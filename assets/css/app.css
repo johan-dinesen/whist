@@ -348,3 +348,25 @@
   .synergy-data .synergy-average{font-size:12px}
   .synergy-data .synergy-sample{font-size:10px}
 }
+
+
+/* v0.2.6 · independent cumulative standings history module. */
+.score-history-panel{padding-bottom:21px}
+.score-history-chart-wrap{position:relative;width:100%;height:390px;min-height:320px;
+  border:1px solid #34495d;border-radius:11px;padding:15px 13px 8px;
+  background:#121e2b;box-sizing:border-box}
+.score-history-chart-wrap canvas{width:100%!important;height:100%!important}
+.score-history-legend{display:flex;flex-wrap:wrap;gap:7px 8px;margin-top:13px}
+.score-history-player{display:inline-flex;align-items:center;gap:7px;
+  background:#1b2b3a;border:1px solid #34485b;color:#ecf3f9;
+  border-radius:7px;padding:7px 9px;font-size:12px;font-weight:650;
+  cursor:pointer;transition:opacity .14s ease,border-color .14s ease}
+.score-history-player:hover{border-color:#6d9bb5}
+.score-history-player[aria-pressed="false"]{opacity:.42;text-decoration:line-through}
+.score-history-player:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.score-history-marker{height:9px;width:18px;border-radius:3px;display:inline-block;flex:none}
+@media(max-width:620px){
+  .score-history-panel{padding:16px 12px 19px}
+  .score-history-chart-wrap{height:315px;min-height:300px;padding:9px 7px 4px}
+  .score-history-player{font-size:11px;padding:7px 8px}
+}

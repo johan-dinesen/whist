@@ -4,6 +4,8 @@ import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionPa
 import {normalizeStandings} from './ranking-model.js';
 import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail} from './stat-metrics.js';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
+import {buildScoreHistory} from './score-history-model.js';
+import {drawScoreHistory} from './score-history-chart.js';
 
 const $ = id => document.getElementById(id);
 const profileCacheVersion = String(Date.now());
@@ -13,6 +15,7 @@ let selectedNotes = new Set();
 let standings = [];
 let activeRequest = 0;
 let view = 'podium';
+let historyChart = null;
 
 function showError(message) {
   const node = $('stats-status');
@@ -258,6 +261,29 @@ function renderSynergy(raw) {
     body.append(tr);
   }
 }
+function renderScoreHistory(raw) {
+  const model=buildScoreHistory(raw);
+  $('score-history-count').textContent = model.gameCount
+    ? `${model.gameCount} spil · ${model.players.length} spillere`
+    : '';
+  const state=$('score-history-state');
+  const content=$('score-history-content');
+  if (!model.gameCount || !model.players.length) {
+    content.classList.add('hidden');
+    state.textContent='Ingen spil i de valgte spilsamlinger.';
+    state.classList.remove('hidden');
+    return;
+  }
+  // Chart.js measures canvas dimensions at construction time, so expose it first.
+  state.classList.add('hidden');
+  content.classList.remove('hidden');
+  historyChart?.destroy();
+  historyChart=null;
+  historyChart=drawScoreHistory({
+    canvas:$('score-history-canvas'),
+    legend:$('score-history-legend'), model
+  });
+}
 function changeView(next) {
   view=next;
   for(const button of document.querySelectorAll('[data-stats-view]')){
@@ -285,16 +311,22 @@ async function refresh() {
   $('synergy-state').classList.remove('hidden');
   $('synergy-content').classList.add('hidden');
   $('synergy-count').textContent='';
+  historyChart?.destroy();
+  historyChart=null;
+  $('score-history-state').textContent='Indlæser stillingshistorik …';
+  $('score-history-state').classList.remove('hidden');
+  $('score-history-content').classList.add('hidden');
+  $('score-history-count').textContent='';
   const params={
     ...selectionParams(selectedNotes),
     p_include_guests:$('stats-include-guests').checked
   };
-  // Read the two independent modules in parallel. A problem in one should
-  // not prevent the other from loading.
+  // Load modules independently. An error in one must not hide the others.
   const settled=await Promise.allSettled([
     supabase.rpc('get_standings_for_notes',params),
     supabase.rpc('get_melding_statistics_for_notes',params),
-    supabase.rpc('get_synergy_for_notes',params)
+    supabase.rpc('get_synergy_for_notes',params),
+    supabase.rpc('get_standings_history_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
@@ -323,6 +355,20 @@ async function refresh() {
     const error=synergyResult.status==='rejected'?synergyResult.reason:synergyResult.value.error;
     errors.push(`Synergi: ${error.message||String(error)}`);
     $('synergy-state').textContent='Synergi kunne ikke indlæses.';
+  }
+  const graphResult=settled[3];
+  if(graphResult.status==='fulfilled' && !graphResult.value.error){
+    try{renderScoreHistory(graphResult.value.data);}
+    catch(err){
+      errors.push(`Stillingshistorik: ${err.message}`);
+      $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
+      $('score-history-state').classList.remove('hidden');
+      $('score-history-content').classList.add('hidden');
+    }
+  }else{
+    const error=graphResult.status==='rejected'?graphResult.reason:graphResult.value.error;
+    errors.push(`Stillingshistorik: ${error.message||String(error)}`);
+    $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
   }
   if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
   $('stats-refresh').disabled=false;

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.5">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.6">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.5</span>
+      <span class="version">v0.2.6</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -97,9 +97,25 @@
         </details>
       </div>
     </section>
+    <section class="panel score-history-panel" aria-labelledby="score-history-title">
+      <div class="ranking-head">
+        <div>
+          <h2 id="score-history-title">Stillingshistorik</h2>
+          <p id="score-history-count" class="rank-subtitle" aria-live="polite"></p>
+        </div>
+      </div>
+      <p id="score-history-state" class="ranking-empty" role="status">Indlæser stillingshistorik …</p>
+      <div id="score-history-content" class="hidden">
+        <div class="score-history-chart-wrap">
+          <canvas id="score-history-canvas" role="img" aria-label="Kurver over spillernes akkumulerede nettopoint efter hvert spil"></canvas>
+        </div>
+        <div id="score-history-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere i diagrammet"></div>
+      </div>
+    </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
-  <script type="module" src="assets/js/stats.js?v=0.2.5"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.6"></script>
 </body>
 </html>

@@ -1,23 +1,25 @@
 import assert from 'node:assert/strict';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail} from '../assets/js/stat-metrics.js';
-const row={
- player_id:'a42df3bb-0f8f-47fb-ad64-d21fcb0cf36e',player_name:'Johan',is_guest:false,
- games_played:10, net_points:'3.5',calls_made:5,
- under_calls:2,over_calls:1,exact_calls:1,unclassified_calls:1,
- under_pct:'40.0',over_pct:'20.0',exact_pct:'20.0',
- avg_deviation:'0.5',avg_abs_deviation:'1.25',deviation_observations:4,
- avg_points_per_hand:'0.35'
+import {buildScoreHistory} from '../assets/js/score-history-model.js';
+
+const raw = {
+  game_count: 4,
+  players:[{id:'w',name:'William'},{id:'d',name:'David'},{id:'g',name:'Gustav'},{id:'j',name:'Johan'},{id:'s',name:'Sofus'}],
+  games:[
+    {index:4,payouts:[{player_id:'w',points:-1},{player_id:'d',points:1},{player_id:'g',points:1},{player_id:'j',points:-1}]},
+    {index:2,payouts:[{player_id:'w',points:0.2},{player_id:'d',points:-0.2},{player_id:'g',points:0.2},{player_id:'j',points:-0.2}]},
+    {index:1,payouts:[{player_id:'s',points:0.5},{player_id:'d',points:-0.5},{player_id:'g',points:-0.5},{player_id:'j',points:0.5}]},
+    {index:3,payouts:[{player_id:'w',points:0.05},{player_id:'s',points:0.05},{player_id:'g',points:-0.05},{player_id:'j',points:-0.05}]}
+  ]
 };
-const [p]=normalizeMeldingStatistics([row]);
-assert.equal(p.underPct,40);assert.equal(p.overPct,20);assert.equal(p.exactPct,20);
-assert.equal(p.unknown,1);assert.equal(p.avgDeviation,0.5);
-assert.equal(METRICS.length,7);
-assert.equal(displayMetric(METRICS[1],p),'40,0 %');
-assert.equal(displayMetric(METRICS[4],p),'0,50');
-assert.equal(displayMetric(METRICS[6],p),'0,35');
-assert.match(metricDetail(METRICS[1],p),/2 af 5/);
-assert.equal(displayMetric(METRICS[1],normalizeMeldingStatistics([{...row,calls_made:0,under_calls:0,over_calls:0,exact_calls:0,unclassified_calls:0,under_pct:null,over_pct:null,exact_pct:null,avg_deviation:null,avg_abs_deviation:null,deviation_observations:0}])[0]),'—');
-assert.throws(()=>normalizeMeldingStatistics([{...row,under_calls:3}]),/ufuldstændige/);
-const winners=normalizeMeldingStatistics([row,{...row,player_id:'another',player_name:'David',net_points:'7.9'}]);
-assert.equal(winners[0].name,'David');
-console.log('PASS model: metrics, zero calls, unknown solo, format, errors, order');
+const m=buildScoreHistory(raw);
+assert.equal(m.gameCount,4);
+assert.deepEqual(m.players.map(x=>x.name),['David','Gustav','Johan','Sofus','William']);
+assert.deepEqual(m.players.find(x=>x.id==='d').series,[0,-0.5,-0.7,-0.7,0.3]);
+assert.deepEqual(m.players.find(x=>x.id==='w').series,[0,0,0.2,0.25,-0.75]);
+assert.deepEqual(m.players.find(x=>x.id==='s').series,[0,0.5,0.5,0.55,0.55]);
+for(let i=0;i<=4;i++) assert.ok(Math.abs(m.players.reduce((v,p)=>v+p.series[i],0))<1e-10);
+assert.deepEqual(buildScoreHistory({game_count:0,players:[],games:[]}),{gameCount:0,players:[]});
+assert.throws(()=>buildScoreHistory({...raw,game_count:5}),/Antallet/);
+assert.throws(()=>buildScoreHistory({...raw,games:[...raw.games.slice(0,3),{index:5,payouts:raw.games[3].payouts}]}),/fortløbende/);
+assert.throws(()=>buildScoreHistory({...raw,games:[...raw.games.slice(0,3),{index:3,payouts:[{player_id:'w',points:0.2}]}]}),/fortløbende|mangler/);
+console.log('PASS score history: chronology, continuous x, flat lines, cent precision, zero sum, empty, invalid data');
