@@ -125,3 +125,20 @@
 /* v0.1.10: quiet connection state, but preserve actionable error messages. */
 .connection-error{margin:4px 0 14px;color:#ffc2a7;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
 #refresh-history.refresh-history-btn{min-height:34px;padding:6px 10px;font-size:12px;border-radius:7px;width:auto}
+
+/* v0.1.11: compact per-player profile picture manager. */
+.profile-editor{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:16px}
+.profile-avatar{width:144px;height:144px;border-radius:50%;background:var(--surface2);border:2px solid #405166;display:grid;place-items:center;overflow:hidden;flex:none;position:relative}
+.profile-initials{font-size:39px;font-weight:800;color:var(--muted)}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.profile-file-controls{flex:1 1 210px;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.profile-file-controls input{max-width:100%;font-size:13px;color:var(--text)}
+.profile-file-controls input::file-selector-button{background:var(--surface2);color:var(--text);border:1px solid #405166;padding:10px;border-radius:8px;margin-right:9px;cursor:pointer}
+#profile-player{width:100%;min-height:48px;padding:11px 12px;background:#0d1622;color:var(--text);border:1px solid #4b5c6d;border-radius:8px;margin-top:8px}
+.profile-hint{font-size:12px;color:var(--muted);margin:0}
+#profile-upload-btn{margin-top:4px}
+#admin-tournament-content>.panel{margin-top:16px}
+#profile-panel{margin-top:12px}
+.admin-toolbar{justify-content:flex-start}
+.admin-toolbar p{margin-right:auto}
+@media(max-width:620px){.profile-editor{gap:14px}.profile-avatar{height:116px;width:116px}.profile-file-controls{flex-basis:100%}.admin-toolbar{flex-direction:row;flex-wrap:wrap}}
