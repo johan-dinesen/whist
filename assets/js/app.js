@@ -1,0 +1,245 @@
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+
+const $ = id => document.getElementById(id);
+const CALLS = [
+  ['almindelig', 'Almindelig'], ['gode', 'Gode'], ['halve', 'Halve'],
+  ['vip', 'Vip'], ['sol', 'Sol'], ['ren_sol', 'Ren Sol'],
+  ['bordlaegger', 'Bordlægger'], ['ren_bordlaegger', 'Ren Bordlægger']
+];
+const TRUMPS = [
+  ['hearts', '❤️ Hjerter'], ['clubs', '♣️ Klør'],
+  ['diamonds', '♦️ Ruder'], ['spades', '♠️ Spar'], ['no_trump', '🃏 Uden trumf']
+];
+const SOLO = new Set(['sol', 'ren_sol', 'bordlaegger', 'ren_bordlaegger']);
+const SHORT_SOLO = new Set(['sol', 'bordlaegger']);
+const SCORES = [4,3,2,1,0,-1,-2,-3,-4,-5,-6,-7];
+const configReady = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-')
+  && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes('YOUR-');
+const previewMode = new URLSearchParams(location.search).has('preview');
+let supabase = null;
+let currentUser = null;
+let players = [];
+let tournaments = [];
+let requestId = null;
+const s = {
+  playerIds: [], tournamentId: '', playedAt: '', callType: null, callerIds: [],
+  tricks: null, vipDepth: null, trump: null, partnerId: null,
+  score: null, soloResults: {}
+};
+
+function localDateTime(d = new Date()) {
+  const t = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return t.toISOString().slice(0,16);
+}
+function show(id, visible) { $(id).classList.toggle('hidden', !visible); }
+function labelFrom(list, value) { return list.find(a => a[0] === value)?.[1] ?? String(value ?? ''); }
+function getName(id) { return players.find(p => p.id === id)?.display_name ?? 'Ukendt spiller'; }
+function sortedChosen() { return players.filter(p => s.playerIds.includes(p.id)).sort((a,b) => a.display_name.localeCompare(b.display_name,'da')); }
+function isSolo() { return SOLO.has(s.callType); }
+function message(id, txt, error = false) { const el = $(id); el.textContent = txt; el.style.color = error ? '#ffc2a7' : ''; }
+function resetFrom(level) {
+  if (level <= 1) s.callType = null;
+  if (level <= 2) s.callerIds = [];
+  if (level <= 3) { s.tricks = null; s.vipDepth = null; s.trump = null; s.partnerId = null; s.score = null; s.soloResults = {}; }
+  if (level <= 4) { s.vipDepth = null; s.trump = null; s.partnerId = null; s.score = null; }
+  if (level <= 5) { s.trump = null; s.partnerId = null; s.score = null; }
+  if (level <= 6) { s.partnerId = null; s.score = null; }
+  if (level <= 7) s.score = null;
+  requestId = null;
+}
+function buttons(id, opts, selected, onClick, options = {}) {
+  const root = $(id); root.replaceChildren();
+  for (const [value, text] of opts) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'choice' + (options.guest?.(value) ? ' guest' : '');
+    b.textContent = text;
+    b.setAttribute('aria-pressed', String(selected(value)));
+    b.disabled = Boolean(options.disabled?.(value));
+    b.addEventListener('click', () => onClick(value));
+    root.append(b);
+  }
+}
+function renderPlayers() {
+  let available = players.filter(p => p.active && (!p.is_guest || $('show-guests').checked));
+  available.sort((a,b) => a.display_name.localeCompare(b.display_name,'da'));
+  buttons('players-options', available.map(p=>[p.id,p.display_name]),
+    id=>s.playerIds.includes(id), id=>{
+      if (s.playerIds.includes(id)) s.playerIds = s.playerIds.filter(x=>x!==id);
+      else if (s.playerIds.length < 4) s.playerIds.push(id);
+      resetFrom(1); render();
+    }, { guest: id=>players.find(p=>p.id===id)?.is_guest,
+      disabled: id=>s.playerIds.length===4 && !s.playerIds.includes(id) });
+  $('player-count').textContent = `${s.playerIds.length} / 4`;
+}
+function render() {
+  renderPlayers();
+  const full = s.playerIds.length === 4;
+  show('call-step', full);
+  if (!full) { ['caller-step','tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
+  buttons('call-options', CALLS, v=>s.callType===v, v=>{s.callType=v;resetFrom(2);render();});
+  show('caller-step', Boolean(s.callType));
+  if (!s.callType) { ['tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
+  $('caller-help').textContent = isSolo() ? 'Vælg én eller flere meldere.' : 'Vælg én melder.';
+  buttons('caller-options', sortedChosen().map(p=>[p.id,p.display_name]), id=>s.callerIds.includes(id), id=>{
+    if (isSolo()) s.callerIds = s.callerIds.includes(id) ? s.callerIds.filter(x=>x!==id) : [...s.callerIds,id];
+    else s.callerIds=[id];
+    resetFrom(3);render();
+  });
+  const hasCaller = s.callerIds.length > 0;
+  show('tricks-step', hasCaller && !isSolo());
+  show('vip-step', hasCaller && s.tricks!==null && s.callType==='vip');
+  const canTrump = hasCaller && s.tricks!==null && (s.callType!=='vip' || s.vipDepth!==null);
+  show('trump-step', !isSolo() && canTrump);
+  show('partner-step', !isSolo() && canTrump && Boolean(s.trump));
+  if (!isSolo() && hasCaller) {
+    buttons('tricks-options', [9,10,11,12,13].map(x=>[x,String(x)]),v=>s.tricks===v,v=>{s.tricks=v;resetFrom(4);render();});
+    buttons('vip-options', [1,2,3].map(x=>[x,String(x)]),v=>s.vipDepth===v,v=>{s.vipDepth=v;resetFrom(5);render();});
+    const options = s.callType==='gode' ? TRUMPS.filter(a=>['clubs','no_trump'].includes(a[0])) : TRUMPS;
+    buttons('trump-options',options,v=>s.trump===v,v=>{s.trump=v;resetFrom(6);render();});
+    buttons('partner-options',sortedChosen().map(p=>[p.id,p.display_name]),v=>s.partnerId===v,v=>{s.partnerId=v;resetFrom(7);render();});
+  }
+  const canResult = isSolo() ? hasCaller : Boolean(s.partnerId);
+  show('result-step', canResult);
+  if (canResult) renderResult();
+  const complete = canResult && (isSolo()
+    ? s.callerIds.every(id=>Boolean(s.soloResults[id]))
+    : s.score !== null);
+  show('review-panel',complete);
+  if (complete) renderReview();
+}
+function renderResult() {
+  if (!isSolo()) {
+    $('result-options').style.display='grid';
+    $('result-help').textContent='Vælg resultat fra +4 til −7.';
+    buttons('result-options', SCORES.map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;render();});
+    return;
+  }
+  $('result-help').textContent='Vælg udfald for hver melder.';
+  const root=$('result-options');root.replaceChildren();root.style.display='block';
+  const results= SHORT_SOLO.has(s.callType) ? ['Vundet (0 stik)','Vundet (1 stik)','Tabt'] : ['Vundet','Tabt'];
+  for (const id of s.callerIds) {
+    const wrap=document.createElement('div');wrap.className='solo-player';
+    const title=document.createElement('h3');title.textContent=getName(id);wrap.append(title);
+    const opts=document.createElement('div');opts.className='choices';
+    for (const result of results) {
+      const b=document.createElement('button'); b.type='button';b.className='choice';b.textContent=result;
+      b.setAttribute('aria-pressed',String(s.soloResults[id]===result));
+      b.addEventListener('click',()=>{s.soloResults[id]=result;requestId=null;render();});opts.append(b);
+    }
+    wrap.append(opts);root.append(wrap);
+  }
+}
+function renderReview() {
+  const fields = [
+    ['Turnering', tournaments.find(t=>t.id===s.tournamentId)?.name ?? 'Uden turnering'],
+    ['Spillet', new Date(s.playedAt).toLocaleString('da-DK',{dateStyle:'medium',timeStyle:'short'})],
+    ['Spillere', s.playerIds.map(getName).join(', ')],
+    ['Melding', labelFrom(CALLS,s.callType)],
+    ['Melder', s.callerIds.map(getName).join(', ')]
+  ];
+  if (isSolo()) fields.push(['Resultater',s.callerIds.map(id=>`${getName(id)}: ${s.soloResults[id]}`).join(' · ')]);
+  else fields.push(['Stik',String(s.tricks)],['Trumf',labelFrom(TRUMPS,s.trump)],
+    ...(s.callType==='vip'?[['Vip dybde',String(s.vipDepth)]]:[]),
+    ['Makker',getName(s.partnerId)],['Resultat',s.score>0?`+${s.score}`:String(s.score)]);
+  const root=$('review-content');root.replaceChildren();
+  fields.forEach(([name,value])=>{const dt=document.createElement('dt');dt.textContent=name;
+    const dd=document.createElement('dd');dd.textContent=value;root.append(dt,dd);});
+}
+function newGame() {
+  s.playerIds=[];resetFrom(1);s.playedAt=localDateTime();$('played-at').value=s.playedAt;
+  $('show-guests').checked=false;
+  message('save-message','');
+  show('success-panel',false);show('game-panel',true);$('save-btn').disabled=false;
+  render();window.scrollTo({top:0,behavior:'smooth'});
+}
+async function saveGame() {
+  if (previewMode) { message('save-message','Dette er kun en forhåndsvisning. Intet er gemt.',true); return; }
+  if (!$('played-at').value || s.playerIds.length!==4 || !s.callType || !s.callerIds.length) return;
+  const date=new Date($('played-at').value);
+  if (isNaN(date.getTime()) || date.getTime()>Date.now()+10*60*1000){message('save-message','Vælg et gyldigt tidspunkt, som ikke ligger i fremtiden.',true);return;}
+  if (!requestId) requestId=crypto.randomUUID();
+  const participants=s.playerIds.map((id,i)=>({player_id:id,seat:i+1,is_caller:s.callerIds.includes(id),is_partner:!isSolo()&&s.partnerId===id,solo_result:isSolo()?s.soloResults[id]??null:null}));
+  const params={p_request_id:requestId,p_tournament_id:s.tournamentId||null,p_played_at:date.toISOString(),p_call_type:s.callType,
+    p_tricks:isSolo()?null:s.tricks,p_vip_depth:s.callType==='vip'?s.vipDepth:null,p_trump:isSolo()?null:s.trump,
+    p_score:isSolo()?null:s.score,p_participants:participants};
+  $('save-btn').disabled=true;message('save-message','Gemmer spillet ...');
+  try {
+    const {data,error}=await supabase.rpc('register_game',params);
+    if(error)throw error;
+    $('success-id').textContent=`Spil-ID: ${data}`;
+    show('game-panel',false);show('success-panel',true);
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(err){message('save-message',`Spillet blev ikke bekræftet gemt: ${err.message}. Prøv igen.`,true);$('save-btn').disabled=false;}
+}
+async function loadData() {
+  const [a,b]=await Promise.all([
+    supabase.from('players').select('id,display_name,is_guest,active').eq('active',true).order('display_name'),
+    supabase.from('tournaments').select('id,name,start_at,end_at').order('name',{ascending:false})
+  ]);
+  if(a.error)throw a.error;if(b.error)throw b.error;
+  players=a.data??[];tournaments=b.data??[];
+  const sel=$('tournament-select');sel.replaceChildren();
+  const empty=new Option('Uden turnering','');sel.add(empty);
+  tournaments.forEach(t=>sel.add(new Option(t.name,t.id)));
+  s.tournamentId=tournaments.length===1?tournaments[0].id:'';sel.value=s.tournamentId;
+  sel.addEventListener('change',()=>{s.tournamentId=sel.value;requestId=null;render();});
+  if (!players.length) {show('configuration-message',true);$('configuration-message').textContent='Ingen spillere fundet. Tilføj en godkendt registrator og spillere i Supabase (se README).';}
+  else show('configuration-message',false);
+  newGame();
+}
+async function authenticate(user) {
+  if (!user) {currentUser=null;show('auth-panel',true);show('game-panel',false);show('success-panel',false);return;}
+  if(currentUser?.id===user.id)return;
+  currentUser=user;
+  $('signed-in-email').textContent=user.email??'bruger';
+  show('auth-panel',false);
+  try {await loadData();}catch(err){show('configuration-message',true);$('configuration-message').textContent=`Kunne ikke indlæse spillere og turneringer: ${err.message}. Kontrollér database, rettigheder og godkendelse.`;}
+}
+$('login-form').addEventListener('submit',async event=>{
+  event.preventDefault();if(!supabase)return;
+  $('login-btn').disabled=true;message('auth-message','Sender login-link ...');
+  const email=$('login-email').value.trim();
+  const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+  message('auth-message',error?`Kunne ikke sende link: ${error.message}`:'Tjek din indbakke og åbn login-linket.',Boolean(error));
+  $('login-btn').disabled=false;
+});
+$('logout-btn').addEventListener('click',async()=>{await supabase.auth.signOut();currentUser=null;await authenticate(null);});
+$('show-guests').addEventListener('change',()=>{if(!$('show-guests').checked){const valid=new Set(players.filter(p=>!p.is_guest).map(p=>p.id));if(s.playerIds.some(id=>!valid.has(id))){s.playerIds=s.playerIds.filter(id=>valid.has(id));resetFrom(1);}}render();});
+$('played-at').addEventListener('change',()=>{s.playedAt=$('played-at').value;requestId=null;render();});
+$('save-btn').addEventListener('click',saveGame);
+$('new-game-btn').addEventListener('click',newGame);
+
+async function init() {
+  if (previewMode) {
+    const names=['David','Gustav','Johan','Samuel','Sofus','William','Anna','Caroline','Iben','Maria','Stine','Vera'];
+    players=names.map((name,i)=>({id:`preview-${i}`,display_name:name,is_guest:i>=6,active:true}));
+    tournaments=[{id:'preview-tournament',name:'Klitmøller 2026'}];
+    const select=$('tournament-select');select.replaceChildren();
+    select.add(new Option('Uden turnering',''));
+    select.add(new Option('Klitmøller 2026','preview-tournament'));
+    s.tournamentId='preview-tournament';select.value=s.tournamentId;
+    select.addEventListener('change',()=>{s.tournamentId=select.value;render();});
+    $('configuration-message').textContent='FORHÅNDSVISNING: Dette er kun til at afprøve formularen. Ingen spil bliver gemt.';
+    show('configuration-message',true);show('auth-panel',false);
+    $('signed-in-email').textContent='forhåndsvisning';$('logout-btn').classList.add('hidden');
+    newGame();return;
+  }
+  if (!configReady) {show('configuration-message',true);show('auth-panel',false);return;}
+  try {
+    const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+    supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+  } catch (e) {
+    show('configuration-message',true);
+    $('configuration-message').textContent='Kunne ikke indlæse Supabase-forbindelsen: '+e.message;
+    return;
+  }
+  const {data,error}=await supabase.auth.getSession();
+  if(error){show('configuration-message',true);$('configuration-message').textContent=error.message;return;}
+  await authenticate(data.session?.user??null);
+  supabase.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT') setTimeout(()=>{void authenticate(null);},0);
+    else if(event==='SIGNED_IN' && session?.user && currentUser?.id!==session.user.id)
+      setTimeout(()=>{void authenticate(session.user);},0);
+  });
+}
+init();
