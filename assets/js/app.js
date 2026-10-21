@@ -212,6 +212,19 @@ function renderPayoutPreview() {
     root.textContent = `Kunne ikke beregne point: ${err.message}`;
   }
 }
+async function refreshActiveTournament() {
+  if (!supabase || !canSave) return false;
+  const previousId = selectedScopeId();
+  const {data,error} = await supabase.from('tournaments')
+    .select('id,name,is_active').eq('is_active',true);
+  if (error) throw error;
+  if ((data ?? []).length > 1) throw new Error('Flere turneringer er markeret aktive.');
+  activeTournament = data?.[0] ?? null;
+  render();
+  // If the active tournament changed while a game was being filled in, require
+  // a second confirmation so the intended tournament cannot change silently.
+  return scopeMode === 'active' && previousId !== selectedScopeId();
+}
 function newGame() {
   if (pendingStepScroll !== null) clearTimeout(pendingStepScroll);
   pendingStepScroll = null;
@@ -221,6 +234,9 @@ function newGame() {
   show('password-panel',false);
   show('success-panel',false);show('game-panel',true);$('save-btn').disabled=false;
   render();window.scrollTo({top:0,behavior:'smooth'});
+  if (supabase && canSave) refreshActiveTournament().catch(err=>{
+    $('scope-hint').textContent = `Kunne ikke kontrollere aktiv turnering: ${err.message}. Genindlæs siden.`;
+  });
 }
 async function hasWriteAccess() {
   const {data,error}=await supabase.rpc('registration_access_until');
@@ -260,6 +276,19 @@ async function saveGame() {
     return;
   }
   show('password-panel',false);
+  try {
+    if (await refreshActiveTournament()) {
+      requestId = null;
+      submissionTime = null;
+      message('save-message','Den aktive spilsamling blev ændret siden du begyndte. Kontroller den viste spilsamling og tryk “Gem spil” igen.',true);
+      $('save-btn').disabled=false;
+      return;
+    }
+  } catch (err) {
+    message('save-message',`Kunne ikke kontrollere aktiv spilsamling: ${err.message}. Intet er gemt. Prøv igen.`,true);
+    $('save-btn').disabled=false;
+    return;
+  }
   if (!requestId) {
     requestId = crypto.randomUUID();
     // First actual registration request, after any shared-password step.

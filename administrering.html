@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Administrering af Whist-spilsamlinger og aktiv turnering.">
+  <title>Whist | Administrering</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a href="./" class="brand">WHIST<span class="brand-mark">.</span></a>
+      <nav class="site-nav"><a href="./">Registrering</a><a href="historik.html">Historik</a><a href="administrering.html" aria-current="page">Administrering</a></nav>
+    </div>
+  </header>
+  <main class="shell">
+    <div class="heading">
+      <div><p class="eyebrow">Kompagniet · Whist</p><h1>Administrering</h1>
+        <p class="intro">Opret spilsamlinger, og vælg hvilken samling der automatisk foreslås ved registrering af nye spil.</p>
+      </div>
+      <span class="version">v0.1.7</span>
+    </div>
+    <p id="admin-status" class="notice notice-warning" role="status" aria-live="polite">Forbinder til Supabase ...</p>
+
+    <section id="admin-login-panel" class="panel hidden" aria-labelledby="admin-login-title">
+      <h2 id="admin-login-title">Adgang til Administrering</h2>
+      <p class="muted">Indtast administrationskoden. Det er en anden adgangskode end den fælles kode til registrering. Adgangen gælder på denne enhed i 12 timer.</p>
+      <form id="admin-password-form" class="password-form">
+        <label for="admin-password" class="field-label">Administrationskode</label>
+        <input type="password" id="admin-password" minlength="8" maxlength="72" autocomplete="off" required>
+        <button id="admin-unlock-btn" class="button primary" type="submit">Åbn Administrering</button>
+      </form>
+      <p id="admin-password-message" class="feedback" role="alert" aria-live="polite"></p>
+    </section>
+
+    <section id="admin-content" class="hidden" aria-label="Administration af spilsamlinger">
+      <div class="admin-toolbar">
+        <p id="admin-access" class="muted"></p>
+        <button id="admin-lock-btn" class="button secondary" type="button">Lås Administrering</button>
+      </div>
+      <section class="panel" aria-labelledby="active-title">
+        <h2 id="active-title">Aktiv spilsamling</h2>
+        <p class="muted">Denne samling vælges som standard, når et nyt spil registreres. Vælg Kredsspil, hvis ingen turnering er i gang. Gamle spil ændres ikke.</p>
+        <form id="admin-active-form">
+          <div id="admin-tournament-options" class="admin-radio-list" role="radiogroup" aria-label="Aktiv spilsamling"></div>
+          <button id="admin-save-active-btn" class="button primary" type="submit">Gem aktiv spilsamling</button>
+        </form>
+        <p id="admin-active-message" class="feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="create-title">
+        <h2 id="create-title">Opret ny spilsamling</h2>
+        <p class="muted">For eksempel <strong>Hals 2027</strong>. Den nye samling bliver tilgængelig i Historik med det samme, men den bliver ikke aktiv, før du vælger den ovenfor.</p>
+        <form id="admin-create-form" class="admin-create-form">
+          <label for="admin-new-name" class="field-label">Navn på ny spilsamling</label>
+          <div class="admin-create-row">
+            <input id="admin-new-name" name="name" type="text" maxlength="120" placeholder="Hals 2027" autocomplete="off" required>
+            <button id="admin-create-btn" class="button primary" type="submit">Opret</button>
+          </div>
+        </form>
+        <p id="admin-create-message" class="feedback" role="status" aria-live="polite"></p>
+      </section>
+    </section>
+  </main>
+  <footer class="shell footer">Whist · Administration af turneringer</footer>
+  <noscript><div class="shell notice notice-warning">JavaScript er nødvendigt for at bruge Administrering.</div></noscript>
+  <script type="module" src="assets/js/admin.js?v=0.1.7"></script>
+</body>
+</html>

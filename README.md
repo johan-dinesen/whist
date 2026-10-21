@@ -1,56 +1,65 @@
-# Whist v0.1.6: tournament notes and Kredsspil
+# Whist v0.1.7: Administrering
 
-This is an incremental update to v0.1.5. The scoring rules, the shared password, 30-day authorization, and automatic timestamps have not changed. **9 Gode = 0.40; 9 Halve = 0.50; each additional trick doubles the value.**
+Adds **Administrering** to the existing v0.1.6 Whist site. The admin page can:
 
-## Deploy to your existing GitHub Pages repository
+1. Create new named tournaments such as **Hals 2027**, without activating them.
+2. Select exactly one active tournament as the default note on newly registered games.
+3. Choose **Kredsspil** as the default (no active tournament).
+4. Lock the admin page again explicitly.
 
-1. In Supabase → SQL Editor run **`sql/06_tournament_notes.sql`**. This assumes `05_scoring_history.sql` was already run. The migration does not delete or rewrite old games. You do not need to rerun 01, 02, 04 or 05.
-2. Replace `index.html`, `historik.html`, `assets/css/app.css`, `assets/js/app.js`, and `assets/js/history.js` in the repository. Nothing else needs replacing. Commit/push and hard-refresh the website; check for `v0.1.6` in both pages.
-3. **Preserve `assets/js/config.js` and the Supabase keys you already configured**. This ZIP deliberately contains only `assets/js/config.example.js`, not your real config.
-4. The v0.1.5 `assets/js/scoring.js` remains unchanged. It is included so a fresh installation has all frontend dependencies.
+No individual email or GitHub login is needed. Admin has a **separate password**, verified by Supabase on every unlock. A valid admin session is remembered for **12 hours** on the same browser. The ordinary shared game-registration password and its **30-day** grant are unchanged. Changing the admin password invalidates prior admin grants.
 
-## Classification of games
+## Deployment to your existing Supabase + GitHub Pages project
 
-`public.tournaments` now has these five named groupings: Slettestrand 2023, Hals 2024, Helsinki 2024, Hals 2025 and Klitmøller 2026. **Kredsspil** is not a database tournament row; it means a game where `public.games.tournament_id IS NULL`. Every existing game retains its current tournament assignment. The SQL creates missing group names with no invented start/end dates.
+**First, SQL:** In Supabase → SQL Editor, run `sql/07_administration.sql` from this package. The existing `01_schema.sql`, `02_seed.sql`, `04_shared_password.sql`, `05_scoring_history.sql`, and `06_tournament_notes.sql` must already have been run, in that order. **Do not rerun them just to install this update.** The new migration never deletes or rewrites old games.
 
-**Registration:** A compact “Spilsamling” setting appears above the players. When a tournament is marked `is_active=true`, that tournament is automatically selected. You can tap **Kredsspil** for an ordinary game. The selection persists when you press “Registrer næste spil” on the same page, but not indefinitely across browsers. The selected grouping is shown in the review before submission. With no active tournament, the only option is Kredsspil. The game timestamp is still captured automatically when submitting.
-
-**Historik:** No date fields or date column. Click one note to isolate it, then click another to include both. “Alle” resets the filter to all notes, including Kredsspil. “Medtag gæstespil” still toggles guest-game inclusion, adding guest-name columns to the right. “Note” appears only when all or multiple notes are displayed; it is hidden for a single selected note to conserve space. The table has sticky column headings inside a vertically and horizontally scrollable region, compact payout columns, and alternating row colors. The call label uses `9Alm♦` rather than `9Almindelig ♦`, and the result heading is shortened to `Res.`. The table loads 250 games at a time, with an **Indlæs flere spil** button to support large imports.
-
-## Turning an active tournament on or off
-
-In Supabase SQL Editor, to activate Klitmøller 2026:
+**Second, set the independent admin password once in Supabase SQL Editor:** Replace the example with your own long, random password (8–72 bytes; 20+ random characters recommended). **Choose a different password from the registration password.**
 
 ```sql
-begin;
-update public.tournaments set is_active = false where is_active;
-update public.tournaments set is_active = true where name = 'Klitmøller 2026';
-commit;
+insert into private.admin_secret (id, password_hash, changed_at)
+values (
+  1,
+  extensions.crypt('REPLACE_WITH_A_DIFFERENT_LONG_ADMIN_PASSWORD', extensions.gen_salt('bf', 12)),
+  clock_timestamp()
+)
+on conflict (id) do update
+  set password_hash = excluded.password_hash,
+      changed_at = excluded.changed_at;
 ```
 
-A unique index ensures at most one tournament is active. We do **not** automatically activate Klitmøller 2026 merely because it appears in the seed; you decide when the tournament is actually happening. To end the active tournament:
+The password appears as a literal in the SQL editor when initially set; avoid sharing the statement or committing it to GitHub. The website **never downloads or stores your password**, and the database contains only its bcrypt hash. Running the statement again with a new password rotates it and invalidates previously authorized admin sessions.
 
-```sql
-update public.tournaments set is_active = false where is_active;
-```
+**Third, website files:** Copy these items from the package into your existing GitHub Pages repository, preserving their paths:
 
-When none is active, the form defaults to Kredsspil. Activating/deactivating a tournament never reclassifies previously saved games. Older games can later be imported with an explicit tournament ID, not inferred from timestamps. To inspect the notes and assignment counts:
+- **Add** `administrering.html` and `assets/js/admin.js`.
+- **Replace** `index.html`, `historik.html`, `assets/js/app.js`, `assets/css/app.css`.
+- **Keep** your existing `assets/js/config.js` untouched.
+- All other bundled files are identical to the prior release or included for reference. Your prior `assets/js/scoring.js` and `assets/js/history.js` continue to work.
 
-```sql
-select name, is_active from public.tournaments order by name;
+Commit and push. Open `https://YOURNAME.github.io/YOUR_REPO/administrering.html` (or use the Administrering navigation link). Enter the independent admin code.
 
-select coalesce(t.name, 'Kredsspil') as note, count(*) as games
-from public.games g
-left join public.tournaments t on t.id = g.tournament_id
-group by t.name order by t.name;
-```
+## Normal workflow
 
-## Notes on historical imports
+- To plan **Hals 2027**, enter its name and click **Opret**. It becomes selectable in Historik immediately; it is **not** active yet.
+- When it starts, select **Hals 2027** under *Aktiv spilsamling* and click **Gem aktiv spilsamling**.
+- When it ends, select **Kredsspil (ingen aktiv turnering)** and save. The registration page defaults to Kredsspil for newly started games.
+- You may still manually choose Kredsspil for an individual game while a tournament is active.
+- The admin selection affects **new submissions only**. It never reclassifies old games, and never changes their scores or recorded timestamps. A registration page open in another tab checks whether the default changed before saving and requires reconfirmation if so.
 
-When we import your legacy games, each game's source file/tournament can be mapped explicitly to the corresponding `tournaments.id`, even if its recorded timestamp is incomplete or unusual. This is safer than guessing tournament membership from a date range, and it leaves Kredsspil distinct. Existing games with `tournament_id=NULL` will show under Kredsspil. If any were accidentally recorded there while a tournament was running, they can be reassigned deliberately later, but nothing in this migration does that automatically.
+## Supabase security model
 
-## Security and testing
+The admin password hash, failed-attempt counters, and time-limited grants are held in the non-exposed `private` schema. Browser users have **no direct insert or update rights** on `public.tournaments`; they call `admin_create_tournament()` and `admin_set_active_tournament()` through restricted Postgres functions. Both functions independently verify the admin grant linked to the current anonymous Supabase Auth account. Anonymous Supabase Auth sessions use the `authenticated` database role; RPCs restrict who may execute them and check the browser session server-side. **Do not put a service-role key or a password in any GitHub file.**
 
-The SQL creates `get_game_history_for_notes()`, a paginated read-only RPC that enforces the existing 30-day authorization through `is_registrar()`. It leaves all raw table write restrictions in place. Players and current active groupings are readable to anonymous authenticated sessions so the registration form can be filled before the shared password is entered. No password is embedded in the site.
+There is a **five-attempt / 15-minute per-session lockout**. It is not effective against attackers who continually create new anonymous sessions. For public internet hosting, use a high-entropy admin secret and consider enabling Supabase's CAPTCHA and/or an upstream rate limiter before broad use. The admin page's password requirement is backed by server-side access checks, not merely by hiding UI controls.
 
-Run `npm test` in this folder to test scoring and form behavior. SQL syntax and integration should be verified in your actual Supabase project before depending on them. This environment does not have credentials for the hosted database.
+## Troubleshooting
+
+- **Could not find the function**: SQL migration `07_administration.sql` was not applied, or Supabase's schema cache is stale. Re-run only the new migration if needed, then refresh the page.
+- **Administration password not configured**: Set `private.admin_secret` with the SQL above.
+- **Anonymous sign-ins disabled**: Enable Anonymous Sign-Ins under Supabase Authentication settings (the registration site needs it too).
+- **Can't see new tournament on history page**: Hard-refresh `historik.html` to reload the current list of labels.
+- **Active note in a previously opened registration tab looks stale**: Refresh the registration page. Save also rechecks the active note and warns if it changed.
+
+## Tests
+
+Run `npm test` in the project folder to execute the existing scoring/history tests plus the new admin UI tests. The local tests simulate Supabase calls; actual database functions and authorization must still be verified against your live Supabase project. A recommended check is to create a test tournament, activate it, submit one game, verify `games.tournament_id`, deactivate it, and verify the next game's `tournament_id` is NULL.

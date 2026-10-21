@@ -100,3 +100,24 @@
   .history-table th,.history-table td{padding:6px 7px}
   .history-table .payout-heading,.history-table .payout-cell{padding-left:5px;padding-right:5px;min-width:45px}
 }
+
+/* v0.1.7: private tournament administration */
+.admin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 18px}
+.admin-toolbar p{font-size:13px}
+.admin-toolbar .button{min-height:40px;padding:9px 13px;flex:0 0 auto}
+.admin-radio-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0}
+.admin-radio-choice{display:flex;align-items:center;gap:11px;padding:13px;background:var(--surface2);border:1px solid #405166;border-radius:9px;cursor:pointer;min-height:49px;font-weight:600;font-size:14px}
+.admin-radio-choice:has(input:checked){border-color:var(--blue);background:var(--blue-dark)}
+.admin-radio-choice input{accent-color:var(--blue);flex:none;width:18px;height:18px}
+.admin-radio-choice span{flex:1;overflow-wrap:anywhere}
+.admin-radio-choice small{font-size:10px;color:var(--green);font-weight:800;text-transform:uppercase;letter-spacing:.035em}
+.admin-radio-choice:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.admin-create-form{margin-top:16px}
+.admin-create-row{display:flex;gap:10px;margin-top:8px}
+.admin-create-row input{flex:1;min-width:0;background:#0d1622;color:var(--text);border:1px solid #4b5c6d;border-radius:8px;padding:12px;min-height:48px}
+.admin-create-row .button{min-width:105px}
+.admin-error{color:#ffc2a7!important}
+@media(max-width:620px){.site-nav{gap:10px;font-size:12px}.admin-radio-list{grid-template-columns:1fr}.admin-toolbar{flex-direction:column;align-items:flex-start}.admin-create-row{flex-direction:column}.admin-create-row .button{width:100%}}
+
+/* Keep all three navigation links accessible on small phones. */
+@media(max-width:530px){.topbar-inner{height:auto;min-height:64px;flex-wrap:wrap;padding:10px 0;gap:5px}.site-nav{width:100%;justify-content:space-between;gap:8px;font-size:12px}.brand{font-size:17px}}
