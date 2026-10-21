@@ -54,15 +54,16 @@ function drawTable(games) {
       .sort((a,b) => a.localeCompare(b,'da'))
     : [];
   const names = [...REGULAR, ...otherRegulars, ...guests];
-  // With a single note selected, displaying its name in every row is redundant.
-  const showNoteColumn = selectedNotes.size !== 1;
+  // The note is redundant with one collection selected. If every visible game is
+  // Kredsspil, the note column would also be entirely empty.
+  const showNoteColumn = selectedNotes.size !== 1 && games.some(g => g.tournament_id);
   const head = $('history-head'); head.replaceChildren();
   const header = document.createElement('tr');
-  const columns = ['Melding','Res.','Melder','Makker',...(showNoteColumn ? ['Note'] : []),...names];
+  const columns = ['Melding','🏆','Melder','Makker',...(showNoteColumn ? ['Note'] : []),...names];
   columns.forEach((label,index) => {
     const th = cell(label,'th');
     if (index >= (showNoteColumn ? 5 : 4)) th.classList.add('payout-heading');
-    if (label === 'Res.') th.title = 'Resultat';
+    if (index === 1) th.title = 'Resultat';
     header.append(th);
   });
   head.append(header);
@@ -73,7 +74,8 @@ function drawTable(games) {
     const byName = new Map(participants.map(p => [p.name,p]));
     tr.append(cell(gameLabel(game)), cell(gameResult(game)), cell(game.callers),
       cell(game.partners));
-    if (showNoteColumn) tr.append(cell(groupName(game)));
+    // An unassigned game is Kredsspil: no label is needed in its row.
+    if (showNoteColumn) tr.append(cell(game.tournament_id ? groupName(game) : ''));
     for (const name of names) {
       const participant = byName.get(name);
       const td = cell(participant ? formatPoints(participant.payout) : '');
