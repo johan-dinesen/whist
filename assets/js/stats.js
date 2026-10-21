@@ -3,6 +3,7 @@ import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
 import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail} from './stat-metrics.js';
+import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 
 const $ = id => document.getElementById(id);
 const profileCacheVersion = String(Date.now());
@@ -195,6 +196,68 @@ function renderMeldingStatistics(raw) {
     body.append(tr);
   }
 }
+function renderSynergy(raw) {
+  const {players,matrix,maxAbs,partnershipGames} = normalizeSynergy(raw);
+  const state = $('synergy-state');
+  const content = $('synergy-content');
+  const head = $('synergy-head');
+  const body = $('synergy-body');
+  const count = $('synergy-count');
+  content.classList.toggle('hidden',players.length===0);
+  state.classList.toggle('hidden',players.length!==0);
+  count.textContent = players.length
+    ? `${players.length} spillere · ${partnershipGames} makkerspil`
+    : '';
+  head.replaceChildren();
+  body.replaceChildren();
+  if (!players.length) {
+    state.textContent='Ingen spil i de valgte spilsamlinger.';
+    return;
+  }
+  const corner = document.createElement('th');
+  corner.scope='col';
+  corner.className='synergy-corner';
+  corner.title='Spillere i rækker og kolonner';
+  corner.textContent='↔';
+  head.append(corner);
+  for (const player of players) {
+    const th=document.createElement('th');
+    th.scope='col';
+    th.textContent=player.name;
+    th.title=player.name;
+    head.append(th);
+  }
+  for (const [i,player] of players.entries()) {
+    const tr=document.createElement('tr');
+    const name=document.createElement('th');
+    name.scope='row';
+    name.textContent=player.name;
+    name.title=player.name;
+    tr.append(name);
+    for (const [j,partner] of players.entries()) {
+      const value=matrix[i][j];
+      const td=document.createElement('td');
+      td.className='synergy-data';
+      if (i===j) td.classList.add('synergy-diagonal');
+      if (!value.games) td.classList.add('synergy-empty');
+      if (value.games) {
+        td.style.backgroundColor=synergyTint(value.average,maxAbs);
+      }
+      const avg=document.createElement('strong');
+      avg.className='synergy-average';
+      avg.textContent=formatSynergyPoints(value.average);
+      const sample=document.createElement('small');
+      sample.className='synergy-sample';
+      sample.textContent=`${value.games} spil`;
+      const description=`${player.name} / ${partner.name}: ${value.games ? formatSynergyPoints(value.average)+' point i gennemsnit, ' : ''}${value.games} spil${i===j?', egen makker':''}`;
+      td.title=description;
+      td.setAttribute('aria-label',description);
+      td.append(avg,sample);
+      tr.append(td);
+    }
+    body.append(tr);
+  }
+}
 function changeView(next) {
   view=next;
   for(const button of document.querySelectorAll('[data-stats-view]')){
@@ -218,6 +281,10 @@ async function refresh() {
   $('metrics-state').textContent='Indlæser statistik …';
   $('metrics-state').classList.remove('hidden');
   $('metrics-content').classList.add('hidden');
+  $('synergy-state').textContent='Indlæser synergi …';
+  $('synergy-state').classList.remove('hidden');
+  $('synergy-content').classList.add('hidden');
+  $('synergy-count').textContent='';
   const params={
     ...selectionParams(selectedNotes),
     p_include_guests:$('stats-include-guests').checked
@@ -226,7 +293,8 @@ async function refresh() {
   // not prevent the other from loading.
   const settled=await Promise.allSettled([
     supabase.rpc('get_standings_for_notes',params),
-    supabase.rpc('get_melding_statistics_for_notes',params)
+    supabase.rpc('get_melding_statistics_for_notes',params),
+    supabase.rpc('get_synergy_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
@@ -246,6 +314,15 @@ async function refresh() {
     const error=metricResult.status==='rejected'?metricResult.reason:metricResult.value.error;
     errors.push(`Meldingsstatistik: ${error.message||String(error)}`);
     $('metrics-state').textContent='Statistikken kunne ikke indlæses.';
+  }
+  const synergyResult=settled[2];
+  if(synergyResult.status==='fulfilled' && !synergyResult.value.error){
+    try{renderSynergy(synergyResult.value.data??[]);}
+    catch(err){errors.push(`Synergi: ${err.message}`);$('synergy-state').textContent='Synergi kunne ikke indlæses.';}
+  }else{
+    const error=synergyResult.status==='rejected'?synergyResult.reason:synergyResult.value.error;
+    errors.push(`Synergi: ${error.message||String(error)}`);
+    $('synergy-state').textContent='Synergi kunne ikke indlæses.';
   }
   if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
   $('stats-refresh').disabled=false;

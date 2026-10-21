@@ -312,3 +312,39 @@
 .metric-help dt{font-weight:700;color:#e9f2f8}
 .metric-help dd{margin:0;color:var(--muted)}
 @media(max-width:480px){.metric-help dl{grid-template-columns:1fr;gap:2px}.metric-help dd{margin-bottom:10px}}
+
+/* Synergi: data matrix, intentionally independent from other Statistik modules. */
+.synergy-panel{padding-bottom:20px}
+.synergy-scroll{overflow:auto;max-height:min(72vh,760px);border:1px solid #35495d;border-radius:10px;background:#111d2a;scrollbar-color:#47647c #142330;overscroll-behavior:contain}
+.synergy-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.synergy-table{border-collapse:separate;border-spacing:0;min-width:100%;width:max-content;table-layout:fixed;font-variant-numeric:tabular-nums}
+.synergy-table th,.synergy-table td{border-right:1px solid #314256;border-bottom:1px solid #314256}
+.synergy-table tr>:last-child{border-right:0}
+.synergy-table tbody tr:last-child>*{border-bottom:0}
+.synergy-table thead th{position:sticky;top:0;z-index:4;background:#263b4e;color:#f1f6fb;font-size:11px;padding:9px 5px;text-align:center;min-width:89px;max-width:124px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.synergy-table tbody th{position:sticky;left:0;z-index:3;background:#202f41;color:#e2ebf5;font-size:12px;font-weight:750;min-width:94px;max-width:130px;text-align:left;padding:10px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.synergy-table .synergy-corner{left:0;z-index:5;min-width:94px;text-align:left;padding-left:13px;color:#a2bccf;font-size:17px}
+.synergy-table tbody tr:nth-child(even) th{background:#1b2a3b}
+.synergy-table td.synergy-data{min-width:89px;height:66px;text-align:center;padding:8px 5px;background:#142331;transition:box-shadow .12s ease;color:#f5f9fc}
+.synergy-table td.synergy-data:hover{box-shadow:inset 0 0 0 2px #b3d8ee}
+.synergy-data .synergy-average{display:block;font-size:13px;font-weight:780;letter-spacing:.005em;line-height:1.35;white-space:nowrap}
+.synergy-data .synergy-sample{display:block;font-size:10px;line-height:1.6;color:#d0dde9;opacity:.85;white-space:nowrap}
+.synergy-table td.synergy-empty{background:#12202d;color:#7890a4}
+.synergy-empty .synergy-average{font-weight:500;color:#768c9e}
+.synergy-empty .synergy-sample{color:#849cb0}
+.synergy-data.synergy-diagonal{outline:1px solid rgba(197,220,236,.2);outline-offset:-2px}
+.synergy-key{display:flex;flex-wrap:wrap;gap:6px 17px;margin:12px 0 0;color:var(--muted);font-size:11px}
+.synergy-key span{display:inline-flex;align-items:center;gap:6px}
+.synergy-key i{display:inline-block;height:10px;width:10px;border-radius:3px;border:1px solid rgba(255,255,255,.1)}
+.synergy-legend-negative{background:#b54f65}
+.synergy-legend-zero{background:#1b2b3b}
+.synergy-legend-positive{background:#299873}
+.synergy-panel .metric-help p{font-size:12px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+@media(max-width:620px){
+  .synergy-panel{padding:16px 12px 19px}
+  .synergy-table thead th{min-width:82px;max-width:108px;font-size:10px;padding:8px 4px}
+  .synergy-table tbody th,.synergy-table .synergy-corner{min-width:80px;max-width:110px;padding:8px 6px;font-size:11px}
+  .synergy-table td.synergy-data{min-width:82px;height:59px;padding:6px 3px}
+  .synergy-data .synergy-average{font-size:12px}
+  .synergy-data .synergy-sample{font-size:10px}
+}

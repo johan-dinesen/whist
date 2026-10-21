@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.3">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.5">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.4</span>
+      <span class="version">v0.2.5</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -74,9 +74,32 @@
         </details>
       </div>
     </section>
+    <section class="panel synergy-panel" aria-labelledby="synergy-title">
+      <div class="ranking-head">
+        <div><h2 id="synergy-title">Synergi</h2><p class="rank-subtitle" id="synergy-count" aria-live="polite"></p></div>
+      </div>
+      <p id="synergy-state" class="ranking-empty" role="status">Indlæser synergi …</p>
+      <div id="synergy-content" class="hidden">
+        <div class="synergy-scroll" tabindex="0" role="region" aria-label="Synergimatrix, rul vandret for at se alle makkere">
+          <table id="synergy-table" class="synergy-table">
+            <thead><tr id="synergy-head"></tr></thead>
+            <tbody id="synergy-body"></tbody>
+          </table>
+        </div>
+        <div class="synergy-key" aria-label="Farveskala">
+          <span><i class="synergy-legend-negative" aria-hidden="true"></i> Negative point</span>
+          <span><i class="synergy-legend-zero" aria-hidden="true"></i> Ingen spil / nul</span>
+          <span><i class="synergy-legend-positive" aria-hidden="true"></i> Positive point</span>
+        </div>
+        <details class="metric-help">
+          <summary>Sådan beregnes Synergi</summary>
+          <p>Hver celle viser gennemsnittet af spillerens nettopoint i de spil, hvor de to spillere var melder og makker, samt antallet af sådanne spil. Matricen er symmetrisk. Diagonalen er spil, hvor melderen var sin egen makker (én mod tre). Solomeldinger indgår ikke. Kun spillere med mindst ét spil i de valgte spilsamlinger vises. Farvestyrken følger det største absolutte makker-gennemsnit i det valgte datasæt.</p>
+        </details>
+      </div>
+    </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
-  <script type="module" src="assets/js/stats.js?v=0.2.3"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.5"></script>
 </body>
 </html>
