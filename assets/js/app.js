@@ -1,3 +1,4 @@
+import {scoreGame, formatPoints} from './scoring.js';
 window.__whistAppStarted = true;
 // Load config dynamically so a missing config.js cannot hide the form.
 let SUPABASE_URL = '';
@@ -161,6 +162,29 @@ function renderReview() {
   const root=$('review-content');root.replaceChildren();
   fields.forEach(([name,value])=>{const dt=document.createElement('dt');dt.textContent=name;
     const dd=document.createElement('dd');dd.textContent=value;root.append(dt,dd);});
+  renderPayoutPreview();
+}
+function renderPayoutPreview() {
+  const root = $('payout-preview');
+  root.replaceChildren();
+  try {
+    const payout = scoreGame(s);
+    const title = document.createElement('h3');
+    title.textContent = 'Pointfordeling';
+    root.append(title);
+    const list = document.createElement('div');
+    list.className = 'payout-preview-grid';
+    for (const id of s.playerIds) {
+      const value = payout.get(id);
+      const name = document.createElement('span'); name.textContent = getName(id);
+      const number = document.createElement('strong'); number.textContent = formatPoints(value);
+      number.className = value > 0 ? 'gain' : value < 0 ? 'loss' : '';
+      list.append(name, number);
+    }
+    root.append(list);
+  } catch(err) {
+    root.textContent = `Kunne ikke beregne point: ${err.message}`;
+  }
 }
 function newGame() {
   if (pendingStepScroll !== null) clearTimeout(pendingStepScroll);

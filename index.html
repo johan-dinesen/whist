@@ -10,10 +10,10 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="shell topbar-inner"><a href="./" class="brand">WHIST<span class="brand-mark">.</span></a><span class="topbar-tag">Spilregistrering</span></div>
+    <div class="shell topbar-inner"><a href="./" class="brand">WHIST<span class="brand-mark">.</span></a><nav class="site-nav"><a href="./" aria-current="page">Registrering</a><a href="historik.html">Historik</a></nav></div>
   </header>
   <main class="shell">
-    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer et spil</h1><p class="intro">Alle spil samles i én database. Vælg fire spillere og registrer resultatet.</p></div><span class="version">v0.1.4</span></div>
+    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer et spil</h1><p class="intro">Alle spil samles i én database. Vælg fire spillere og registrer resultatet.</p></div><span class="version">v0.1.5</span></div>
     <div id="configuration-message" class="notice notice-warning" role="status" aria-live="polite">Indlæser spillere fra Supabase. Hvis knapperne forbliver grå, skal du kontrollere, at <code>assets/js/app.js</code> findes, og genindlæse siden.</div>
     <section id="game-panel" aria-label="Registreringsformular">
       <p id="access-status" class="access-status" role="status" aria-live="polite">Spillet kan udfyldes uden adgangskode. En fungerende forbindelse kræves for at gemme.</p>
@@ -33,7 +33,7 @@
       <section class="panel step hidden" id="trump-step" aria-labelledby="trump-title"><div class="step-title"><span class="step-index">05</span><div><h2 id="trump-title">Trumf</h2></div></div><div id="trump-options" class="choices"></div></section>
       <section class="panel step hidden" id="partner-step" aria-labelledby="partner-title"><div class="step-title"><span class="step-index">06</span><div><h2 id="partner-title">Makker</h2><p>Samme spiller som melder er tilladt, som i jeres tidligere registrering.</p></div></div><div id="partner-options" class="choices"></div></section>
       <section class="panel step hidden" id="result-step" aria-labelledby="result-title"><div class="step-title"><span class="step-index">07</span><div><h2 id="result-title">Resultat</h2><p id="result-help">Vælg resultatet.</p></div></div><div id="result-options" class="choices"></div></section>
-      <section id="review-panel" class="panel review-panel hidden" aria-labelledby="review-title"><h2 id="review-title">Kontrollér registreringen</h2><p class="muted">Spillet får automatisk tidsstempel, når det gemmes.</p><dl class="review-list" id="review-content"></dl><button class="button primary submit-button" id="save-btn" type="button">Gem spil</button><p class="feedback" id="save-message" aria-live="polite" role="status"></p></section>
+      <section id="review-panel" class="panel review-panel hidden" aria-labelledby="review-title"><h2 id="review-title">Kontrollér registreringen</h2><p class="muted">Spillet får automatisk tidsstempel, når det gemmes.</p><dl class="review-list" id="review-content"></dl><div id="payout-preview" class="payout-preview" aria-label="Beregnet pointfordeling"></div><button class="button primary submit-button" id="save-btn" type="button">Gem spil</button><p class="feedback" id="save-message" aria-live="polite" role="status"></p></section>
       <section id="password-panel" class="panel password-panel hidden" aria-labelledby="password-title">
         <h2 id="password-title">Kode til registrering</h2>
         <p class="muted">Du kan udfylde formularen uden kode. Du skal kun indtaste den fælles kode, når du gemmer. Adgang huskes på denne enhed i 30 dage.</p>
@@ -47,7 +47,7 @@
     </section>
     <section class="panel success-panel hidden" id="success-panel" aria-labelledby="success-title"><div class="success-check" aria-hidden="true">✓</div><h2 id="success-title">Spil registreret</h2><p>Spillet er gemt i databasen.</p><p id="success-id" class="muted mono"></p><button class="button primary" id="new-game-btn" type="button">Registrer næste spil</button></section>
   </main>
-  <footer class="shell footer">Whist · Første version: kun registrering, ingen pointberegning</footer>
+  <footer class="shell footer">Whist · Registrering og beregning af point</footer>
   <noscript><div class="shell notice notice-warning">JavaScript er slået fra. Slå JavaScript til for at vælge spillere og registrere spil.</div></noscript>
   <script>
     // Temporary startup diagnostic. This does not store credentials or game data.
@@ -81,6 +81,6 @@
       }, 5000);
     })();
   </script>
-  <script type="module" src="assets/js/app.js?v=0.1.4"></script>
+  <script type="module" src="assets/js/app.js?v=0.1.5"></script>
 </body>
 </html>

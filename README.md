@@ -1,152 +1,69 @@
-# Whist registration: phase 1
+# Whist v0.1.5: points and game history
 
-A **new, separate GitHub Pages application**. It deliberately does **not** use
-Google Sites, Google Apps Script or Google Sheets. A Supabase/Postgres database
-stores games, players, and optional tournament associations. No score calculations
-or charts are implemented yet.
+This package extends the **working v0.1.4** registration app. It retains anonymous sessions, the shared 30-day password, the existing `games` and `game_participants` tables, automatic submission timestamps, and scroll-to-next-step behavior.
 
-## 1. Folder layout
+## Install on an existing GitHub Pages Whist repository
 
-```text
-whist-registration/
-├── index.html                    # Mobile-first game-registration screen
-├── assets/
-│   ├── css/app.css               # All visual styles
-│   └── js/
-│       ├── app.js                # Forms, validation, Supabase calls
-│       └── config.js             # Public Supabase URL + publishable key
-├── sql/
-│   ├── 01_schema.sql             # Tables, permissions, RLS, atomic save
-│   ├── 02_seed.sql               # Initial players + Klitmøller 2026
-│   └── 03_authorize_registrar.sql # Template for authorizing an account
-├── docs/
-│   └── data-model.md             # Explanations for future statistics
-├── .gitignore
-└── README.md
+**1. Keep your own `assets/js/config.js` unchanged.** The ZIP contains `config.example.js` only; do not upload it as `config.js` or overwrite your real credentials.
+
+**2. Run `sql/05_scoring_history.sql` once in Supabase → SQL Editor.** You must already have run the previous `01_schema.sql` and `04_shared_password.sql`. This migration is non-destructive and safe to re-run. It creates:
+
+- `public.game_player_payouts`: one calculated payout row per player per game.
+- `public.game_history`: one row per game, with named caller(s), partner, all four participants and their payout values in JSON, including past games.
+- `public.get_game_history(...)`: read-only API for filtering by date, guest participation and optional tournament ID. Only accessible to anonymous browser sessions that have been unlocked by the shared password and are still within the 30-day window.
+
+**3. Copy the following files to the same paths in your GitHub repository:**
+
+- `index.html` (updated review section and new Historik link)
+- `historik.html` (new history page)
+- `assets/css/app.css` (updated CSS for both pages)
+- `assets/js/app.js` (updated registration form showing estimated payouts)
+- `assets/js/scoring.js` (**new required file**, used by both pages)
+- `assets/js/history.js` (**new required file**, loads live calculated payouts)
+
+You may also commit `sql/05_scoring_history.sql` and `tests/` to keep the migration and tests versioned. **Never overwrite your existing `config.js` or rerun the old schema/seed files.**
+
+**4. Commit, push, and hard-refresh GitHub Pages.** The website should say `v0.1.5` and show links to **Registrering** and **Historik**. Example history URL: `https://YOURUSERNAME.github.io/whist-registration/historik.html`.
+
+**5. Test:** Register a test game, check that the registration review shows the point distribution, then open Historik. On a device with existing valid 30-day access, history opens immediately. Otherwise enter the same shared password once. SQL verification:
+
+```sql
+select id, call_type, played_at, callers, partners, payout_sum, participants
+from public.game_history
+order by played_at desc limit 10;
+
+select game_id, sum(payout) as total
+from public.game_player_payouts
+group by game_id
+having sum(payout) <> 0;
 ```
 
-## 2. What is and isn't implemented
+The second query should return **zero rows**, because each game's winnings and losses must sum to zero. If it doesn't, investigate the affected game before relying on statistics.
 
-**Implemented**
-- Four different players, selected from a central database list.
-- Six main players and six guests from the 2026 workbook (seed data).
-- Eight call types: Almindelig, Gode, Halve, Vip, Sol, Ren Sol,
-  Bordlægger, Ren Bordlægger.
-- One/multiple callers as appropriate; nine to thirteen tricks on non-solo
-  games; VIP depth 1–3; trump restrictions on Gode; partner selection;
-  integer result from +4 through −7 or an outcome per solo caller.
-- Selection of existing tournaments, or "Uden turnering".
-- Exact game date/time. Stored as `timestamptz`; the browser submits UTC.
-- Authentication by emailed login link, with a separate approved-registrar list.
-- Database transaction, server-side validation, and replay-safe request IDs.
-- A **read-only preview** of the whole UI without configuring Supabase:
-  open `?preview=1`. It *never* saves data.
+## Scoring rules implemented
 
-**Not implemented**
-- Importing 2026 games into the database.
-- Creating tournaments/players inside the website (use Supabase Table Editor now).
-- Ranking, score calculation, historical charts, synergy and statistics.
-- Editing or deleting already submitted games; add later with audit records.
-- Offline registration. An internet connection is required to save games.
+### Almindelig / Gode / Halve / Vip
 
-## 3. Create Supabase database
+At 9 tricks, base points are respectively `0.30 / 0.40 / 0.50 / 0.60`. For each trick increase from 9, double the base value. For a score of `0`, take the base; `+n` multiplies by `1 + n/2`; `-n` multiplies by `-(1 + (n-1)/2)` (where `n >= 1`). Vip additionally multiplies by `vip_depth`.
 
-1. Create a project at https://supabase.com/dashboard.
-2. In the **SQL Editor**, run `sql/01_schema.sql` **once**.
-3. Then run `sql/02_seed.sql` to populate the names and 2026 tournament.
-4. Open Project Settings / API Keys (or the project's API section).
-   Copy the **Project URL** and the **publishable key** (`sb_publishable_...`
-   or your project's browser-safe legacy anon key).
-5. Replace the placeholders in `assets/js/config.js` with the URL and
-   publishable key. **Never put a `service_role` or secret key in the browser.**
+Caller and partner each receive the signed value, and the two opponents each receive its negative. Historic self-partner records are handled as a **one-person team receiving 3V** against three players receiving `-V`, ensuring zero-sum accounting.
 
-Because row-level security and least-privilege grants are used, merely knowing
-those public values does **not** permit anyone to write game data.
+**A discrepancy in the provided specification must be resolved before treating the scores as final:** `9Halve=0.50` plus doubling at each trick implies `10Halve=1.00` and `11Halve=2.00`, whereas the message also gives `10Halve=0.80` and `11Halve=1.60`. This implementation uses the doubling rule. If the latter examples are intentional, change the rule centrally in SQL and in `assets/js/scoring.js` after agreement. Calculated history will update automatically.
 
-## 4. Authorize yourself to register games
+### Sol / Ren Sol / Bordlægger / Ren Bordlægger
 
-1. In Supabase > Authentication > URL Configuration, set the **Site URL**
-   to the live GitHub Pages URL including any project path, e.g.
-   `https://YOURUSERNAME.github.io/whist-registration/`.
-   Add the same full URL as an allowed **Redirect URL**.
-   When testing locally, add `http://localhost:8000/` as an allowed redirect.
-2. Open the live website, enter your email address, and follow the login link.
-   (First sign-in creates an Auth user if sign-ups are enabled.)
-3. Open **Authentication > Users** in Supabase; confirm your user exists.
-4. In SQL Editor, copy `sql/03_authorize_registrar.sql`, **replace the email**
-   with yours, run it, and refresh the website or sign in again.
-5. Sign-in alone is **not** permission to write games. Only users who appear
-   in `public.registrars` can read player/tournament lists or use `register_game`.
-   To add a trusted friend, have them sign in once and then add their auth ID
-   to the registrar table in Supabase. Revoke access by deleting that row.
+Values are `0.30 / 0.60 / 1.20 / 2.40`. Each caller independently wins `+V` (if the result starts with `Vundet`) or loses `-V` (if `Tabt`), and transfers the opposite amount in three equal parts to the other players. All callers' transfers are added. Two successful Sol callers each get `+0.20`, and the other two get `-0.20`. A successful caller and a losing caller get `+0.40 / -0.40`, with `0` for the other players.
 
-For a real group, review your Supabase email sending limits and provider
-configuration. A mail link can only redirect to addresses allowed in Auth.
+The underlying database labels are preserved (`bordlaegger` / `ren_bordlaegger`), to remain compatible with previously registered games.
 
-## 5. Publish to GitHub Pages
+## History filters and guest columns
 
-1. Create a **new repository** for the card-game application, for example
-   `whist-registration`. Do **not** overwrite your academic website repository.
-2. Unzip this project. Upload/commit the **contents**, keeping `index.html`
-   in the repository root.
-3. In GitHub repository **Settings > Pages**, choose **Deploy from a branch**,
-   branch `main`, folder `/(root)`.
-4. The URL will usually be
-   `https://YOURUSERNAME.github.io/whist-registration/`.
-5. Use that **exact URL**, including trailing slash, in Supabase Auth's
-   Site URL and Redirect URLs.
-6. After setup, edit files in VS Code, then **commit and push**. GitHub Pages
-   republishes from the branch. Relative paths work at project subpaths.
+The history page supports **inclusive from/to dates**, which makes it possible to isolate a tournament based on its dates later without changing how games are registered. The database RPC also accepts an optional `p_tournament_id` for future use.
 
-If you want to preview on your computer, open a terminal in the project folder:
+With **Medtag gæstespil** unchecked, only games involving the regular players are shown. Enabling it includes games with guests and adds guest-name columns on the right. Games not involving a particular player have a blank cell. The history page shows up to 500 latest matching games for responsiveness; the RPC supports a larger maximum of 2,000.
 
-```bash
-python -m http.server 8000
-```
+## Security and verification
 
-Then visit `http://localhost:8000/?preview=1` for the **non-saving UI demo**.
-For live authentication locally, use `http://localhost:8000/` and ensure it
-is an allowed Supabase redirect. Opening `index.html` via `file://` is not recommended.
+The new history RPC enforces the existing 30-day shared-password authorization on the server, and the calculated views are not granted directly to the browser. No service-role or private key should appear in GitHub. The point-preview is only a client-side display; **Supabase's database views are the canonical calculation**.
 
-## 6. Managing the next tournament
-
-Go to Supabase > Table Editor > `tournaments` and insert a row:
-
-- `name`: e.g. `Klitmøller 2027`
-- `start_at`: optional start date/time (with timezone)
-- `end_at`: optional end date/time (with timezone)
-
-There is **one common `games` table** across all tournaments and years.
-Every game has both `played_at` and optional `tournament_id`. Future charts
-can filter games either by selected tournament or by a user-specified time
-interval, without making separate spreadsheets.
-
-To add a guest/player, insert a row in `players`. Mark guests `is_guest=true`.
-Don't delete players who participated in old games; set `active=false`
-instead. `game_participants.was_guest` preserves the original guest status.
-
-## 7. Reliability and security boundaries
-
-- Anonymous visitors have no database table or submit access.
-- Authenticated but unapproved users also have no access to game data.
-- `register_game` runs in one database transaction with server-side validation.
-- Each submission uses a unique request ID; repeating a request cannot
-  create a duplicate game. Network failure messages don't imply a save failed:
-  use the same retry button before restarting the form.
-- Browser configuration (`config.js`) **is public**. It must contain only a
-  browser-safe publishable key. Supabase database SQL uses Row Level Security.
-- No live Supabase account/database is created by this package. You need to
-  perform the setup above; until then, only preview mode works.
-- Use Supabase backup/export features and consider regular database backups.
-
-## 8. Legacy migration
-
-The source workbook (`2026Klitmøller.xlsx`) has a source-of-truth `Overview`
-worksheet with timestamp, Player1–4, caller, call, tricks, trump, VIP depth,
-partner, score and a guest flag. Later phases can import those records into
-`games` and `game_participants`, mapping names onto stable player UUIDs.
-
-Before implementing statistics we should review scoring formulas and check
-that outputs reproduce the legacy spreadsheet for the same historical games.
-Some formula results in the workbook are not directly portable, so this
-version intentionally stores **raw results only**.
+The JavaScript scoring module is covered by `npm test` (Node.js required). There is no connection from this ZIP to your live Supabase project; the migration has not been applied to or executed against your hosted database. Browser-based end-to-end testing was not possible in the build environment, so verify one live game before relying on the history.
