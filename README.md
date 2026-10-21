@@ -1,27 +1,26 @@
-# Whist Statistik v0.2.1 - Podie + pointdiagram
+# Whist v0.2.2: tighter point diagram and white solo-result symbols
 
-This package is a **frontend-only patch** for v0.2.0. It does not change database schema, permissions, ranking calculation or shared Spilsamlinger filters.
-
-## Apply to GitHub
-
-Replace exactly these files in the existing Whist repository:
-
-- `statistik.html`
-- `assets/js/stats.js`
-- `assets/css/app.css`
-
-Keep all other files, especially `assets/js/config.js`, `assets/js/profiles.js`, `assets/js/notes.js`, and the Supabase migrations as they are. Commit and push. Refresh Statistik; the heading should show `v0.2.1`. No SQL is necessary.
+This is a frontend-only incremental update for the existing GitHub Pages Whist project.
 
 ## Changes
 
-- Removes the numerals 1, 2, 3 from the podium blocks. The remaining standings list still shows ranking numbers.
-- Fixes profile-photo loading: previous markup made the images `loading=lazy` while CSS hid them until the `load` event; this could prevent the requests from starting. Images now load eagerly, fade in when loaded and fall back to initials on error. Uploaded files continue to be read from the `whist-profiles` public bucket at `{player UUID}.webp`.
-- Replaces the two donut charts with one static vertical bar chart, ordered by standings. All bars share the same scale and a single zero baseline. Gains rise (green) and losses fall (red). Uploaded profile images appear on the baseline. The chart scrolls horizontally on mobile.
-- The two-option toggle is now `Podie` / `Pointdiagram`.
-- The same category and guest filters continue to drive both views.
+- **Statistik / Pointdiagram:** up to six players occupy exactly the available diagram width, including on narrow phones. Seven or more players can be reached through horizontal scrolling, with six columns visible at once. The scroll hint appears only when needed.
+- **Historik / result column:** solo outcomes are plain white `✓` (win) and `×` (loss) rather than colored emoji. Multiple callers display consecutive symbols, in caller order. Existing games, scores, suits and filtering remain untouched.
 
-## Tests and limitations
+## Deployment
 
-`node --check assets/js/stats.js` passes. The headless browser fixture passed at 1160px and 390px with simulated Supabase results and loadable image data, checking the image `load` event and visible photo, standings order, no podium numbers, gain/loss/zero bars, guest inclusion and view switches. This does not constitute a live Supabase Storage test.
+Replace these five paths in your GitHub repository:
 
-If images do not load after deploying, inspect Supabase Storage > `whist-profiles` and verify that files are named after the corresponding UUID and that the bucket is public. The image URL may be opened directly from the browser's developer tools.
+- `statistik.html`
+- `historik.html`
+- `assets/js/stats.js`
+- `assets/js/history.js`
+- `assets/css/app.css`
+
+**Do not overwrite** `assets/js/config.js` or any other files. No SQL migration is needed.
+
+Commit and push, then refresh your site; both pages show **v0.2.2**. Their CSS and script URLs have new version parameters to avoid displaying older cached versions.
+
+## Checks
+
+JavaScript syntax was checked with Node. An isolated Chromium fixture verified that six players fit without sideways overflow at viewport widths 320, 390, 620, and 1160 px; a seventh player produces horizontal scrolling. It also verified that solo symbols render as `✓×` and appear in white. These are local checks, not a live Supabase deployment test.

@@ -80,7 +80,12 @@ function drawBarChart(rows) {
   const root = $('rank-bar-chart');
   root.replaceChildren();
   root.style.setProperty('--rank-count', String(rows.length));
-  root.style.minWidth = `${Math.max(0, rows.length * 88)}px`;
+  // Show up to six equal-width players in the visible chart area on every device.
+  // Additional players occupy the same width and can be reached by scrolling.
+  root.style.width = rows.length > 6 ? `${(rows.length / 6 * 100).toFixed(4)}%` : '100%';
+  root.style.minWidth = '0';
+  document.querySelector('.rank-chart-scroll-tip').classList.toggle('has-overflow', rows.length > 6);
+  document.querySelector('.rank-bar-scroll').scrollLeft = 0;
   const maxAbs = Math.max(0.01, ...rows.map(p => Math.abs(p.points)));
   const zero = document.createElement('div');
   zero.className = 'rank-zero-line';
@@ -105,6 +110,7 @@ function drawBarChart(rows) {
     foot.className = 'rank-bar-footer';
     const name = document.createElement('strong');
     name.textContent = player.name;
+    name.title = player.name;
     const games = document.createElement('small');
     games.textContent = `${player.games} spil`;
     foot.append(name, games);

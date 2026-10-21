@@ -36,7 +36,7 @@ function gameResult(game) {
   if (!SOLO.has(game.call_type)) return game.score > 0 ? `+${game.score}` : String(game.score);
   return (game.participants ?? [])
     .filter(p => p.is_caller)
-    .map(p => String(p.solo_result || '').startsWith('Vundet') ? '✅' : '❌')
+    .map(p => String(p.solo_result || '').startsWith('Vundet') ? '✓' : '×')
     .join('');
 }
 function groupName(game) {
@@ -68,7 +68,15 @@ function drawTable(games) {
     const tr = document.createElement('tr');
     const participants = game.participants ?? [];
     const byName = new Map(participants.map(p => [p.name,p]));
-    tr.append(cell(gameLabel(game)), cell(gameResult(game)), cell(game.callers),
+    const result = cell(gameResult(game));
+    if (SOLO.has(game.call_type)) {
+      result.classList.add('solo-result');
+      result.setAttribute('aria-label', (game.participants ?? [])
+        .filter(p => p.is_caller)
+        .map(p => `${p.name}: ${String(p.solo_result || '').startsWith('Vundet') ? 'vundet' : 'tabt'}`)
+        .join(', '));
+    }
+    tr.append(cell(gameLabel(game)), result, cell(game.callers),
       cell(game.partners));
     for (const name of names) {
       const participant = byName.get(name);

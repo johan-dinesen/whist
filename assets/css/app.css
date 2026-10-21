@@ -251,3 +251,25 @@
 
 .rank-chart-scroll-tip{display:none;font-size:11px;color:var(--muted);margin:8px 0 0!important;text-align:center}
 @media(max-width:620px){.rank-chart-scroll-tip{display:block}}
+
+/* v0.2.2: six chart columns fit the viewport; additional players scroll sideways. */
+.rank-bar-chart{width:100%;min-width:0}
+.rank-bar-scroll{min-width:0}
+.rank-bar-footer strong{padding:0 2px}
+.rank-chart-scroll-tip{display:none}
+.rank-chart-scroll-tip.has-overflow{display:block}
+.history-table td.solo-result{color:#fff;font-weight:700;white-space:nowrap;letter-spacing:.055em}
+@media(max-width:620px){
+  .rank-bar-scroll{padding:8px 4px 6px}
+  .rank-bar-avatar{width:30px;height:30px}
+  .rank-bar{left:23%;width:54%}
+  .rank-bar-footer{font-size:10px}
+  .rank-bar-footer small{font-size:9px}
+  .rank-bar-value{font-size:10px}
+}
+@media(max-width:350px){
+  .rank-bar-avatar{width:27px;height:27px}
+  .rank-bar-footer{font-size:9px}
+  .rank-bar-footer small{font-size:8px}
+  .rank-bar-value{font-size:9px}
+}
