@@ -4,7 +4,7 @@ This is a small update to the **existing** Statistik page. It adds one module be
 
 ## Install
 
-1. In Supabase → SQL Editor, run the **entire** `sql/20_standings_history.sql`. This adds the read-only RPC `public.get_standings_history_for_notes(uuid[],boolean,boolean)`. Requires the existing scoring views and historical metadata from previous imports.
+1. In Supabase → SQL Editor, run the **entire** `sql/20_standings_history.sql`. This adds the read-only RPC `public.get_standings_history_for_notes(uuid[],boolean,boolean)`. Requires the existing scoring views and historical metadata from previous imports .
 2. In GitHub, **replace**:
    - `statistik.html`
    - `assets/js/stats.js`
