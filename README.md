@@ -1,6 +1,6 @@
 # Whist v0.2.2: tighter point diagram and white solo-result symbols
 
-This is a frontend-only incremental update for the existing GitHub Pages Whist project.
+This is a frontend-only incremental update for the existing GitHub Pages Whist  project.
 
 ## Changes
 
