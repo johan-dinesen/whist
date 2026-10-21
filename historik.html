@@ -20,20 +20,10 @@
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Spilhistorik</h1>
         <p class="intro">Vælg én eller flere spilsamlinger. Point beregnes automatisk ud fra de gemte spil.</p>
       </div>
-      <span class="version">v0.1.8</span>
+      <span class="version">v0.1.9</span>
     </div>
     <p id="history-status" class="notice notice-warning" role="status" aria-live="polite">Opretter forbindelse til Supabase ...</p>
-    <section id="unlock-history" class="panel hidden" aria-labelledby="unlock-title">
-      <h2 id="unlock-title">Fælles adgangskode</h2>
-      <p class="muted">Indtast den fælles adgangskode for at åbne historikken på denne enhed. Adgang huskes i 30 dage.</p>
-      <form id="history-password-form" class="password-form">
-        <label for="history-password" class="field-label">Adgangskode</label>
-        <input id="history-password" type="password" minlength="8" maxlength="72" autocomplete="off" required>
-        <button id="history-unlock" class="button primary" type="submit">Åbn historik</button>
-      </form>
-      <p id="history-password-error" class="feedback" role="alert"></p>
-    </section>
-    <section id="history-content" class="hidden">
+    <section id="history-content">
       <section class="panel" aria-label="Filtre">
         <h2>Spilsamlinger</h2>
         <p class="muted">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
@@ -58,6 +48,6 @@
     </section>
   </main>
   <footer class="shell footer">Whist · Historik og pointfordeling</footer>
-  <script type="module" src="assets/js/history.js?v=0.1.8"></script>
+  <script type="module" src="assets/js/history.js?v=0.1.9"></script>
 </body>
 </html>

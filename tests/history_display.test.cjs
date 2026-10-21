@@ -33,13 +33,13 @@ const game = {call_type:'almindelig',tricks:9,trump:'diamonds',vip_depth:null,sc
 vm.runInContext('drawTable(sample)',Object.assign(ctx,{sample:[game]}));
 const headers=()=>els.get('history-head').children[0].children.map(x=>x.textContent);
 const columns=()=>els.get('history-body').children[0].children.map(x=>x.textContent);
-assert.deepEqual(headers().slice(0,5),['Melding','Res.','Melder','Makker','Note']);
+assert.deepEqual(headers().slice(0,5),['Melding','🏆','Melder','Makker','Note']);
 assert.equal(columns()[0],'9Alm♦');
 assert.equal(columns()[4],'Hals 2025');
 assert(headers().includes('David') && headers().includes('William'));
 assert(!headers().includes('Dato') && !headers().includes('Resultat'));
 vm.runInContext("selectedNotes.add('t1');drawTable(sample)",ctx);
-assert.deepEqual(headers().slice(0,5),['Melding','Res.','Melder','Makker','David']);
+assert.deepEqual(headers().slice(0,5),['Melding','🏆','Melder','Makker','David']);
 assert.equal(columns()[4],'−0,5');
 assert.match(css,/\.history-table thead th\s*\{[^}]*position:sticky;[^}]*top:0/s);
 assert.match(css,/\.history-table tbody tr:nth-child\(even\)\s*\{/);

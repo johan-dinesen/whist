@@ -13,18 +13,10 @@
     <div class="shell topbar-inner"><a href="./" class="brand">WHIST<span class="brand-mark">.</span></a><nav class="site-nav"><a href="./" aria-current="page">Registrering</a><a href="historik.html">Historik</a><a href="administrering.html">Administrering</a></nav></div>
   </header>
   <main class="shell">
-    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer et spil</h1><p class="intro">Alle spil samles i én database. Vælg fire spillere og registrer resultatet.</p></div><span class="version">v0.1.7</span></div>
+    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer et spil</h1><p class="intro">Alle spil samles i én database. Vælg fire spillere og registrer resultatet.</p></div><span class="version">v0.1.9</span></div>
     <div id="configuration-message" class="notice notice-warning" role="status" aria-live="polite">Indlæser spillere fra Supabase. Hvis knapperne forbliver grå, skal du kontrollere, at <code>assets/js/app.js</code> findes, og genindlæse siden.</div>
     <section id="game-panel" aria-label="Registreringsformular">
       <p id="access-status" class="access-status" role="status" aria-live="polite">Spillet kan udfyldes uden adgangskode. En fungerende forbindelse kræves for at gemme.</p>
-      <section class="panel scope-panel" aria-labelledby="scope-title">
-        <h2 id="scope-title">Spilsamling</h2>
-        <p class="muted">Er spillet en del af den aktive turnering eller et kredsspil?</p>
-        <div id="scope-options" class="choices scope-choices" role="group" aria-label="Spilsamling">
-          <button class="choice" type="button" disabled>Kredsspil</button>
-        </div>
-        <p id="scope-hint" class="scope-hint" aria-live="polite">Indlæser aktiv turnering ...</p>
-      </section>
       <section class="panel step" aria-labelledby="players-title"><div class="step-title"><span class="step-index">01</span><div><h2 id="players-title">Spillere</h2><p>Vælg præcis fire spillere <span class="count-pill" id="player-count">0 / 4</span></p></div></div><label class="toggle"><input type="checkbox" id="show-guests"><span>Vis gæster</span></label><div id="players-options" class="choices" role="group" aria-label="Spillere">
         <!-- Static fallback, replaced by JavaScript with clickable buttons and live IDs. -->
         <button class="choice" type="button" disabled>David</button>
@@ -89,6 +81,6 @@
       }, 5000);
     })();
   </script>
-  <script type="module" src="assets/js/app.js?v=0.1.6"></script>
+  <script type="module" src="assets/js/app.js?v=0.1.9"></script>
 </body>
 </html>

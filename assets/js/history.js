@@ -2,7 +2,7 @@ import {formatPoints} from './scoring.js';
 
 const $ = id => document.getElementById(id);
 const REGULAR = ['David','Gustav','Johan','Samuel','Sofus','William'];
-const GROUP_ORDER = ['Slettestrand 2023','Hals 2024','Helsinki 2024','Hals 2025','Klitmøller 2026'];
+const HISTORICAL_ORDER = ['Klitmøller 2026','Hals 2025','Helsinki 2024','Hals 2024','Slettestrand 2023'];
 const LABELS = {
   almindelig:'Alm',gode:'Gode',halve:'Halve',vip:'Vip',
   sol:'Sol',ren_sol:'Ren Sol',bordlaegger:'Bordlægger',ren_bordlaegger:'Ren Bordlægger'
@@ -96,11 +96,24 @@ function drawTable(games) {
 function noteLabel(key) {
   return key === 'kredsspil' ? 'Kredsspil' : groups.find(g => g.id === key)?.name ?? key;
 }
+function sortGroups(categories) {
+  return [...categories].sort((a,b) => {
+    const ia = HISTORICAL_ORDER.indexOf(a.name);
+    const ib = HISTORICAL_ORDER.indexOf(b.name);
+    if (ia === -1 && ib === -1) {
+      const byDate = Date.parse(b.created_at) - Date.parse(a.created_at);
+      return byDate || b.name.localeCompare(a.name,'da');
+    }
+    if (ia === -1) return -1;
+    if (ib === -1) return 1;
+    return ia - ib;
+  });
+}
 function drawNotes() {
   const root = $('note-options'); root.replaceChildren();
-  const available = [{key:'all',name:'Alle'},
+  const available = [{key:'kredsspil',name:'Kredsspil'},
     ...groups.map(g => ({key:g.id,name:g.name})),
-    {key:'kredsspil',name:'Kredsspil'}];
+    {key:'all',name:'Alle'}];
   for (const {key,name} of available) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -173,8 +186,6 @@ async function refreshHistory() {
   } else await fetchPage(true);
 }
 async function openHistory() {
-  visible('unlock-history',false);
-  visible('history-content',true);
   drawNotes();
   await refreshHistory();
 }
@@ -203,43 +214,14 @@ async function init() {
     }
     if (!session) throw new Error('Kunne ikke oprette anonym session');
     const {data:categories,error:groupsError} = await supabase.from('tournaments')
-      .select('id,name,is_active');
+      .select('id,name,created_at');
     if (groupsError) throw new Error(`Kunne ikke læse spilsamlinger: ${groupsError.message}. Kør 06_tournament_notes.sql.`);
-    groups = (categories ?? []).sort((a,b) => {
-      const ia = GROUP_ORDER.indexOf(a.name), ib = GROUP_ORDER.indexOf(b.name);
-      if (ia >= 0 && ib >= 0) return ia - ib;
-      if (ia >= 0) return -1;
-      if (ib >= 0) return 1;
-      return a.name.localeCompare(b.name,'da');
-    });
-    const {data:expires,error:accessError} = await supabase.rpc('registration_access_until');
-    if (accessError) throw accessError;
-    if (expires && new Date(expires) > new Date()) await openHistory();
-    else {
-      status('Indtast den fælles kode for at se historikken.');
-      visible('unlock-history',true);
-    }
+    groups = sortGroups(categories ?? []);
+    await openHistory();
   } catch(err) {
     status(`Supabase-fejl: ${err.message}. Kontrollér opsætning og SQL-migrationerne.`,true);
   }
 }
-$('history-password-form').addEventListener('submit',async e => {
-  e.preventDefault();
-  if (!supabase) return;
-  $('history-unlock').disabled = true;
-  $('history-password-error').textContent = 'Kontrollerer adgangskode ...';
-  try {
-    const {data,error} = await supabase.rpc('unlock_registration',{
-      p_password:$('history-password').value
-    });
-    $('history-password').value = '';
-    if (error) throw error;
-    if (!data) throw new Error('Forkert kode eller for mange forsøg');
-    $('history-password-error').textContent = '';
-    await openHistory();
-  } catch(err) { $('history-password-error').textContent = err.message; }
-  finally { $('history-unlock').disabled = false; }
-});
 $('refresh-history').addEventListener('click',refreshHistory);
 $('load-more-history').addEventListener('click',() => fetchPage(false));
 $('include-guests').addEventListener('change',refreshHistory);
