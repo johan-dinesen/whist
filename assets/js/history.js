@@ -1,8 +1,8 @@
 import {formatPoints} from './scoring.js';
+import {sortGroups,readSelection,saveIncludeGuests,readIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 
 const $ = id => document.getElementById(id);
 const REGULAR = ['David','Gustav','Johan','Samuel','Sofus','William'];
-const HISTORICAL_ORDER = ['Klitmøller 2026','Hals 2025','Helsinki 2024','Hals 2024','Slettestrand 2023'];
 const LABELS = {
   almindelig:'Alm',gode:'Gode',halve:'Halve',vip:'Vip',
   sol:'Sol',ren_sol:'Ren Sol',bordlaegger:'Bordlægger',ren_bordlaegger:'Ren Bordlægger'
@@ -90,46 +90,8 @@ function drawTable(games) {
 function noteLabel(key) {
   return key === 'kredsspil' ? 'Kredsspil' : groups.find(g => g.id === key)?.name ?? key;
 }
-function sortGroups(categories) {
-  return [...categories].sort((a,b) => {
-    const ia = HISTORICAL_ORDER.indexOf(a.name);
-    const ib = HISTORICAL_ORDER.indexOf(b.name);
-    if (ia === -1 && ib === -1) {
-      const byDate = Date.parse(b.created_at) - Date.parse(a.created_at);
-      return byDate || b.name.localeCompare(a.name,'da');
-    }
-    if (ia === -1) return -1;
-    if (ib === -1) return 1;
-    return ia - ib;
-  });
-}
 function drawNotes() {
-  const root = $('note-options'); root.replaceChildren();
-  const available = [{key:'kredsspil',name:'Kredsspil'},
-    ...groups.map(g => ({key:g.id,name:g.name})),
-    {key:'all',name:'Alle'}];
-  for (const {key,name} of available) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'note-chip';
-    button.textContent = name;
-    button.setAttribute('aria-pressed',String(key === 'all' ? selectedNotes.size === 0 : selectedNotes.has(key)));
-    button.addEventListener('click', () => {
-      if (key === 'all') selectedNotes.clear();
-      else if (selectedNotes.has(key)) selectedNotes.delete(key);
-      else selectedNotes.add(key);
-      drawNotes();
-      refreshHistory();
-    });
-    root.append(button);
-  }
-}
-function selectionParams() {
-  // NULL in the RPC means everything; [] explicitly means no named tournaments.
-  return selectedNotes.size === 0
-    ? {p_tournament_ids:null,p_include_kredsspil:true}
-    : {p_tournament_ids:[...selectedNotes].filter(x => x !== 'kredsspil'),
-       p_include_kredsspil:selectedNotes.has('kredsspil')};
+  renderNoteFilters($('note-options'),groups,selectedNotes,refreshHistory);
 }
 async function fetchPage(reset = false) {
   if (!supabase) return;
@@ -141,7 +103,7 @@ async function fetchPage(reset = false) {
   try {
     status('Henter spil og beregner point ...');
     const {data,error} = await supabase.rpc('get_game_history_for_notes',{
-      ...selectionParams(),
+      ...selectionParams(selectedNotes),
       p_include_guests:$('include-guests').checked,
       p_max_games:PAGE_SIZE,
       p_offset:reset ? 0 : lastGames.length
@@ -180,6 +142,8 @@ async function refreshHistory() {
   } else await fetchPage(true);
 }
 async function openHistory() {
+  selectedNotes = readSelection(groups);
+  $('include-guests').checked = readIncludeGuests();
   drawNotes();
   await refreshHistory();
 }
@@ -218,5 +182,8 @@ async function init() {
 }
 $('refresh-history').addEventListener('click',refreshHistory);
 $('load-more-history').addEventListener('click',() => fetchPage(false));
-$('include-guests').addEventListener('change',refreshHistory);
+$('include-guests').addEventListener('change',()=>{
+  saveIncludeGuests($('include-guests').checked);
+  refreshHistory();
+});
 init();

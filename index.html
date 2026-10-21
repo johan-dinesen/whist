@@ -10,10 +10,10 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="shell topbar-inner"><a href="./" class="brand">WHIST<span class="brand-mark">.</span></a><nav class="site-nav"><a href="./" aria-current="page">Registrering</a><a href="historik.html">Historik</a><a href="administrering.html">Administrering</a></nav></div>
+    <div class="shell topbar-inner"><a href="./" class="brand">WHIST<span class="brand-mark">.</span></a><nav class="site-nav"><a href="./" aria-current="page">Registrering</a><a href="historik.html">Historik</a><a href="statistik.html">Statistik</a><a href="administrering.html">Administrering</a></nav></div>
   </header>
   <main class="shell">
-    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer spil</h1></div><span class="version">v0.1.10</span></div>
+    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer spil</h1></div><span class="version">v0.2.0</span></div>
     <p id="configuration-message" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section id="game-panel" aria-label="Registreringsformular">
       <section class="panel step" aria-labelledby="players-title"><div class="step-title"><span class="step-index">01</span><div><h2 id="players-title">Spillere</h2><p>Vælg præcis fire spillere <span class="count-pill" id="player-count">0 / 4</span></p></div></div><label class="toggle"><input type="checkbox" id="show-guests"><span>Vis gæster</span></label><div id="players-options" class="choices" role="group" aria-label="Spillere">
@@ -25,14 +25,14 @@
         <button class="choice" type="button" disabled>Sofus</button>
         <button class="choice" type="button" disabled>William</button>
       </div></section>
-      <section class="panel step hidden" id="call-step" aria-labelledby="call-title"><div class="step-title"><span class="step-index">02</span><div><h2 id="call-title">Melding</h2></div></div><div id="call-options" class="choices"></div></section>
+      <section class="panel step hidden" id="call-step" aria-labelledby="call-title"><div class="step-title"><span class="step-index">02</span><div><h2 id="call-title">Melding</h2><p>Vælg meldingstype.</p></div></div><div id="call-options" class="choices"></div></section>
       <section class="panel step hidden" id="caller-step" aria-labelledby="caller-title"><div class="step-title"><span class="step-index">03</span><div><h2 id="caller-title">Melder</h2><p id="caller-help">Vælg melder.</p></div></div><div id="caller-options" class="choices"></div></section>
       <section class="panel step hidden" id="tricks-step" aria-labelledby="tricks-title"><div class="step-title"><span class="step-index">04</span><div><h2 id="tricks-title">Antal stik meldt</h2></div></div><div id="tricks-options" class="choices"></div></section>
       <section class="panel step hidden" id="vip-step" aria-labelledby="vip-title"><div class="step-title"><span class="step-index">05</span><div><h2 id="vip-title">Vip dybde</h2></div></div><div id="vip-options" class="choices"></div></section>
       <section class="panel step hidden" id="trump-step" aria-labelledby="trump-title"><div class="step-title"><span class="step-index">05</span><div><h2 id="trump-title">Trumf</h2></div></div><div id="trump-options" class="choices"></div></section>
-      <section class="panel step hidden" id="partner-step" aria-labelledby="partner-title"><div class="step-title"><span class="step-index">06</span><div><h2 id="partner-title">Makker</h2></div></div><div id="partner-options" class="choices"></div></section>
+      <section class="panel step hidden" id="partner-step" aria-labelledby="partner-title"><div class="step-title"><span class="step-index">06</span><div><h2 id="partner-title">Makker</h2><p>Samme spiller som melder er tilladt, som i jeres tidligere registrering.</p></div></div><div id="partner-options" class="choices"></div></section>
       <section class="panel step hidden" id="result-step" aria-labelledby="result-title"><div class="step-title"><span class="step-index">07</span><div><h2 id="result-title">Resultat</h2><p id="result-help">Vælg resultatet.</p></div></div><div id="result-options" class="choices"></div></section>
-      <section id="review-panel" class="panel review-panel hidden" aria-labelledby="review-title"><h2 id="review-title">Kontrollér registreringen</h2><dl class="review-list" id="review-content"></dl><div id="payout-preview" class="payout-preview" aria-label="Beregnet pointfordeling"></div><button class="button primary submit-button" id="save-btn" type="button">Gem spil</button><p class="feedback" id="save-message" aria-live="polite" role="status"></p></section>
+      <section id="review-panel" class="panel review-panel hidden" aria-labelledby="review-title"><h2 id="review-title">Kontrollér registreringen</h2><p class="muted">Spillet får automatisk tidsstempel, når det gemmes.</p><dl class="review-list" id="review-content"></dl><div id="payout-preview" class="payout-preview" aria-label="Beregnet pointfordeling"></div><button class="button primary submit-button" id="save-btn" type="button">Gem spil</button><p class="feedback" id="save-message" aria-live="polite" role="status"></p></section>
       <section id="password-panel" class="panel password-panel hidden" aria-labelledby="password-title">
         <h2 id="password-title">Kode til registrering</h2>
         <form id="password-form" class="password-form">

@@ -142,3 +142,77 @@
 .admin-toolbar{justify-content:flex-start}
 .admin-toolbar p{margin-right:auto}
 @media(max-width:620px){.profile-editor{gap:14px}.profile-avatar{height:116px;width:116px}.profile-file-controls{flex-basis:100%}.admin-toolbar{flex-direction:row;flex-wrap:wrap}}
+
+/* v0.2.0: standings. Preserves existing Whist theme and profile uploader. */
+.ranking-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.ranking-head h2{margin:0}
+.rank-subtitle{margin:4px 0 0!important;font-size:12px;color:var(--muted)}
+.rank-panel{padding-bottom:28px}
+.view-switch{display:flex;gap:3px;padding:3px;border:1px solid #34485a;background:#0d1722;border-radius:11px}
+.view-switch button{border:0;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:12px;min-height:36px;padding:7px 12px}
+.view-switch button[aria-pressed=true]{color:#f0f7fc;background:#28435a;box-shadow:inset 0 0 0 1px #4f7290}
+.view-switch button:hover{color:var(--text)}
+.ranking-empty{text-align:center;padding:35px 12px;color:var(--muted);font-size:14px}
+.stats-podium{display:flex;justify-content:center;align-items:end;gap:14px;min-height:300px;max-width:540px;margin:20px auto 22px}
+.podium-place{flex:1 1 0;max-width:175px;min-width:0;display:flex;flex-direction:column;align-items:center;position:relative;text-align:center}
+.podium-place.position-1{order:2}
+.podium-place.position-2{order:1}
+.podium-place.position-3{order:3}
+.rank-avatar{width:42px;height:42px;border-radius:50%;display:inline-grid;place-items:center;flex:none;position:relative;overflow:hidden;background:#223547;border:2px solid #4a6074;color:#d6e7f4}
+.rank-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.rank-avatar.has-photo img{display:block}
+.rank-initials{font-weight:800;font-size:13px;letter-spacing:.02em}
+.rank-avatar-podium{z-index:1;width:66px;height:66px;margin-bottom:-13px;border-width:3px;box-shadow:0 4px 18px rgba(0,0,0,.3)}
+.rank-avatar-podium .rank-initials{font-size:22px}
+.position-1 .rank-avatar-podium{width:80px;height:80px;border-color:#d5b45f}
+.position-2 .rank-avatar-podium{border-color:#b7c6d5}
+.position-3 .rank-avatar-podium{border-color:#b88262}
+.position-1 .rank-initials{font-size:25px}
+.podium-stand{width:100%;display:flex;flex-direction:column;align-items:center;gap:5px;padding:23px 8px 15px;border:1px solid #40566a;border-radius:12px 12px 7px 7px;background:linear-gradient(155deg,#263c51,#182837);height:138px;box-shadow:0 10px 20px rgba(0,0,0,.14)}
+.position-1 .podium-stand{height:170px;background:linear-gradient(160deg,#32414b,#273c48 60%,#1b2d3b);border-color:#806b43}
+.position-2 .podium-stand{height:145px;border-color:#74818e}
+.position-3 .podium-stand{height:126px;border-color:#735944}
+.podium-number{color:#b6c9d9;font-size:12px;font-weight:800;line-height:1}
+.position-1 .podium-number{color:#ecd08e}
+.podium-name{font-size:clamp(12px,1.8vw,15px);line-height:1.3;max-width:100%;overflow-wrap:anywhere}
+.podium-score{font-size:clamp(17px,2.6vw,24px);font-variant-numeric:tabular-nums;letter-spacing:-.025em;line-height:1.2;color:#ecf4fc}
+.position-1 .podium-score{font-size:clamp(20px,3vw,28px)}
+.podium-games{font-size:11px;color:#afc1d2}
+.stats-lower{display:flex;flex-direction:column;gap:8px;max-width:630px;margin:0 auto}
+.ranking-item{display:flex;align-items:center;gap:14px;border:1px solid #304254;border-radius:10px;background:#1b2837;padding:11px 15px;min-width:0}
+.ranking-item:nth-child(even){background:#172330}
+.ranking-position{font-size:14px;font-weight:700;color:#90a9bc;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+.ranking-person{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.ranking-person-text{display:flex;flex-direction:column;gap:0;min-width:0}
+.ranking-person-text strong{font-size:14px;font-weight:700;overflow-wrap:anywhere}
+.ranking-person-text small{font-size:11px;color:var(--muted)}
+.rank-score{white-space:nowrap;font-size:14px;font-variant-numeric:tabular-nums;font-weight:750}
+.chart-explanation{font-size:12px;color:var(--muted);margin:2px 0 19px!important;max-width:560px}
+.rank-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.rank-chart-card{border:1px solid #34485a;border-radius:12px;background:#172331;padding:18px 18px 20px;min-width:0}
+.rank-chart-card h3{font-size:14px;margin:0 0 17px;text-align:center}
+.rank-donut{width:min(100%,190px);aspect-ratio:1;margin:0 auto 20px;border-radius:50%;display:grid;place-items:center}
+.rank-donut-hole{width:62%;height:62%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#172331;box-shadow:0 0 0 1px rgba(255,255,255,.05);text-align:center}
+.rank-donut-hole strong{font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}
+.rank-donut-hole small{font-size:10px;color:var(--muted)}
+.rank-donut-legend{display:flex;flex-direction:column;gap:6px}
+.rank-legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;align-items:center;gap:9px;font-size:12px;padding:6px 0;border-bottom:1px solid #2b3b4c}
+.rank-legend-row:last-child{border-bottom:0}
+.rank-legend-row span:nth-child(2){overflow-wrap:anywhere}
+.rank-legend-row strong{font-variant-numeric:tabular-nums}
+.rank-legend-row small{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;min-width:36px}
+.rank-legend-marker{height:10px;width:10px;border-radius:3px}
+#stats-refresh{min-height:34px;padding:6px 10px;font-size:12px;border-radius:7px;width:auto}
+@media(max-width:620px){
+  .stats-podium{gap:7px;min-height:270px;margin:12px auto 16px}
+  .podium-stand{padding-left:5px;padding-right:5px}
+  .rank-avatar-podium{width:55px;height:55px}
+  .position-1 .rank-avatar-podium{width:69px;height:69px}
+  .rank-chart-grid{grid-template-columns:1fr}
+  .rank-chart-card{padding:16px}
+  .ranking-item{gap:9px;padding:9px 11px}
+  .rank-score{font-size:12px}
+  .view-switch{flex:1 1 100%;justify-content:center}
+  .view-switch button{flex:1}
+}
+@media(max-width:350px){.podium-name{font-size:11px}.podium-score{font-size:17px}}

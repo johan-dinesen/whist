@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
+  <title>Whist | Statistik</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a href="./" class="brand">WHIST<span class="brand-mark">.</span></a>
+      <nav class="site-nav" aria-label="Hovednavigation">
+        <a href="./">Registrering</a>
+        <a href="historik.html">Historik</a>
+        <a href="statistik.html" aria-current="page">Statistik</a>
+        <a href="administrering.html">Administrering</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <div class="heading">
+      <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
+      <span class="version">v0.2.0</span>
+    </div>
+    <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
+    <section class="panel" aria-labelledby="stats-note-title">
+      <h2 id="stats-note-title">Spilsamlinger</h2>
+      <p class="muted">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
+      <div id="stats-note-options" class="note-options" role="group" aria-label="Vælg spilsamlinger"></div>
+      <div class="history-controls">
+        <label class="toggle"><input type="checkbox" id="stats-include-guests"><span>Medtag gæstespil</span></label>
+        <button class="button secondary refresh-history-btn" id="stats-refresh" type="button">Opdatér statistik</button>
+      </div>
+    </section>
+    <section class="panel rank-panel" aria-labelledby="rank-title">
+      <div class="ranking-head">
+        <div><h2 id="rank-title">Stilling</h2><p class="rank-subtitle" id="standings-count" aria-live="polite"></p></div>
+        <div id="stats-view-toggle" class="view-switch hidden" role="group" aria-label="Visning af stilling">
+          <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
+          <button type="button" data-stats-view="chart" aria-pressed="false">Pointfordeling</button>
+        </div>
+      </div>
+      <p id="standings-empty" class="ranking-empty">Indlæser stilling …</p>
+      <div id="podium-view" class="hidden" aria-label="Stilling med top tre og øvrige spillere">
+        <div id="stats-podium" class="stats-podium"></div>
+        <div id="stats-lower" class="stats-lower"></div>
+      </div>
+      <div id="chart-view" class="hidden" aria-label="Fordeling af positive og negative nettobeløb">
+        <p class="chart-explanation">Andelene viser hver spillers del af de samlede positive henholdsvis negative nettopoint.</p>
+        <div class="rank-chart-grid">
+          <section id="positive-donut" class="rank-chart-card" aria-label="Positive nettogevinster"></section>
+          <section id="negative-donut" class="rank-chart-card" aria-label="Negative nettotab"></section>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="shell footer">Whist · Statistik</footer>
+  <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
+  <script type="module" src="assets/js/stats.js?v=0.2.0"></script>
+</body>
+</html>
