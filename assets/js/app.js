@@ -1,3 +1,4 @@
+window.__whistAppStarted = true;
 // Load config dynamically so a missing config.js cannot hide the form.
 let SUPABASE_URL = '';
 let SUPABASE_PUBLISHABLE_KEY = '';
@@ -19,19 +20,17 @@ const previewMode = new URLSearchParams(location.search).has('preview');
 let supabase = null;
 let accessUntil = null;
 let players = [];
-let tournaments = [];
+
 let requestId = null;
+let submissionTime = null; // Device timestamp captured on final write attempt.
 let canSave = false; // Only true after a successful authenticated Supabase data load.
 const s = {
-  playerIds: [], tournamentId: '', playedAt: '', callType: null, callerIds: [],
+  playerIds: [], callType: null, callerIds: [],
   tricks: null, vipDepth: null, trump: null, partnerId: null,
   score: null, soloResults: {}
 };
 
-function localDateTime(d = new Date()) {
-  const t = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return t.toISOString().slice(0,16);
-}
+
 function show(id, visible) { $(id).classList.toggle('hidden', !visible); }
 function labelFrom(list, value) { return list.find(a => a[0] === value)?.[1] ?? String(value ?? ''); }
 function getName(id) { return players.find(p => p.id === id)?.display_name ?? 'Ukendt spiller'; }
@@ -47,6 +46,7 @@ function resetFrom(level) {
   if (level <= 6) { s.partnerId = null; s.score = null; }
   if (level <= 7) s.score = null;
   requestId = null;
+  submissionTime = null;
 }
 function buttons(id, opts, selected, onClick, options = {}) {
   const root = $(id); root.replaceChildren();
@@ -112,7 +112,7 @@ function renderResult() {
   if (!isSolo()) {
     $('result-options').style.display='grid';
     $('result-help').textContent='Vælg resultat fra +4 til −7.';
-    buttons('result-options', SCORES.map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;render();});
+    buttons('result-options', SCORES.map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;submissionTime=null;render();});
     return;
   }
   $('result-help').textContent='Vælg udfald for hver melder.';
@@ -125,15 +125,13 @@ function renderResult() {
     for (const result of results) {
       const b=document.createElement('button'); b.type='button';b.className='choice';b.textContent=result;
       b.setAttribute('aria-pressed',String(s.soloResults[id]===result));
-      b.addEventListener('click',()=>{s.soloResults[id]=result;requestId=null;render();});opts.append(b);
+      b.addEventListener('click',()=>{s.soloResults[id]=result;requestId=null;submissionTime=null;render();});opts.append(b);
     }
     wrap.append(opts);root.append(wrap);
   }
 }
 function renderReview() {
   const fields = [
-    ['Turnering', tournaments.find(t=>t.id===s.tournamentId)?.name ?? 'Uden turnering'],
-    ['Spillet', new Date(s.playedAt).toLocaleString('da-DK',{dateStyle:'medium',timeStyle:'short'})],
     ['Spillere', s.playerIds.map(getName).join(', ')],
     ['Melding', labelFrom(CALLS,s.callType)],
     ['Melder', s.callerIds.map(getName).join(', ')]
@@ -147,7 +145,7 @@ function renderReview() {
     const dd=document.createElement('dd');dd.textContent=value;root.append(dt,dd);});
 }
 function newGame() {
-  s.playerIds=[];resetFrom(1);s.playedAt=localDateTime();$('played-at').value=s.playedAt;
+  s.playerIds=[];resetFrom(1);
   $('show-guests').checked=false;
   message('save-message','');
   show('password-panel',false);
@@ -178,9 +176,7 @@ async function saveGame() {
     message('save-message','Testtilstand: Formularen virker, men Supabase er ikke tilsluttet. Ingen data er gemt. Se den gule besked øverst.',true);
     return;
   }
-  if (!$('played-at').value || s.playerIds.length!==4 || !s.callType || !s.callerIds.length) return;
-  const date=new Date($('played-at').value);
-  if (isNaN(date.getTime()) || date.getTime()>Date.now()+10*60*1000){message('save-message','Vælg et gyldigt tidspunkt, som ikke ligger i fremtiden.',true);return;}
+  if (s.playerIds.length!==4 || !s.callType || !s.callerIds.length) return;
   $('save-btn').disabled=true;
   try {
     if (!(await hasWriteAccess())) {
@@ -194,9 +190,13 @@ async function saveGame() {
     return;
   }
   show('password-panel',false);
-  if (!requestId) requestId=crypto.randomUUID();
+  if (!requestId) {
+    requestId = crypto.randomUUID();
+    // First actual registration request, after any shared-password step.
+    submissionTime = new Date().toISOString();
+  }
   const participants=s.playerIds.map((id,i)=>({player_id:id,seat:i+1,is_caller:s.callerIds.includes(id),is_partner:!isSolo()&&s.partnerId===id,solo_result:isSolo()?s.soloResults[id]??null:null}));
-  const params={p_request_id:requestId,p_tournament_id:s.tournamentId||null,p_played_at:date.toISOString(),p_call_type:s.callType,
+  const params={p_request_id:requestId,p_tournament_id:null,p_played_at:submissionTime,p_call_type:s.callType,
     p_tricks:isSolo()?null:s.tricks,p_vip_depth:s.callType==='vip'?s.vipDepth:null,p_trump:isSolo()?null:s.trump,
     p_score:isSolo()?null:s.score,p_participants:participants};
   message('save-message','Gemmer spillet ...');
@@ -208,51 +208,50 @@ async function saveGame() {
     window.scrollTo({top:0,behavior:'smooth'});
   } catch(err){message('save-message',`Spillet blev ikke bekræftet gemt: ${err.message}. Prøv igen.`,true);$('save-btn').disabled=false;}
 }
-function setTournamentOptions() {
-  const sel=$('tournament-select');
-  sel.replaceChildren();
-  sel.add(new Option('Uden turnering',''));
-  tournaments.forEach(t=>sel.add(new Option(t.name,t.id)));
-  s.tournamentId=tournaments.length===1?tournaments[0].id:'';
-  sel.value=s.tournamentId;
-}
-
 function showDemo(reason) {
-  // These are demonstration names, not live database records.
-  // Never send their local IDs to Supabase.
-  const names=['David','Gustav','Johan','Samuel','Sofus','William','Anna','Caroline','Iben','Maria','Stine','Vera'];
+  // Stable fallback for troubleshooting only. Demo IDs are never sent to Supabase.
+  const names=['David','Gustav','Johan','Samuel','Sofus','William',
+    'Anna','Caroline','Iben','Maria','Stine','Vera'];
+  const selectedNames=s.playerIds.map(id=>getName(id));
   players=names.map((name,i)=>({id:`demo-${i}`,display_name:name,is_guest:i>=6,active:true}));
-  tournaments=[{id:'demo-tournament',name:'Klitmøller 2026'}];
+  s.playerIds=players.filter(p=>selectedNames.includes(p.display_name)).map(p=>p.id);
   canSave=false;
-  setTournamentOptions();
   $('configuration-message').textContent=reason;
   show('configuration-message',true);
-  newGame();
-  $('access-status').textContent='Testtilstand. Du kan prøve formularen, men ingen spil kan gemmes, før Supabase er forbundet.';
+  render();
+  $('access-status').textContent='Testtilstand. Du kan vælge spillere og afprøve formularen, men ingen spil kan gemmes, før Supabase virker.';
 }
 
 async function loadData() {
-  const [a,b]=await Promise.all([
-    supabase.from('players').select('id,display_name,is_guest,active').eq('active',true).order('display_name'),
-    supabase.from('tournaments').select('id,name,start_at,end_at').order('name',{ascending:false})
-  ]);
-  if(a.error)throw a.error;
-  if(b.error)throw b.error;
-  if(!a.data?.length)throw new Error('Ingen spillere i Supabase. Kør sql/02_seed.sql.');
-  players=a.data;
-  tournaments=b.data??[];
+  const {data,error}=await supabase.from('players')
+    .select('id,display_name,is_guest,active').eq('active',true).order('display_name');
+  if(error)throw error;
+  if(!data?.length)throw new Error('Ingen spillere i Supabase. Kontrollér players-tabellen, 02_seed.sql og adgangspolitikker.');
+  // Preserve in-progress selections when demo IDs switch to real UUIDs.
+  // Every game submitted later must use the live player IDs from Supabase.
+  const oldNames=new Map(players.map(p=>[p.id,p.display_name]));
+  const liveByName=new Map(data.map(p=>[p.display_name.toLocaleLowerCase('da'),p.id]));
+  const liveId=oldId=> oldId && liveByName.get(String(oldNames.get(oldId)||'').toLocaleLowerCase('da'));
+  const priorCount=s.playerIds.length;
+  const mappedPlayers=s.playerIds.map(liveId).filter(Boolean);
+  const mappedCallers=s.callerIds.map(liveId).filter(Boolean);
+  const mappedPartner=liveId(s.partnerId)||null;
+  const mappedSolo={};
+  for(const [oldId,result] of Object.entries(s.soloResults)) {
+    const id=liveId(oldId);
+    if(id)mappedSolo[id]=result;
+  }
+  players=data;
+  s.playerIds=mappedPlayers;
+  s.callerIds=mappedCallers;
+  s.partnerId=mappedPartner;
+  s.soloResults=mappedSolo;
+  if(s.playerIds.length!==priorCount) resetFrom(1);
   canSave=true;
-  setTournamentOptions();
   show('configuration-message',false);
-  newGame();
+  render();
 }
 
-// A single listener works for both live and demonstration tournaments.
-$('tournament-select').addEventListener('change',()=>{
-  s.tournamentId=$('tournament-select').value;
-  requestId=null;
-  render();
-});
 $('password-form').addEventListener('submit',async event=>{
   event.preventDefault();
   if (!supabase) return;
@@ -281,13 +280,13 @@ $('password-form').addEventListener('submit',async event=>{
   }
 });
 $('show-guests').addEventListener('change',()=>{if(!$('show-guests').checked){const valid=new Set(players.filter(p=>!p.is_guest).map(p=>p.id));if(s.playerIds.some(id=>!valid.has(id))){s.playerIds=s.playerIds.filter(id=>valid.has(id));resetFrom(1);}}render();});
-$('played-at').addEventListener('change',()=>{s.playedAt=$('played-at').value;requestId=null;render();});
 $('save-btn').addEventListener('click',saveGame);
 $('new-game-btn').addEventListener('click',newGame);
 
 async function init() {
   // Make the form usable immediately, including when the server or config fails.
-  showDemo('Indlæser forbindelse til Supabase. Du kan allerede afprøve formularen, men ikke gemme endnu.');
+  showDemo('Forbinder til Supabase. Spillerne kan vælges nu, men gemning kræver aktiv forbindelse.');
+  window.__whistAppReady = true;
   if (previewMode) {
     showDemo('TESTTILSTAND: Du kan gennemgå alle felter. Intet sendes til databasen. Fjern ?preview=1 for at forbinde.');
     return;
