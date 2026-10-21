@@ -13,10 +13,10 @@
     <div class="shell topbar-inner"><a href="./" class="brand">WHIST<span class="brand-mark">.</span></a><span class="topbar-tag">Spilregistrering</span></div>
   </header>
   <main class="shell">
-    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer et spil</h1><p class="intro">Ét register for alle år og turneringer. Fire spillere pr. spil.</p></div><span class="version">v0.1</span></div>
-    <div id="configuration-message" class="notice notice-warning hidden" role="alert">Opsæt forbindelsen i <code>assets/js/config.js</code>, og følg instruktionerne i README.md. Der er ikke gemt nogen data.</div>
-    <section id="game-panel" class="hidden" aria-label="Registreringsformular">
-      <p id="access-status" class="access-status" role="status" aria-live="polite"></p>
+    <div class="heading"><div><p class="eyebrow">Kompagniet · Whist</p><h1>Registrer et spil</h1><p class="intro">Ét register for alle år og turneringer. Fire spillere pr. spil.</p></div><span class="version">v0.1.1</span></div>
+    <div id="configuration-message" class="notice notice-warning" role="status" aria-live="polite">Indlæser spillere og turneringer. Hvis dette bliver stående, skal du kontrollere, at <code>assets/js/app.js</code> og <code>assets/js/config.js</code> er uploadet korrekt.</div>
+    <section id="game-panel" aria-label="Registreringsformular">
+      <p id="access-status" class="access-status" role="status" aria-live="polite">Spillet kan udfyldes uden adgangskode. En fungerende forbindelse kræves for at gemme.</p>
       <div class="panel context-panel"><div class="context-grid">
         <label class="field"><span class="field-label">Turnering</span><select id="tournament-select" aria-label="Vælg turnering"></select><small>Alle spil gemmes samlet. Turneringer har egne datointervaller.</small></label>
         <label class="field"><span class="field-label">Tidspunkt for spillet</span><input id="played-at" type="datetime-local" required><small>Kan ændres ved efterregistrering.</small></label>
@@ -44,6 +44,7 @@
     <section class="panel success-panel hidden" id="success-panel" aria-labelledby="success-title"><div class="success-check" aria-hidden="true">✓</div><h2 id="success-title">Spil registreret</h2><p>Spillet er gemt i databasen.</p><p id="success-id" class="muted mono"></p><button class="button primary" id="new-game-btn" type="button">Registrer næste spil</button></section>
   </main>
   <footer class="shell footer">Whist · Første version: kun registrering, ingen pointberegning</footer>
+  <noscript><div class="shell notice notice-warning">JavaScript er slået fra. Slå JavaScript til for at vælge spillere og registrere spil.</div></noscript>
   <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
