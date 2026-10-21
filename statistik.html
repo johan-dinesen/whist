@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.6">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.7">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.6</span>
+      <span class="version">v0.2.7</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -41,6 +41,7 @@
         <div id="stats-view-toggle" class="view-switch hidden" role="group" aria-label="Visning af stilling">
           <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
           <button type="button" data-stats-view="chart" aria-pressed="false">Pointdiagram</button>
+          <button type="button" data-stats-view="history" aria-pressed="false">Stillingshistorik</button>
         </div>
       </div>
       <p id="standings-empty" class="ranking-empty">Indlæser stilling …</p>
@@ -53,6 +54,15 @@
           <div id="rank-bar-chart" class="rank-bar-chart"></div>
         </div>
         <p class="rank-chart-scroll-tip">Rul vandret for at se alle spillere.</p>
+      </div>
+      <div id="score-history-view" class="hidden" aria-label="Stillingshistorik med nettopoint efter hvert spil">
+        <p id="score-history-state" class="ranking-empty" role="status">Indlæser stillingshistorik …</p>
+        <div id="score-history-content" class="hidden">
+          <div class="score-history-chart-wrap">
+            <canvas id="score-history-canvas" role="img" aria-label="Kurver over spillernes akkumulerede nettopoint efter hvert spil"></canvas>
+          </div>
+          <div id="score-history-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere i diagrammet"></div>
+        </div>
       </div>
     </section>
     <section class="panel metrics-panel" aria-labelledby="metrics-title">
@@ -86,36 +96,16 @@
             <tbody id="synergy-body"></tbody>
           </table>
         </div>
-        <div class="synergy-key" aria-label="Farveskala">
-          <span><i class="synergy-legend-negative" aria-hidden="true"></i> Negative point</span>
-          <span><i class="synergy-legend-zero" aria-hidden="true"></i> Ingen spil / nul</span>
-          <span><i class="synergy-legend-positive" aria-hidden="true"></i> Positive point</span>
-        </div>
         <details class="metric-help">
           <summary>Sådan beregnes Synergi</summary>
-          <p>Hver celle viser gennemsnittet af spillerens nettopoint i de spil, hvor de to spillere var melder og makker, samt antallet af sådanne spil. Matricen er symmetrisk. Diagonalen er spil, hvor melderen var sin egen makker (én mod tre). Solomeldinger indgår ikke. Kun spillere med mindst ét spil i de valgte spilsamlinger vises. Farvestyrken følger det største absolutte makker-gennemsnit i det valgte datasæt.</p>
+          <p>Hver celle viser gennemsnittet af spillerens nettopoint i de spil, hvor de to spillere var melder og makker, samt antallet af sådanne spil. Matricen er symmetrisk. Diagonalen er spil, hvor melderen var sin egen makker (én mod tre).</p>
         </details>
-      </div>
-    </section>
-    <section class="panel score-history-panel" aria-labelledby="score-history-title">
-      <div class="ranking-head">
-        <div>
-          <h2 id="score-history-title">Stillingshistorik</h2>
-          <p id="score-history-count" class="rank-subtitle" aria-live="polite"></p>
-        </div>
-      </div>
-      <p id="score-history-state" class="ranking-empty" role="status">Indlæser stillingshistorik …</p>
-      <div id="score-history-content" class="hidden">
-        <div class="score-history-chart-wrap">
-          <canvas id="score-history-canvas" role="img" aria-label="Kurver over spillernes akkumulerede nettopoint efter hvert spil"></canvas>
-        </div>
-        <div id="score-history-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere i diagrammet"></div>
       </div>
     </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=0.2.6"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.7"></script>
 </body>
 </html>

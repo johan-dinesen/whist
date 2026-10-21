@@ -370,3 +370,34 @@
   .score-history-chart-wrap{height:315px;min-height:300px;padding:9px 7px 4px}
   .score-history-player{font-size:11px;padding:7px 8px}
 }
+
+/* v0.2.7: six-player synergy matrix fits within the mobile viewport. */
+.synergy-scroll{width:100%;max-width:740px;margin-inline:auto}
+.synergy-table{width:100%;min-width:0;table-layout:fixed}
+.synergy-table.is-compact{width:100%;min-width:0}
+.synergy-table.is-wide{min-width:calc(var(--synergy-columns) * 65px)}
+.synergy-table thead th,.synergy-table tbody th,.synergy-table .synergy-corner{
+  min-width:0;max-width:none;padding:7px 2px;overflow:hidden;text-overflow:ellipsis;
+}
+.synergy-table tbody th{padding-left:5px;padding-right:1px;font-size:11px}
+.synergy-table .synergy-corner{text-align:center;padding-left:0}
+.synergy-table td.synergy-data{min-width:0;height:53px;padding:3px 1px}
+.synergy-data .synergy-average{font-size:12px;line-height:1.25;letter-spacing:-.02em}
+.synergy-data .synergy-sample{font-size:9px;line-height:1.4}
+@media(max-width:620px){
+  .synergy-panel{padding:14px 9px 17px}
+  .synergy-table thead th{min-width:0;max-width:none;padding:6px 1px;font-size:clamp(8px,2.45vw,10px);letter-spacing:-.045em}
+  .synergy-table tbody th,.synergy-table .synergy-corner{min-width:0;max-width:none;padding:5px 1px;font-size:clamp(8px,2.45vw,10px);letter-spacing:-.045em}
+  .synergy-table td.synergy-data{min-width:0;height:45px;padding:2px 0}
+  .synergy-data .synergy-average{font-size:clamp(9px,2.8vw,12px);letter-spacing:-.05em}
+  .synergy-data .synergy-sample{font-size:clamp(7px,2.2vw,9px);letter-spacing:-.025em}
+  .view-switch{gap:2px;padding:2px}
+  .view-switch button{font-size:11px;padding:6px 8px;min-height:34px}
+  .score-history-chart-wrap{height:315px;min-height:295px;padding:9px 7px 4px}
+}
+@media(max-width:360px){
+  .synergy-panel{padding-left:7px;padding-right:7px}
+  .view-switch button{font-size:10px;padding:6px 6px}
+}
+/* Stillingshistorik is the third Stilling view, not a separate panel. */
+#score-history-view{margin-top:12px}

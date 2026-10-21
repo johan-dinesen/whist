@@ -16,6 +16,7 @@ let standings = [];
 let activeRequest = 0;
 let view = 'podium';
 let historyChart = null;
+let historyModel = null;
 
 function showError(message) {
   const node = $('stats-status');
@@ -133,9 +134,11 @@ function renderRankings(rows) {
   $('stats-view-toggle').classList.toggle('hidden',empty);
   $('podium-view').classList.toggle('hidden',empty||view!=='podium');
   $('chart-view').classList.toggle('hidden',empty||view!=='chart');
+  $('score-history-view').classList.toggle('hidden',empty||view!=='history');
   if(empty)return;
   renderPodium(standings);
   drawBarChart(standings);
+  if(view==='history')requestAnimationFrame(mountHistoryChart);
 }
 // Independent module: table definitions live in stat-metrics.js, so more
 // statistics can be added without changing the podium or chart renderers.
@@ -205,12 +208,16 @@ function renderSynergy(raw) {
   const content = $('synergy-content');
   const head = $('synergy-head');
   const body = $('synergy-body');
+  const table = $('synergy-table');
   const count = $('synergy-count');
   content.classList.toggle('hidden',players.length===0);
   state.classList.toggle('hidden',players.length!==0);
   count.textContent = players.length
     ? `${players.length} spillere · ${partnershipGames} makkerspil`
     : '';
+  table.style.setProperty('--synergy-columns',String(players.length + 1));
+  table.classList.toggle('is-compact',players.length <= 6);
+  table.classList.toggle('is-wide',players.length > 6);
   head.replaceChildren();
   body.replaceChildren();
   if (!players.length) {
@@ -261,36 +268,47 @@ function renderSynergy(raw) {
     body.append(tr);
   }
 }
-function renderScoreHistory(raw) {
-  const model=buildScoreHistory(raw);
-  $('score-history-count').textContent = model.gameCount
-    ? `${model.gameCount} spil · ${model.players.length} spillere`
-    : '';
-  const state=$('score-history-state');
-  const content=$('score-history-content');
-  if (!model.gameCount || !model.players.length) {
-    content.classList.add('hidden');
-    state.textContent='Ingen spil i de valgte spilsamlinger.';
-    state.classList.remove('hidden');
-    return;
+// Chart.js must be constructed only after its parent tab is visible;
+// otherwise it can measure a zero-width canvas on mobile.
+function mountHistoryChart() {
+  if(view !== 'history' || !standings.length || !historyModel?.gameCount ||
+     $('score-history-view').classList.contains('hidden')) return;
+  try {
+    if(!historyChart){
+      historyChart=drawScoreHistory({
+        canvas:$('score-history-canvas'),
+        legend:$('score-history-legend'),
+        model:historyModel
+      });
+    } else {
+      historyChart.resize();
+    }
+  } catch(err) {
+    $('score-history-content').classList.add('hidden');
+    $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
+    $('score-history-state').classList.remove('hidden');
+    showError(`Stillingshistorik: ${err.message}`);
   }
-  // Chart.js measures canvas dimensions at construction time, so expose it first.
-  state.classList.add('hidden');
-  content.classList.remove('hidden');
-  historyChart?.destroy();
-  historyChart=null;
-  historyChart=drawScoreHistory({
-    canvas:$('score-history-canvas'),
-    legend:$('score-history-legend'), model
-  });
+}
+function renderScoreHistory(raw) {
+  historyModel=buildScoreHistory(raw);
+  const ready=historyModel.gameCount > 0 && historyModel.players.length > 0;
+  const state=$('score-history-state');
+  $('score-history-content').classList.toggle('hidden',!ready);
+  state.classList.toggle('hidden',ready);
+  if(!ready)state.textContent='Ingen spil i de valgte spilsamlinger.';
+  if(ready && view==='history')requestAnimationFrame(mountHistoryChart);
 }
 function changeView(next) {
+  if(!['podium','chart','history'].includes(next))return;
   view=next;
   for(const button of document.querySelectorAll('[data-stats-view]')){
     button.setAttribute('aria-pressed',String(button.dataset.statsView===view));
   }
   $('podium-view').classList.toggle('hidden',view!=='podium'||!standings.length);
   $('chart-view').classList.toggle('hidden',view!=='chart'||!standings.length);
+  $('score-history-view').classList.toggle('hidden',view!=='history'||!standings.length);
+  if(view==='history')requestAnimationFrame(mountHistoryChart);
 }
 async function refresh() {
   if(!supabase)return;
@@ -303,6 +321,7 @@ async function refresh() {
   $('standings-empty').classList.remove('hidden');
   $('podium-view').classList.add('hidden');
   $('chart-view').classList.add('hidden');
+  $('score-history-view').classList.add('hidden');
   $('stats-view-toggle').classList.add('hidden');
   $('metrics-state').textContent='Indlæser statistik …';
   $('metrics-state').classList.remove('hidden');
@@ -313,10 +332,10 @@ async function refresh() {
   $('synergy-count').textContent='';
   historyChart?.destroy();
   historyChart=null;
+  historyModel=null;
   $('score-history-state').textContent='Indlæser stillingshistorik …';
   $('score-history-state').classList.remove('hidden');
   $('score-history-content').classList.add('hidden');
-  $('score-history-count').textContent='';
   const params={
     ...selectionParams(selectedNotes),
     p_include_guests:$('stats-include-guests').checked
@@ -364,6 +383,7 @@ async function refresh() {
       $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
       $('score-history-state').classList.remove('hidden');
       $('score-history-content').classList.add('hidden');
+      historyModel=null;
     }
   }else{
     const error=graphResult.status==='rejected'?graphResult.reason:graphResult.value.error;
