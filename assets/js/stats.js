@@ -150,7 +150,6 @@ function renderMeldingStatistics(raw) {
   const content=$('metrics-content');
   const head=$('metric-head');
   const body=$('metric-body');
-  const legacy=$('metrics-legacy-note');
   content.classList.toggle('hidden', people.length===0);
   state.classList.toggle('hidden', people.length!==0);
   if(!people.length){
@@ -177,7 +176,9 @@ function renderMeldingStatistics(raw) {
     const name=document.createElement('strong');name.textContent=player.name;
     const games=document.createElement('small');games.textContent=`${player.games} spil`;
     info.append(name,games);
-    personCell.append(avatar(player,'metric-player-avatar'),info);
+    const identity=document.createElement('span');identity.className='metric-player-identity';
+    identity.append(avatar(player,'metric-player-avatar'),info);
+    personCell.append(identity);
     tr.append(personCell);
     for(const metric of METRICS){
       const td=document.createElement('td');
@@ -193,9 +194,6 @@ function renderMeldingStatistics(raw) {
     }
     body.append(tr);
   }
-  const unknown=people.reduce((total,p)=>total+p.unknown,0);
-  legacy.classList.toggle('hidden',unknown===0);
-  if(unknown)legacy.textContent=`${unknown} historiske solo-sejre er kun gemt som “Vundet” uden stikantal. De tæller som meldinger, men ikke som under-/præcismeldinger eller i stikafvigelsen.`;
 }
 function changeView(next) {
   view=next;

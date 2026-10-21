@@ -24,12 +24,12 @@ export const METRICS = [
   },
   {
     key:'deviation', label:'Stikafvigelse', short:'Stikafv.',
-    help:'Gennemsnitlig fortegnet afvigelse fra meldingen. Solo-tab mangler præcist antal stik og indgår ikke.',
+    help:'Gennemsnitligt resultat (med fortegn) på egne meldinger af typen Almindelig, Gode, Halve eller Vip. Solo-meldinger indgår ikke.',
     valueKey:'avgDeviation', type:'deviation'
   },
   {
     key:'absoluteDeviation', label:'Absolut stikafvigelse', short:'|Stikafv.|',
-    help:'Gennemsnitlig absolut værdi af kendt stikafvigelse. Solo-tab uden stikantal indgår ikke.',
+    help:'Gennemsnittet af den absolutte resultatværdi på egne meldinger af typen Almindelig, Gode, Halve eller Vip. Solo-meldinger indgår ikke.',
     valueKey:'avgAbsoluteDeviation', type:'deviation'
   },
   {
@@ -77,7 +77,7 @@ export function normalizeMeldingStatistics(data) {
       throw new Error('Supabase returnerede ufuldstændige statistikdata.');
     }
     return p;
-  }).sort((a,b)=> b.points-a.points || b.games-a.games || a.name.localeCompare(b.name,'da'));
+  }).sort((a,b)=> a.name.localeCompare(b.name,'da',{sensitivity:'base'}) || a.id.localeCompare(b.id));
 }
 
 export function displayMetric(metric, player) {
@@ -97,7 +97,7 @@ export function formatNumber(value, precision) {
 
 export function metricDetail(metric, player) {
   if(metric.type==='percentage')return `${player[metric.countKey]} af ${player.calls} meldinger`;
-  if(metric.type==='deviation')return `${player.deviationSamples} af ${player.calls} meldinger har kendt stikafvigelse`;
+  if(metric.type==='deviation')return `Beregnet ud fra ${player.deviationSamples} meldinger af typen Almindelig, Gode, Halve eller Vip`;
   if(metric.type==='points')return `${formatNumber(player.points,2)} point over ${player.games} spil`;
   if(metric.key==='calls')return `${player.games} spillede spil`;
   return metric.help;
