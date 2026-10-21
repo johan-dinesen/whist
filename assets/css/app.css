@@ -401,3 +401,7 @@
 }
 /* Stillingshistorik is the third Stilling view, not a separate panel. */
 #score-history-view{margin-top:12px}
+
+.synergy-table tbody th {
+  text-align: center;
+}
