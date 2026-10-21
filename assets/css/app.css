@@ -216,3 +216,38 @@
   .view-switch button{flex:1}
 }
 @media(max-width:350px){.podium-name{font-size:11px}.podium-score{font-size:17px}}
+
+/* v0.2.1: clean podium and a signed vertical-bar standings visualization. */
+.podium-stand{justify-content:flex-start}
+.rank-avatar img{display:block;opacity:0;transition:opacity .14s ease}
+.rank-avatar.has-photo img{opacity:1}
+/* Keeping the <img> present in layout ensures loading works even before onload. */
+.rank-bar-scroll{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid #34485a;background:#101b27;border-radius:12px;padding:14px 12px 8px;scrollbar-color:#47647c #142330}
+.rank-bar-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.rank-bar-chart{height:400px;position:relative;width:100%;display:grid;grid-template-columns:repeat(var(--rank-count),minmax(0,1fr));isolation:isolate}
+.rank-zero-line{position:absolute;top:49%;left:0;right:0;height:2px;background:#536e80;z-index:1;pointer-events:none}
+.rank-bar-column{position:relative;height:100%;min-width:0;text-align:center}
+.rank-bar-column:nth-of-type(even){background:rgba(255,255,255,.012)}
+.rank-bar{position:absolute;left:19%;width:62%;height:var(--bar-height);z-index:0;border-radius:5px 5px 0 0}
+.rank-bar-positive{bottom:51%;background:linear-gradient(180deg,#63c9a5,#267d66);box-shadow:inset 0 1px 0 #96e0c8}
+.rank-bar-negative{top:49%;background:linear-gradient(180deg,#b45c6a,#e08a96);border-radius:0 0 5px 5px;box-shadow:inset 0 -1px 0 #efb1b8}
+.rank-bar-zero{height:0}
+.rank-bar-value{position:absolute;left:0;right:0;padding:0 2px;font-size:12px;line-height:1.2;color:#eef5fa;font-variant-numeric:tabular-nums;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.rank-bar-value.positive{bottom:calc(51% + var(--bar-height) + 9px)}
+.rank-bar-value.negative{top:calc(49% + var(--bar-height) + 9px)}
+.rank-bar-value.zero{top:calc(49% - 25px);color:var(--muted)}
+.rank-bar-avatar{position:absolute!important;left:50%;top:49%;transform:translate(-50%,-50%);z-index:3;width:38px;height:38px;border:2px solid #658197;box-shadow:0 3px 10px rgba(0,0,0,.45)}
+.rank-bar-footer{position:absolute;bottom:4px;left:1px;right:1px;display:flex;flex-direction:column;gap:2px;align-items:center;font-size:12px;line-height:1.3}
+.rank-bar-footer strong{font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-bar-footer small{font-size:10px;color:var(--muted)}
+.chart-explanation{margin:2px 0 13px!important;max-width:none}
+@media(max-width:620px){
+  .rank-bar-scroll{padding:8px 6px 6px}
+  .rank-bar-chart{height:365px}
+  .rank-bar-avatar{width:33px;height:33px}
+  .rank-bar-footer{font-size:11px}
+  .rank-bar-value{font-size:11px}
+}
+
+.rank-chart-scroll-tip{display:none;font-size:11px;color:var(--muted);margin:8px 0 0!important;text-align:center}
+@media(max-width:620px){.rank-chart-scroll-tip{display:block}}

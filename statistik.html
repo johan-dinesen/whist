@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.1">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.0</span>
+      <span class="version">v0.2.1</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -40,7 +40,7 @@
         <div><h2 id="rank-title">Stilling</h2><p class="rank-subtitle" id="standings-count" aria-live="polite"></p></div>
         <div id="stats-view-toggle" class="view-switch hidden" role="group" aria-label="Visning af stilling">
           <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
-          <button type="button" data-stats-view="chart" aria-pressed="false">Pointfordeling</button>
+          <button type="button" data-stats-view="chart" aria-pressed="false">Pointdiagram</button>
         </div>
       </div>
       <p id="standings-empty" class="ranking-empty">Indlæser stilling …</p>
@@ -48,17 +48,17 @@
         <div id="stats-podium" class="stats-podium"></div>
         <div id="stats-lower" class="stats-lower"></div>
       </div>
-      <div id="chart-view" class="hidden" aria-label="Fordeling af positive og negative nettobeløb">
-        <p class="chart-explanation">Andelene viser hver spillers del af de samlede positive henholdsvis negative nettopoint.</p>
-        <div class="rank-chart-grid">
-          <section id="positive-donut" class="rank-chart-card" aria-label="Positive nettogevinster"></section>
-          <section id="negative-donut" class="rank-chart-card" aria-label="Negative nettotab"></section>
+      <div id="chart-view" class="hidden" aria-label="Pointdiagram med positive og negative nettopoint">
+        <p class="chart-explanation">Nettopoint for hver spiller på samme skala. Søjler over nul er gevinster; søjler under nul er tab.</p>
+        <div class="rank-bar-scroll" tabindex="0" role="region" aria-label="Søjlediagram, rul vandret for flere spillere">
+          <div id="rank-bar-chart" class="rank-bar-chart"></div>
         </div>
+        <p class="rank-chart-scroll-tip">Rul vandret for at se alle spillere.</p>
       </div>
     </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
-  <script type="module" src="assets/js/stats.js?v=0.2.0"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.1"></script>
 </body>
 </html>

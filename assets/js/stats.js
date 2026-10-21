@@ -1,13 +1,10 @@
 import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
-import {normalizeStandings,pointShares} from './ranking-model.js';
+import {normalizeStandings} from './ranking-model.js';
 
 const $ = id => document.getElementById(id);
 const profileCacheVersion = String(Date.now());
-const gainColors = ['#78b6d7','#d7a667','#8eae91','#c492a9','#9995cb','#94c6b6',
-  '#d6b98a','#8aa4c4','#bc9983','#8dbece','#c5a4c9','#a9c083'];
-const lossColors = ['#be7582','#b88d68','#a48bbf','#c9a77e','#cb8d8d','#999cad'];
 let supabase = null;
 let groups = [];
 let selectedNotes = new Set();
@@ -33,7 +30,10 @@ function avatar(player, size = '') {
   figure.append(initials);
   const img = document.createElement('img');
   img.alt = '';
-  img.loading = 'lazy';
+  // Eager loading is required: the initial CSS hides the image until onload.
+  // Lazy-loaded, display:none images can otherwise remain unfetched indefinitely.
+  img.loading = 'eager';
+  img.decoding = 'async';
   // Stored photos have a stable UUID-based filename. Missing photos show initials.
   img.onload = () => figure.classList.add('has-photo');
   img.onerror = () => figure.classList.remove('has-photo');
@@ -58,11 +58,10 @@ function renderPodium(rows) {
     place.setAttribute('aria-label',`${index+1}. plads: ${player.name}, ${signed(player.points)} point`);
     place.append(avatar(player,'rank-avatar-podium'));
     const stand = document.createElement('div'); stand.className = 'podium-stand';
-    const rank = document.createElement('span'); rank.className='podium-number'; rank.textContent = String(index+1);
     const name = document.createElement('strong'); name.className='podium-name'; name.textContent=player.name;
     const score = document.createElement('strong'); score.className='podium-score'; score.textContent=signed(player.points);
     const games = document.createElement('span');games.className='podium-games';games.textContent=`${player.games} spil`;
-    stand.append(rank,name,score,games);place.append(stand);podium.append(place);
+    stand.append(name,score,games);place.append(stand);podium.append(place);
   }
   for (const [offset,player] of rows.slice(3).entries()) {
     const item=document.createElement('article'); item.className='ranking-item';
@@ -75,42 +74,44 @@ function renderPodium(rows) {
     item.append(position,info);playerScore(item,player);lower.append(item);
   }
 }
-function chartSliceStyle(items, total, palette) {
-  if (!total) return 'conic-gradient(#344556 0% 100%)';
-  let progress = 0;
-  const slices=[];
-  items.forEach((p,i) => {
-    const start=progress;
-    progress += p.share * 100;
-    slices.push(`${palette[i % palette.length]} ${start.toFixed(5)}% ${progress.toFixed(5)}%`);
+// Signed point chart: one horizontal zero baseline, common scale for all players.
+// Positive values rise above zero; negative values descend beneath it.
+function drawBarChart(rows) {
+  const root = $('rank-bar-chart');
+  root.replaceChildren();
+  root.style.setProperty('--rank-count', String(rows.length));
+  root.style.minWidth = `${Math.max(0, rows.length * 88)}px`;
+  const maxAbs = Math.max(0.01, ...rows.map(p => Math.abs(p.points)));
+  const zero = document.createElement('div');
+  zero.className = 'rank-zero-line';
+  zero.setAttribute('aria-hidden', 'true');
+  root.append(zero);
+  rows.forEach((player, i) => {
+    const column = document.createElement('div');
+    column.className = 'rank-bar-column';
+    const positive = player.points > 0;
+    const negative = player.points < 0;
+    const height = 35 * Math.abs(player.points) / maxAbs;
+    const bar = document.createElement('div');
+    bar.className = `rank-bar ${positive ? 'rank-bar-positive' : negative ? 'rank-bar-negative' : 'rank-bar-zero'}`;
+    bar.style.setProperty('--bar-height', `${height.toFixed(3)}%`);
+    const amount = document.createElement('strong');
+    amount.className = `rank-bar-value ${positive ? 'positive' : negative ? 'negative' : 'zero'}`;
+    amount.style.setProperty('--bar-height', `${height.toFixed(3)}%`);
+    amount.textContent = signed(player.points);
+    const photo = avatar(player, 'rank-avatar-chart');
+    photo.classList.add('rank-bar-avatar');
+    const foot = document.createElement('div');
+    foot.className = 'rank-bar-footer';
+    const name = document.createElement('strong');
+    name.textContent = player.name;
+    const games = document.createElement('small');
+    games.textContent = `${player.games} spil`;
+    foot.append(name, games);
+    column.setAttribute('aria-label', `${i+1}. ${player.name}, ${signed(player.points)} point, ${player.games} spil`);
+    column.append(bar, amount, photo, foot);
+    root.append(column);
   });
-  return `conic-gradient(${slices.join(',')})`;
-}
-function drawDonut(targetId, sign, label) {
-  const root=$(targetId);root.replaceChildren();
-  const items=pointShares(standings,sign);
-  const total=items.reduce((n,x)=>n+x.magnitude,0);
-  const palette=sign==='positive'?gainColors:lossColors;
-  const heading=document.createElement('h3');heading.textContent=label;
-  const donut=document.createElement('div');donut.className='rank-donut';
-  donut.style.background=chartSliceStyle(items,total,palette);
-  donut.setAttribute('role','img');
-  donut.setAttribute('aria-label',`${label}: ${items.map(p=>`${p.name} ${Math.round(100*p.share)} procent`).join(', ') || 'Ingen'}`);
-  const hole=document.createElement('span');hole.className='rank-donut-hole';
-  const amount=document.createElement('strong');amount.textContent=signed(sign==='negative'?-total:total);
-  const unit=document.createElement('small');unit.textContent='point i alt';
-  hole.append(amount,unit);donut.append(hole);
-  const legend=document.createElement('div');legend.className='rank-donut-legend';
-  if(!items.length){const msg=document.createElement('p');msg.className='muted';msg.textContent='Ingen point i denne kategori.';legend.append(msg);}
-  items.forEach((p,i)=>{
-    const row=document.createElement('div');row.className='rank-legend-row';
-    const marker=document.createElement('span');marker.className='rank-legend-marker';marker.style.backgroundColor=palette[i % palette.length];
-    const name=document.createElement('span');name.textContent=p.name;
-    const number=document.createElement('strong');number.textContent=`${(p.share*100).toLocaleString('da-DK',{maximumFractionDigits:1})}%`;
-    const value=document.createElement('small');value.textContent=signed(sign==='negative'?-p.magnitude:p.magnitude);
-    row.append(marker,name,number,value);legend.append(row);
-  });
-  root.append(heading,donut,legend);
 }
 function renderRankings(rows) {
   standings=normalizeStandings(rows);
@@ -123,8 +124,7 @@ function renderRankings(rows) {
   $('chart-view').classList.toggle('hidden',empty||view!=='chart');
   if(empty)return;
   renderPodium(standings);
-  drawDonut('positive-donut','positive','Positive nettogevinster');
-  drawDonut('negative-donut','negative','Negative nettotab');
+  drawBarChart(standings);
 }
 function changeView(next) {
   view=next;

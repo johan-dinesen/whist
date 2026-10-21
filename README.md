@@ -1,74 +1,27 @@
-# Whist v0.2.0 — Statistik, module 1: Stilling
+# Whist Statistik v0.2.1 - Podie + pointdiagram
 
-This is an incremental update to the currently deployed Whist GitHub Pages site
-(after the profile-picture administration update v0.1.11).
+This package is a **frontend-only patch** for v0.2.0. It does not change database schema, permissions, ranking calculation or shared Spilsamlinger filters.
 
-## What is included
+## Apply to GitHub
 
-- `statistik.html`: new Statistik page. First module only: podium for places
-  1–3, then a ranked list of every remaining player. Switch to
-  `Pointfordeling` to view two static doughnut/pie charts.
-- `assets/js/stats.js`, `assets/js/ranking-model.js`: UI and ranking model.
-- `assets/js/notes.js`: single shared Spilsamlinger filter, also used by Historik.
-  It keeps Kredsspil first, newly created tournaments next (newest first),
-  and the five historical categories in their requested order. The selected
-  categories and `Medtag gæstespil` are shared *within the same browser tab*
-  when switching between Historik and Statistik via sessionStorage.
-- `assets/js/history.js`: existing Historik refactored to use the same filtering
-  module. Table layout and scoring are unchanged.
-- `assets/css/app.css`: previous v0.1.11 CSS plus standings/podium/doughnut styles.
-- `index.html`, `historik.html`, `administrering.html`: just add `Statistik` to
-  the navigation and update the version labels.
-- `sql/16_standings.sql`: one new **read-only RPC** `get_standings_for_notes`.
-- `assets/js/scoring.js` and `assets/js/profiles.js`: matching existing helper
-  modules included for reference/completeness. If these are already deployed
-  and working, you do not need to replace them.
+Replace exactly these files in the existing Whist repository:
 
-## Install
+- `statistik.html`
+- `assets/js/stats.js`
+- `assets/css/app.css`
 
-1. Back up the existing repository and check that the profile-image migration
-   `15_profile_administration.sql` was installed previously.
-2. In Supabase SQL Editor, run the **entire** `sql/16_standings.sql` file.
-   Run once after `05_scoring_history.sql` and your working public-history fix.
-   This creates the standings function without changing game records.
-3. Upload these files in their matching locations in GitHub:
-   - `statistik.html` (new)
-   - `index.html`, `historik.html`, `administrering.html` (navigation update)
-   - `assets/css/app.css`
-   - `assets/js/stats.js` (new)
-   - `assets/js/ranking-model.js` (new)
-   - `assets/js/notes.js` (new)
-   - `assets/js/history.js` (existing history implementation, shared filters)
-4. **Keep your real `assets/js/config.js` unchanged.** Also keep
-   `assets/js/app.js`, `assets/js/admin.js`, and the profile-upload module.
-5. Push to GitHub Pages. Refresh the website and open `Statistik` in the nav.
+Keep all other files, especially `assets/js/config.js`, `assets/js/profiles.js`, `assets/js/notes.js`, and the Supabase migrations as they are. Commit and push. Refresh Statistik; the heading should show `v0.2.1`. No SQL is necessary.
 
-## Exact standings semantics
+## Changes
 
-All games included in the selected Spilsamlinger are counted, not just the first
-250 visible on Historik. When nothing is selected, all categories are included.
-With `Medtag gæstespil` unchecked, *entire games involving any guest* are
-excluded. When checked, those games and guest participants are included.
-Each player appears if they took part in at least one included game, including
-players with zero net points. Sort by total net points descending, then number
-of games played descending, then name alphabetically. Payouts are calculated
-by the same database scoring view as Historik, not recalculated in JavaScript.
+- Removes the numerals 1, 2, 3 from the podium blocks. The remaining standings list still shows ranking numbers.
+- Fixes profile-photo loading: previous markup made the images `loading=lazy` while CSS hid them until the `load` event; this could prevent the requests from starting. Images now load eagerly, fade in when loaded and fall back to initials on error. Uploaded files continue to be read from the `whist-profiles` public bucket at `{player UUID}.webp`.
+- Replaces the two donut charts with one static vertical bar chart, ordered by standings. All bars share the same scale and a single zero baseline. Gains rise (green) and losses fall (red). Uploaded profile images appear on the baseline. The chart scrolls horizontally on mobile.
+- The two-option toggle is now `Podie` / `Pointdiagram`.
+- The same category and guest filters continue to drive both views.
 
-The alternative pie view has **two** charts rather than one: percentage shares
-of the net positive points, and percentage shares of absolute net negative
-points. Negative quantities cannot be drawn directly as pie slices.
-Neither view has playback animation or medal emojis. Images are read from the
-existing public `whist-profiles` bucket, named by player UUID; if none exists,
-an initials avatar is shown. Viewing statistics requires no shared password.
+## Tests and limitations
 
-## Verification and caveats
+`node --check assets/js/stats.js` passes. The headless browser fixture passed at 1160px and 390px with simulated Supabase results and loadable image data, checking the image `load` event and visible photo, standings order, no podium numbers, gain/loss/zero bars, guest inclusion and view switches. This does not constitute a live Supabase Storage test.
 
-`node tests/ranking-model.test.mjs` validates ranking, zero-point participants,
-and pie-chart allocation. `python tests/browser_fixture.py` tested desktop and
-390px mobile Chromium interfaces using mock Supabase data. The local fixture
-requires Python Playwright and Chromium; screenshots are not needed in GitHub.
-
-The SQL has **not** been executed against your live Supabase project. If you see
-`Could not find the function public.get_standings_for_notes` in the schema cache,
-confirm the migration ran successfully, then execute
-`NOTIFY pgrst, 'reload schema';` in the SQL Editor and reload Statistik.
+If images do not load after deploying, inspect Supabase Storage > `whist-profiles` and verify that files are named after the corresponding UUID and that the bucket is public. The image URL may be opened directly from the browser's developer tools.
