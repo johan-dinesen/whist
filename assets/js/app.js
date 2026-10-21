@@ -1,4 +1,6 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+// Load config dynamically so a missing config.js cannot hide the form.
+let SUPABASE_URL = '';
+let SUPABASE_PUBLISHABLE_KEY = '';
 
 const $ = id => document.getElementById(id);
 const CALLS = [
@@ -13,14 +15,13 @@ const TRUMPS = [
 const SOLO = new Set(['sol', 'ren_sol', 'bordlaegger', 'ren_bordlaegger']);
 const SHORT_SOLO = new Set(['sol', 'bordlaegger']);
 const SCORES = [4,3,2,1,0,-1,-2,-3,-4,-5,-6,-7];
-const configReady = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-')
-  && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes('YOUR-');
 const previewMode = new URLSearchParams(location.search).has('preview');
 let supabase = null;
-let currentUser = null;
+let accessUntil = null;
 let players = [];
 let tournaments = [];
 let requestId = null;
+let canSave = false; // Only true after a successful authenticated Supabase data load.
 const s = {
   playerIds: [], tournamentId: '', playedAt: '', callType: null, callerIds: [],
   tricks: null, vipDepth: null, trump: null, partnerId: null,
@@ -149,20 +150,56 @@ function newGame() {
   s.playerIds=[];resetFrom(1);s.playedAt=localDateTime();$('played-at').value=s.playedAt;
   $('show-guests').checked=false;
   message('save-message','');
+  show('password-panel',false);
   show('success-panel',false);show('game-panel',true);$('save-btn').disabled=false;
   render();window.scrollTo({top:0,behavior:'smooth'});
 }
+async function hasWriteAccess() {
+  const {data,error}=await supabase.rpc('registration_access_until');
+  if (error) throw error;
+  accessUntil=data;
+  updateAccessLabel();
+  return Boolean(data && new Date(data).getTime()>Date.now());
+}
+function updateAccessLabel() {
+  const active=accessUntil && new Date(accessUntil).getTime()>Date.now();
+  $('access-status').textContent=active
+    ? `Registrering er låst op på denne enhed indtil ${new Date(accessUntil).toLocaleDateString('da-DK')}.`
+    : 'Du kan udfylde et spil uden kode. Den fælles adgangskode kræves først, når du gemmer.';
+}
+function showPasswordRequest() {
+  show('password-panel',true);
+  message('save-message','Indtast den fælles adgangskode nedenfor for at gemme spillet.');
+  $('password-panel').scrollIntoView({behavior:'smooth',block:'center'});
+  $('shared-password').focus({preventScroll:true});
+}
 async function saveGame() {
-  if (previewMode) { message('save-message','Dette er kun en forhåndsvisning. Intet er gemt.',true); return; }
+  if (!canSave || !supabase) {
+    message('save-message','Testtilstand: Formularen virker, men Supabase er ikke tilsluttet. Ingen data er gemt. Se den gule besked øverst.',true);
+    return;
+  }
   if (!$('played-at').value || s.playerIds.length!==4 || !s.callType || !s.callerIds.length) return;
   const date=new Date($('played-at').value);
   if (isNaN(date.getTime()) || date.getTime()>Date.now()+10*60*1000){message('save-message','Vælg et gyldigt tidspunkt, som ikke ligger i fremtiden.',true);return;}
+  $('save-btn').disabled=true;
+  try {
+    if (!(await hasWriteAccess())) {
+      $('save-btn').disabled=false;
+      showPasswordRequest();
+      return;
+    }
+  } catch (err) {
+    message('save-message',`Kunne ikke kontrollere adgang: ${err.message}`,true);
+    $('save-btn').disabled=false;
+    return;
+  }
+  show('password-panel',false);
   if (!requestId) requestId=crypto.randomUUID();
   const participants=s.playerIds.map((id,i)=>({player_id:id,seat:i+1,is_caller:s.callerIds.includes(id),is_partner:!isSolo()&&s.partnerId===id,solo_result:isSolo()?s.soloResults[id]??null:null}));
   const params={p_request_id:requestId,p_tournament_id:s.tournamentId||null,p_played_at:date.toISOString(),p_call_type:s.callType,
     p_tricks:isSolo()?null:s.tricks,p_vip_depth:s.callType==='vip'?s.vipDepth:null,p_trump:isSolo()?null:s.trump,
     p_score:isSolo()?null:s.score,p_participants:participants};
-  $('save-btn').disabled=true;message('save-message','Gemmer spillet ...');
+  message('save-message','Gemmer spillet ...');
   try {
     const {data,error}=await supabase.rpc('register_game',params);
     if(error)throw error;
@@ -171,75 +208,135 @@ async function saveGame() {
     window.scrollTo({top:0,behavior:'smooth'});
   } catch(err){message('save-message',`Spillet blev ikke bekræftet gemt: ${err.message}. Prøv igen.`,true);$('save-btn').disabled=false;}
 }
+function setTournamentOptions() {
+  const sel=$('tournament-select');
+  sel.replaceChildren();
+  sel.add(new Option('Uden turnering',''));
+  tournaments.forEach(t=>sel.add(new Option(t.name,t.id)));
+  s.tournamentId=tournaments.length===1?tournaments[0].id:'';
+  sel.value=s.tournamentId;
+}
+
+function showDemo(reason) {
+  // These are demonstration names, not live database records.
+  // Never send their local IDs to Supabase.
+  const names=['David','Gustav','Johan','Samuel','Sofus','William','Anna','Caroline','Iben','Maria','Stine','Vera'];
+  players=names.map((name,i)=>({id:`demo-${i}`,display_name:name,is_guest:i>=6,active:true}));
+  tournaments=[{id:'demo-tournament',name:'Klitmøller 2026'}];
+  canSave=false;
+  setTournamentOptions();
+  $('configuration-message').textContent=reason;
+  show('configuration-message',true);
+  newGame();
+  $('access-status').textContent='Testtilstand. Du kan prøve formularen, men ingen spil kan gemmes, før Supabase er forbundet.';
+}
+
 async function loadData() {
   const [a,b]=await Promise.all([
     supabase.from('players').select('id,display_name,is_guest,active').eq('active',true).order('display_name'),
     supabase.from('tournaments').select('id,name,start_at,end_at').order('name',{ascending:false})
   ]);
-  if(a.error)throw a.error;if(b.error)throw b.error;
-  players=a.data??[];tournaments=b.data??[];
-  const sel=$('tournament-select');sel.replaceChildren();
-  const empty=new Option('Uden turnering','');sel.add(empty);
-  tournaments.forEach(t=>sel.add(new Option(t.name,t.id)));
-  s.tournamentId=tournaments.length===1?tournaments[0].id:'';sel.value=s.tournamentId;
-  sel.addEventListener('change',()=>{s.tournamentId=sel.value;requestId=null;render();});
-  if (!players.length) {show('configuration-message',true);$('configuration-message').textContent='Ingen spillere fundet. Tilføj en godkendt registrator og spillere i Supabase (se README).';}
-  else show('configuration-message',false);
+  if(a.error)throw a.error;
+  if(b.error)throw b.error;
+  if(!a.data?.length)throw new Error('Ingen spillere i Supabase. Kør sql/02_seed.sql.');
+  players=a.data;
+  tournaments=b.data??[];
+  canSave=true;
+  setTournamentOptions();
+  show('configuration-message',false);
   newGame();
 }
-async function authenticate(user) {
-  if (!user) {currentUser=null;show('auth-panel',true);show('game-panel',false);show('success-panel',false);return;}
-  if(currentUser?.id===user.id)return;
-  currentUser=user;
-  $('signed-in-email').textContent=user.email??'bruger';
-  show('auth-panel',false);
-  try {await loadData();}catch(err){show('configuration-message',true);$('configuration-message').textContent=`Kunne ikke indlæse spillere og turneringer: ${err.message}. Kontrollér database, rettigheder og godkendelse.`;}
-}
-$('login-form').addEventListener('submit',async event=>{
-  event.preventDefault();if(!supabase)return;
-  $('login-btn').disabled=true;message('auth-message','Sender login-link ...');
-  const email=$('login-email').value.trim();
-  const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
-  message('auth-message',error?`Kunne ikke sende link: ${error.message}`:'Tjek din indbakke og åbn login-linket.',Boolean(error));
-  $('login-btn').disabled=false;
+
+// A single listener works for both live and demonstration tournaments.
+$('tournament-select').addEventListener('change',()=>{
+  s.tournamentId=$('tournament-select').value;
+  requestId=null;
+  render();
 });
-$('logout-btn').addEventListener('click',async()=>{await supabase.auth.signOut();currentUser=null;await authenticate(null);});
+$('password-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  if (!supabase) return;
+  $('unlock-btn').disabled=true;
+  message('password-message','Kontrollerer kode ...');
+  try {
+    const {data,error}=await supabase.rpc('unlock_registration',{
+      p_password:$('shared-password').value
+    });
+    $('shared-password').value=''; // Never retain the shared secret in the browser's JS state.
+    if (error) throw error;
+    if (!data) {
+      message('password-message','Forkert kode eller for mange forsøg. Prøv igen senere.',true);
+      return;
+    }
+    accessUntil=data;
+    updateAccessLabel();
+    show('password-panel',false);
+    message('password-message','');
+    await saveGame();
+  } catch(err){
+    message('password-message',`Kunne ikke godkende adgang: ${err.message}`,true);
+  } finally {
+    $('unlock-btn').disabled=false;
+    $('save-btn').disabled=false;
+  }
+});
 $('show-guests').addEventListener('change',()=>{if(!$('show-guests').checked){const valid=new Set(players.filter(p=>!p.is_guest).map(p=>p.id));if(s.playerIds.some(id=>!valid.has(id))){s.playerIds=s.playerIds.filter(id=>valid.has(id));resetFrom(1);}}render();});
 $('played-at').addEventListener('change',()=>{s.playedAt=$('played-at').value;requestId=null;render();});
 $('save-btn').addEventListener('click',saveGame);
 $('new-game-btn').addEventListener('click',newGame);
 
 async function init() {
+  // Make the form usable immediately, including when the server or config fails.
+  showDemo('Indlæser forbindelse til Supabase. Du kan allerede afprøve formularen, men ikke gemme endnu.');
   if (previewMode) {
-    const names=['David','Gustav','Johan','Samuel','Sofus','William','Anna','Caroline','Iben','Maria','Stine','Vera'];
-    players=names.map((name,i)=>({id:`preview-${i}`,display_name:name,is_guest:i>=6,active:true}));
-    tournaments=[{id:'preview-tournament',name:'Klitmøller 2026'}];
-    const select=$('tournament-select');select.replaceChildren();
-    select.add(new Option('Uden turnering',''));
-    select.add(new Option('Klitmøller 2026','preview-tournament'));
-    s.tournamentId='preview-tournament';select.value=s.tournamentId;
-    select.addEventListener('change',()=>{s.tournamentId=select.value;render();});
-    $('configuration-message').textContent='FORHÅNDSVISNING: Dette er kun til at afprøve formularen. Ingen spil bliver gemt.';
-    show('configuration-message',true);show('auth-panel',false);
-    $('signed-in-email').textContent='forhåndsvisning';$('logout-btn').classList.add('hidden');
-    newGame();return;
-  }
-  if (!configReady) {show('configuration-message',true);show('auth-panel',false);return;}
-  try {
-    const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
-    supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-  } catch (e) {
-    show('configuration-message',true);
-    $('configuration-message').textContent='Kunne ikke indlæse Supabase-forbindelsen: '+e.message;
+    showDemo('TESTTILSTAND: Du kan gennemgå alle felter. Intet sendes til databasen. Fjern ?preview=1 for at forbinde.');
     return;
   }
-  const {data,error}=await supabase.auth.getSession();
-  if(error){show('configuration-message',true);$('configuration-message').textContent=error.message;return;}
-  await authenticate(data.session?.user??null);
-  supabase.auth.onAuthStateChange((event,session)=>{
-    if(event==='SIGNED_OUT') setTimeout(()=>{void authenticate(null);},0);
-    else if(event==='SIGNED_IN' && session?.user && currentUser?.id!==session.user.id)
-      setTimeout(()=>{void authenticate(session.user);},0);
-  });
+  try {
+    const config = await import('./config.js');
+    SUPABASE_URL = config.SUPABASE_URL ?? '';
+    SUPABASE_PUBLISHABLE_KEY = config.SUPABASE_PUBLISHABLE_KEY ?? '';
+  } catch (err) {
+    showDemo('Kunne ikke indlæse assets/js/config.js. Kontrollér at filen findes, og at den ligger i den rigtige mappe. Formularen fungerer kun i testtilstand.');
+    return;
+  }
+  const configReady = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-')
+    && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes('YOUR-');
+  if (!configReady) {
+    showDemo('Supabase mangler opsætning i assets/js/config.js. Indsæt projektets URL og publishable key. Formularen vises i testtilstand og gemmer intet.');
+    return;
+  }
+  try {
+    const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+    supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
+    });
+    const {data,error}=await supabase.auth.getSession();
+    if(error)throw error;
+    let session=data.session;
+    if (session && session.user?.is_anonymous === false) {
+      const {error:signOutError}=await supabase.auth.signOut();
+      if (signOutError)throw signOutError;
+      session=null;
+    }
+    if(!session){
+      const {data:anon,error:anonError}=await supabase.auth.signInAnonymously();
+      if(anonError)throw anonError;
+      session=anon.session;
+    }
+    if(!session)throw new Error('Kunne ikke oprette anonym session.');
+    await loadData();
+    try {await hasWriteAccess();}
+    catch(err){
+      console.warn('Adgangsstatus kan ikke kontrolleres:',err.message);
+      $('access-status').textContent='Forbindelsen til spillerlisten virker, men adgangskontrollen fejler. Kontrollér sql/04_shared_password.sql.';
+      $('configuration-message').textContent=`Adgangskontrol fejler: ${err.message}. Kontrollér at sql/04_shared_password.sql er kørt.`;
+      show('configuration-message',true);
+    }
+  } catch(err) {
+    console.error('Supabase initialisering fejlede:',err);
+    supabase=null;
+    showDemo(`Supabase kunne ikke forbindes: ${err.message}. Kontrollér assets/js/config.js, anonyme logins og SQL-tabeller. Ingen data kan gemmes i testtilstand.`);
+  }
 }
 init();
