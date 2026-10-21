@@ -83,8 +83,13 @@ function buttons(id, opts, selected, onClick, options = {}) {
   }
 }
 function renderPlayers() {
-  let available = players.filter(p => p.active && (!p.is_guest || $('show-guests').checked));
-  available.sort((a,b) => a.display_name.localeCompare(b.display_name,'da'));
+  // Keep all regular players together; append guests alphabetically when enabled.
+  const byName = (a,b) => a.display_name.localeCompare(b.display_name,'da');
+  const regulars = players.filter(p => p.active && !p.is_guest).sort(byName);
+  const guests = $('show-guests').checked
+    ? players.filter(p => p.active && p.is_guest).sort(byName)
+    : [];
+  const available = [...regulars, ...guests];
   buttons('players-options', available.map(p=>[p.id,p.display_name]),
     id=>s.playerIds.includes(id), id=>{
       if (s.playerIds.includes(id)) s.playerIds = s.playerIds.filter(x=>x!==id);
@@ -212,14 +217,7 @@ async function hasWriteAccess() {
   const {data,error}=await supabase.rpc('registration_access_until');
   if (error) throw error;
   accessUntil=data;
-  updateAccessLabel();
   return Boolean(data && new Date(data).getTime()>Date.now());
-}
-function updateAccessLabel() {
-  const active=accessUntil && new Date(accessUntil).getTime()>Date.now();
-  $('access-status').textContent=active
-    ? `Registrering er låst op på denne enhed indtil ${new Date(accessUntil).toLocaleDateString('da-DK')}.`
-    : 'Du kan udfylde et spil uden kode. Den fælles adgangskode kræves først, når du gemmer.';
 }
 function showPasswordRequest() {
   show('password-panel',true);
@@ -229,7 +227,7 @@ function showPasswordRequest() {
 }
 async function saveGame() {
   if (!canSave || !supabase) {
-    message('save-message','Testtilstand: Formularen virker, men Supabase er ikke tilsluttet. Ingen data er gemt. Se den gule besked øverst.',true);
+    message('save-message','Spillet kan ikke gemmes, fordi der ikke er forbindelse til Supabase. Ingen data er gemt.',true);
     return;
   }
   if (s.playerIds.length!==4 || !s.callType || !s.callerIds.length) return;
@@ -272,7 +270,7 @@ async function saveGame() {
     window.scrollTo({top:0,behavior:'smooth'});
   } catch(err){message('save-message',`Spillet blev ikke bekræftet gemt: ${err.message}. Prøv igen.`,true);$('save-btn').disabled=false;}
 }
-function showDemo(reason) {
+function showDemo(reason, reportError = false) {
   // Stable fallback for troubleshooting only. Demo IDs are never sent to Supabase.
   const names=['David','Gustav','Johan','Samuel','Sofus','William',
     'Anna','Caroline','Iben','Maria','Stine','Vera'];
@@ -280,10 +278,9 @@ function showDemo(reason) {
   players=names.map((name,i)=>({id:`demo-${i}`,display_name:name,is_guest:i>=6,active:true}));
   s.playerIds=players.filter(p=>selectedNames.includes(p.display_name)).map(p=>p.id);
   canSave=false;
-  $('configuration-message').textContent=reason;
-  show('configuration-message',true);
+  $('configuration-message').textContent=reportError ? reason : '';
+  show('configuration-message',reportError);
   render();
-  $('access-status').textContent='Testtilstand. Du kan vælge spillere og afprøve formularen, men ingen spil kan gemmes, før Supabase virker.';
 }
 
 async function loadData() {
@@ -332,7 +329,6 @@ $('password-form').addEventListener('submit',async event=>{
       return;
     }
     accessUntil=data;
-    updateAccessLabel();
     show('password-panel',false);
     message('password-message','');
     await saveGame();
@@ -352,7 +348,7 @@ async function init() {
   showDemo('Forbinder til Supabase. Spillerne kan vælges nu, men gemning kræver aktiv forbindelse.');
   window.__whistAppReady = true;
   if (previewMode) {
-    showDemo('TESTTILSTAND: Du kan gennemgå alle felter. Intet sendes til databasen. Fjern ?preview=1 for at forbinde.');
+    showDemo('Testtilstand: Du kan gennemgå formularen, men spil gemmes ikke. Fjern ?preview=1 for at forbinde.',true);
     return;
   }
   try {
@@ -360,13 +356,13 @@ async function init() {
     SUPABASE_URL = config.SUPABASE_URL ?? '';
     SUPABASE_PUBLISHABLE_KEY = config.SUPABASE_PUBLISHABLE_KEY ?? '';
   } catch (err) {
-    showDemo('Kunne ikke indlæse assets/js/config.js. Kontrollér at filen findes, og at den ligger i den rigtige mappe. Formularen fungerer kun i testtilstand.');
+    showDemo('Kunne ikke indlæse assets/js/config.js. Kontrollér at filen findes, og at den ligger i den rigtige mappe. Spil kan ikke gemmes.',true);
     return;
   }
   const configReady = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-')
     && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes('YOUR-');
   if (!configReady) {
-    showDemo('Supabase mangler opsætning i assets/js/config.js. Indsæt projektets URL og publishable key. Formularen vises i testtilstand og gemmer intet.');
+    showDemo('Supabase mangler opsætning i assets/js/config.js. Indsæt projektets URL og publishable key. Spil kan ikke gemmes.',true);
     return;
   }
   try {
@@ -392,14 +388,13 @@ async function init() {
     try {await hasWriteAccess();}
     catch(err){
       console.warn('Adgangsstatus kan ikke kontrolleres:',err.message);
-      $('access-status').textContent='Forbindelsen til spillerlisten virker, men adgangskontrollen fejler. Kontrollér sql/04_shared_password.sql.';
       $('configuration-message').textContent=`Adgangskontrol fejler: ${err.message}. Kontrollér at sql/04_shared_password.sql er kørt.`;
       show('configuration-message',true);
     }
   } catch(err) {
     console.error('Supabase initialisering fejlede:',err);
     supabase=null;
-    showDemo(`Supabase kunne ikke forbindes: ${err.message}. Kontrollér assets/js/config.js, anonyme logins og SQL-tabeller. Ingen data kan gemmes i testtilstand.`);
+    showDemo(`Supabase kunne ikke forbindes: ${err.message}. Kontrollér assets/js/config.js, anonyme logins og SQL-tabeller. Spil kan ikke gemmes.`,true);
   }
 }
 init();

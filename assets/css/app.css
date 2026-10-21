@@ -121,3 +121,7 @@
 
 /* Keep all three navigation links accessible on small phones. */
 @media(max-width:530px){.topbar-inner{height:auto;min-height:64px;flex-wrap:wrap;padding:10px 0;gap:5px}.site-nav{width:100%;justify-content:space-between;gap:8px;font-size:12px}.brand{font-size:17px}}
+
+/* v0.1.10: quiet connection state, but preserve actionable error messages. */
+.connection-error{margin:4px 0 14px;color:#ffc2a7;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+#refresh-history.refresh-history-btn{min-height:34px;padding:6px 10px;font-size:12px;border-radius:7px;width:auto}

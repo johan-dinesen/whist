@@ -20,11 +20,10 @@ let generation = 0;
 
 function visible(id, yes) { $(id).classList.toggle('hidden', !yes); }
 function status(text, isError = false) {
-  $('history-status').textContent = text;
-  $('history-status').classList.toggle('notice-warning', isError);
-  $('history-status').style.borderColor = isError ? '' : 'var(--edge)';
-  $('history-status').style.background = isError ? '' : 'var(--surface)';
-  $('history-status').style.color = isError ? '' : 'var(--muted)';
+  // Routine loading/success information stays invisible; errors remain readable.
+  const el = $('history-status');
+  el.textContent = isError ? text : '';
+  visible('history-status', isError);
 }
 function cell(text, element = 'td') { const el = document.createElement(element); el.textContent = text ?? ''; return el; }
 function gameLabel(game) {
@@ -54,15 +53,12 @@ function drawTable(games) {
       .sort((a,b) => a.localeCompare(b,'da'))
     : [];
   const names = [...REGULAR, ...otherRegulars, ...guests];
-  // The note is redundant with one collection selected. If every visible game is
-  // Kredsspil, the note column would also be entirely empty.
-  const showNoteColumn = selectedNotes.size !== 1 && games.some(g => g.tournament_id);
   const head = $('history-head'); head.replaceChildren();
   const header = document.createElement('tr');
-  const columns = ['Melding','🏆','Melder','Makker',...(showNoteColumn ? ['Note'] : []),...names];
+  const columns = ['Melding','🏆','Melder','Makker',...names];
   columns.forEach((label,index) => {
     const th = cell(label,'th');
-    if (index >= (showNoteColumn ? 5 : 4)) th.classList.add('payout-heading');
+    if (index >= 4) th.classList.add('payout-heading');
     if (index === 1) th.title = 'Resultat';
     header.append(th);
   });
@@ -74,8 +70,6 @@ function drawTable(games) {
     const byName = new Map(participants.map(p => [p.name,p]));
     tr.append(cell(gameLabel(game)), cell(gameResult(game)), cell(game.callers),
       cell(game.partners));
-    // An unassigned game is Kredsspil: no label is needed in its row.
-    if (showNoteColumn) tr.append(cell(game.tournament_id ? groupName(game) : ''));
     for (const name of names) {
       const participant = byName.get(name);
       const td = cell(participant ? formatPoints(participant.payout) : '');

@@ -8,8 +8,14 @@ let adminExpires = null;
 
 function toggle(id, yes) { $(id).classList.toggle('hidden', !yes); }
 function note(id, text, bad = false) {
-  $(id).textContent = text;
-  $(id).classList.toggle('admin-error', bad);
+  const el = $(id);
+  if (id === 'admin-status') {
+    el.textContent = bad ? text : '';
+    toggle(id, bad);
+  } else {
+    el.textContent = text;
+  }
+  el.classList.toggle('admin-error', bad);
 }
 function showLogin() {
   toggle('admin-login-panel', true);
