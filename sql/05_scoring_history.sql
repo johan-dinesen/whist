@@ -2,12 +2,9 @@
 -- This script only creates calculated views and one read-only RPC; no existing
 -- games or participants are modified. Safe to re-run.
 --
--- IMPORTANT RULE DISCREPANCY:
--- 9 Halve = 0.50, and doubling each trick -> 10 Halve = 1.00,
--- 11 Halve = 2.00. This follows the general rule, but conflicts
--- with the stated examples 10 Halve = 0.80 and 11 Halve = 1.60.
--- If 0.80/1.60 are intended, clarify the special Halve rule before
--- recording scores as final. All derived results update automatically.
+-- Confirmed scoring: 9 Gode = 0.40; 10 Gode = 0.80; 11 Gode = 1.60.
+-- For Halve, 9 Halve = 0.50; 10 Halve = 1.00; 11 Halve = 2.00.
+-- This calculation is unchanged from v0.1.5.
 
 begin;
 

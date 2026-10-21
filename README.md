@@ -1,69 +1,56 @@
-# Whist v0.1.5: points and game history
+# Whist v0.1.6: tournament notes and Kredsspil
 
-This package extends the **working v0.1.4** registration app. It retains anonymous sessions, the shared 30-day password, the existing `games` and `game_participants` tables, automatic submission timestamps, and scroll-to-next-step behavior.
+This is an incremental update to v0.1.5. The scoring rules, the shared password, 30-day authorization, and automatic timestamps have not changed. **9 Gode = 0.40; 9 Halve = 0.50; each additional trick doubles the value.**
 
-## Install on an existing GitHub Pages Whist repository
+## Deploy to your existing GitHub Pages repository
 
-**1. Keep your own `assets/js/config.js` unchanged.** The ZIP contains `config.example.js` only; do not upload it as `config.js` or overwrite your real credentials.
+1. In Supabase → SQL Editor run **`sql/06_tournament_notes.sql`**. This assumes `05_scoring_history.sql` was already run. The migration does not delete or rewrite old games. You do not need to rerun 01, 02, 04 or 05.
+2. Replace `index.html`, `historik.html`, `assets/css/app.css`, `assets/js/app.js`, and `assets/js/history.js` in the repository. Nothing else needs replacing. Commit/push and hard-refresh the website; check for `v0.1.6` in both pages.
+3. **Preserve `assets/js/config.js` and the Supabase keys you already configured**. This ZIP deliberately contains only `assets/js/config.example.js`, not your real config.
+4. The v0.1.5 `assets/js/scoring.js` remains unchanged. It is included so a fresh installation has all frontend dependencies.
 
-**2. Run `sql/05_scoring_history.sql` once in Supabase → SQL Editor.** You must already have run the previous `01_schema.sql` and `04_shared_password.sql`. This migration is non-destructive and safe to re-run. It creates:
+## Classification of games
 
-- `public.game_player_payouts`: one calculated payout row per player per game.
-- `public.game_history`: one row per game, with named caller(s), partner, all four participants and their payout values in JSON, including past games.
-- `public.get_game_history(...)`: read-only API for filtering by date, guest participation and optional tournament ID. Only accessible to anonymous browser sessions that have been unlocked by the shared password and are still within the 30-day window.
+`public.tournaments` now has these five named groupings: Slettestrand 2023, Hals 2024, Helsinki 2024, Hals 2025 and Klitmøller 2026. **Kredsspil** is not a database tournament row; it means a game where `public.games.tournament_id IS NULL`. Every existing game retains its current tournament assignment. The SQL creates missing group names with no invented start/end dates.
 
-**3. Copy the following files to the same paths in your GitHub repository:**
+**Registration:** A compact “Spilsamling” setting appears above the players. When a tournament is marked `is_active=true`, that tournament is automatically selected. You can tap **Kredsspil** for an ordinary game. The selection persists when you press “Registrer næste spil” on the same page, but not indefinitely across browsers. The selected grouping is shown in the review before submission. With no active tournament, the only option is Kredsspil. The game timestamp is still captured automatically when submitting.
 
-- `index.html` (updated review section and new Historik link)
-- `historik.html` (new history page)
-- `assets/css/app.css` (updated CSS for both pages)
-- `assets/js/app.js` (updated registration form showing estimated payouts)
-- `assets/js/scoring.js` (**new required file**, used by both pages)
-- `assets/js/history.js` (**new required file**, loads live calculated payouts)
+**Historik:** No date fields or date column. Click one note to isolate it, then click another to include both. “Alle” resets the filter to all notes, including Kredsspil. “Medtag gæstespil” still toggles guest-game inclusion, adding guest-name columns to the right. “Note” appears only when all or multiple notes are displayed; it is hidden for a single selected note to conserve space. The table has sticky column headings inside a vertically and horizontally scrollable region, compact payout columns, and alternating row colors. The call label uses `9Alm♦` rather than `9Almindelig ♦`, and the result heading is shortened to `Res.`. The table loads 250 games at a time, with an **Indlæs flere spil** button to support large imports.
 
-You may also commit `sql/05_scoring_history.sql` and `tests/` to keep the migration and tests versioned. **Never overwrite your existing `config.js` or rerun the old schema/seed files.**
+## Turning an active tournament on or off
 
-**4. Commit, push, and hard-refresh GitHub Pages.** The website should say `v0.1.5` and show links to **Registrering** and **Historik**. Example history URL: `https://YOURUSERNAME.github.io/whist-registration/historik.html`.
-
-**5. Test:** Register a test game, check that the registration review shows the point distribution, then open Historik. On a device with existing valid 30-day access, history opens immediately. Otherwise enter the same shared password once. SQL verification:
+In Supabase SQL Editor, to activate Klitmøller 2026:
 
 ```sql
-select id, call_type, played_at, callers, partners, payout_sum, participants
-from public.game_history
-order by played_at desc limit 10;
-
-select game_id, sum(payout) as total
-from public.game_player_payouts
-group by game_id
-having sum(payout) <> 0;
+begin;
+update public.tournaments set is_active = false where is_active;
+update public.tournaments set is_active = true where name = 'Klitmøller 2026';
+commit;
 ```
 
-The second query should return **zero rows**, because each game's winnings and losses must sum to zero. If it doesn't, investigate the affected game before relying on statistics.
+A unique index ensures at most one tournament is active. We do **not** automatically activate Klitmøller 2026 merely because it appears in the seed; you decide when the tournament is actually happening. To end the active tournament:
 
-## Scoring rules implemented
+```sql
+update public.tournaments set is_active = false where is_active;
+```
 
-### Almindelig / Gode / Halve / Vip
+When none is active, the form defaults to Kredsspil. Activating/deactivating a tournament never reclassifies previously saved games. Older games can later be imported with an explicit tournament ID, not inferred from timestamps. To inspect the notes and assignment counts:
 
-At 9 tricks, base points are respectively `0.30 / 0.40 / 0.50 / 0.60`. For each trick increase from 9, double the base value. For a score of `0`, take the base; `+n` multiplies by `1 + n/2`; `-n` multiplies by `-(1 + (n-1)/2)` (where `n >= 1`). Vip additionally multiplies by `vip_depth`.
+```sql
+select name, is_active from public.tournaments order by name;
 
-Caller and partner each receive the signed value, and the two opponents each receive its negative. Historic self-partner records are handled as a **one-person team receiving 3V** against three players receiving `-V`, ensuring zero-sum accounting.
+select coalesce(t.name, 'Kredsspil') as note, count(*) as games
+from public.games g
+left join public.tournaments t on t.id = g.tournament_id
+group by t.name order by t.name;
+```
 
-**A discrepancy in the provided specification must be resolved before treating the scores as final:** `9Halve=0.50` plus doubling at each trick implies `10Halve=1.00` and `11Halve=2.00`, whereas the message also gives `10Halve=0.80` and `11Halve=1.60`. This implementation uses the doubling rule. If the latter examples are intentional, change the rule centrally in SQL and in `assets/js/scoring.js` after agreement. Calculated history will update automatically.
+## Notes on historical imports
 
-### Sol / Ren Sol / Bordlægger / Ren Bordlægger
+When we import your legacy games, each game's source file/tournament can be mapped explicitly to the corresponding `tournaments.id`, even if its recorded timestamp is incomplete or unusual. This is safer than guessing tournament membership from a date range, and it leaves Kredsspil distinct. Existing games with `tournament_id=NULL` will show under Kredsspil. If any were accidentally recorded there while a tournament was running, they can be reassigned deliberately later, but nothing in this migration does that automatically.
 
-Values are `0.30 / 0.60 / 1.20 / 2.40`. Each caller independently wins `+V` (if the result starts with `Vundet`) or loses `-V` (if `Tabt`), and transfers the opposite amount in three equal parts to the other players. All callers' transfers are added. Two successful Sol callers each get `+0.20`, and the other two get `-0.20`. A successful caller and a losing caller get `+0.40 / -0.40`, with `0` for the other players.
+## Security and testing
 
-The underlying database labels are preserved (`bordlaegger` / `ren_bordlaegger`), to remain compatible with previously registered games.
+The SQL creates `get_game_history_for_notes()`, a paginated read-only RPC that enforces the existing 30-day authorization through `is_registrar()`. It leaves all raw table write restrictions in place. Players and current active groupings are readable to anonymous authenticated sessions so the registration form can be filled before the shared password is entered. No password is embedded in the site.
 
-## History filters and guest columns
-
-The history page supports **inclusive from/to dates**, which makes it possible to isolate a tournament based on its dates later without changing how games are registered. The database RPC also accepts an optional `p_tournament_id` for future use.
-
-With **Medtag gæstespil** unchecked, only games involving the regular players are shown. Enabling it includes games with guests and adds guest-name columns on the right. Games not involving a particular player have a blank cell. The history page shows up to 500 latest matching games for responsiveness; the RPC supports a larger maximum of 2,000.
-
-## Security and verification
-
-The new history RPC enforces the existing 30-day shared-password authorization on the server, and the calculated views are not granted directly to the browser. No service-role or private key should appear in GitHub. The point-preview is only a client-side display; **Supabase's database views are the canonical calculation**.
-
-The JavaScript scoring module is covered by `npm test` (Node.js required). There is no connection from this ZIP to your live Supabase project; the migration has not been applied to or executed against your hosted database. Browser-based end-to-end testing was not possible in the build environment, so verify one live game before relying on the history.
+Run `npm test` in this folder to test scoring and form behavior. SQL syntax and integration should be verified in your actual Supabase project before depending on them. This environment does not have credentials for the hosted database.

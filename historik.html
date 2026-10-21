@@ -18,9 +18,9 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Spilhistorik</h1>
-        <p class="intro">Point beregnes automatisk ud fra de gemte spil. Datoer kan senere bruges til at afgrænse turneringer.</p>
+        <p class="intro">Vælg én eller flere spilsamlinger. Point beregnes automatisk ud fra de gemte spil.</p>
       </div>
-      <span class="version">v0.1.5</span>
+      <span class="version">v0.1.6</span>
     </div>
     <p id="history-status" class="notice notice-warning" role="status" aria-live="polite">Opretter forbindelse til Supabase ...</p>
     <section id="unlock-history" class="panel hidden" aria-labelledby="unlock-title">
@@ -35,13 +35,14 @@
     </section>
     <section id="history-content" class="hidden">
       <section class="panel" aria-label="Filtre">
+        <h2>Spilsamlinger</h2>
+        <p class="muted">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
+        <div id="note-options" class="note-options" role="group" aria-label="Vælg spilsamlinger"></div>
         <div class="history-controls">
-          <label class="field"><span class="field-label">Fra dato</span><input type="date" id="from-date"></label>
-          <label class="field"><span class="field-label">Til dato</span><input type="date" id="to-date"></label>
           <label class="toggle"><input type="checkbox" id="include-guests"><span>Medtag gæstespil</span></label>
-          <button class="button primary" id="refresh-history" type="button">Vis spil</button>
+          <button class="button secondary" id="refresh-history" type="button">Opdatér historik</button>
         </div>
-        <p class="muted" style="font-size:12px;margin-top:12px">Datoerne er inklusive. Uden gæstespil vises kun spil med fire faste spillere. Tabellen kan scrolles vandret på mobil.</p>
+        <p class="muted history-help">Uden gæstespil vises kun spil med fire faste spillere. Tabellen kan scrolles vandret på mobil. Kolonneoverskrifterne bliver stående, når du scroller i tabellen.</p>
       </section>
       <section class="panel" aria-label="Historiktabel">
         <h2>Registrerede spil</h2>
@@ -52,10 +53,11 @@
             <tbody id="history-body"></tbody>
           </table>
         </div>
+        <button class="button secondary load-more-button hidden" id="load-more-history" type="button">Indlæs flere spil</button>
       </section>
     </section>
   </main>
   <footer class="shell footer">Whist · Historik og pointfordeling</footer>
-  <script type="module" src="assets/js/history.js?v=0.1.5"></script>
+  <script type="module" src="assets/js/history.js?v=0.1.6"></script>
 </body>
 </html>

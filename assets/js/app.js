@@ -21,6 +21,9 @@ const previewMode = new URLSearchParams(location.search).has('preview');
 let supabase = null;
 let accessUntil = null;
 let players = [];
+let activeTournament = null;
+// The choice persists when registering the next game on the same page.
+let scopeMode = 'active';
 
 let requestId = null;
 let submissionTime = null; // Device timestamp captured on final write attempt.
@@ -79,6 +82,27 @@ function buttons(id, opts, selected, onClick, options = {}) {
     root.append(b);
   }
 }
+function selectedScopeId() {
+  return scopeMode === 'active' && activeTournament ? activeTournament.id : null;
+}
+function scopeLabel() {
+  return selectedScopeId() ? activeTournament.name : 'Kredsspil';
+}
+function renderScope() {
+  const choices = [['kredsspil', 'Kredsspil']];
+  if (activeTournament) choices.push(['active', activeTournament.name]);
+  buttons('scope-options', choices, value =>
+    value === 'kredsspil' ? !selectedScopeId() : Boolean(selectedScopeId()), value => {
+      scopeMode = value;
+      // A failed save retried with a new category must use a new request ID.
+      requestId = null;
+      submissionTime = null;
+      render();
+    });
+  $('scope-hint').textContent = activeTournament
+    ? `Aktiv turnering: ${activeTournament.name}. Kredsspil kan vælges for enkelte spil.`
+    : 'Ingen aktiv turnering er valgt i Supabase. Nye spil gemmes som Kredsspil.';
+}
 function renderPlayers() {
   let available = players.filter(p => p.active && (!p.is_guest || $('show-guests').checked));
   available.sort((a,b) => a.display_name.localeCompare(b.display_name,'da'));
@@ -92,6 +116,7 @@ function renderPlayers() {
   $('player-count').textContent = `${s.playerIds.length} / 4`;
 }
 function render() {
+  renderScope();
   renderPlayers();
   const full = s.playerIds.length === 4;
   show('call-step', full);
@@ -151,6 +176,7 @@ function renderResult() {
 }
 function renderReview() {
   const fields = [
+    ['Spilsamling', scopeLabel()],
     ['Spillere', s.playerIds.map(getName).join(', ')],
     ['Melding', labelFrom(CALLS,s.callType)],
     ['Melder', s.callerIds.map(getName).join(', ')]
@@ -240,7 +266,7 @@ async function saveGame() {
     submissionTime = new Date().toISOString();
   }
   const participants=s.playerIds.map((id,i)=>({player_id:id,seat:i+1,is_caller:s.callerIds.includes(id),is_partner:!isSolo()&&s.partnerId===id,solo_result:isSolo()?s.soloResults[id]??null:null}));
-  const params={p_request_id:requestId,p_tournament_id:null,p_played_at:submissionTime,p_call_type:s.callType,
+  const params={p_request_id:requestId,p_tournament_id:selectedScopeId(),p_played_at:submissionTime,p_call_type:s.callType,
     p_tricks:isSolo()?null:s.tricks,p_vip_depth:s.callType==='vip'?s.vipDepth:null,p_trump:isSolo()?null:s.trump,
     p_score:isSolo()?null:s.score,p_participants:participants};
   message('save-message','Gemmer spillet ...');
@@ -260,6 +286,7 @@ function showDemo(reason) {
   players=names.map((name,i)=>({id:`demo-${i}`,display_name:name,is_guest:i>=6,active:true}));
   s.playerIds=players.filter(p=>selectedNames.includes(p.display_name)).map(p=>p.id);
   canSave=false;
+  activeTournament=null;
   $('configuration-message').textContent=reason;
   show('configuration-message',true);
   render();
@@ -271,6 +298,12 @@ async function loadData() {
     .select('id,display_name,is_guest,active').eq('active',true).order('display_name');
   if(error)throw error;
   if(!data?.length)throw new Error('Ingen spillere i Supabase. Kontrollér players-tabellen, 02_seed.sql og adgangspolitikker.');
+  const {data:groups,error:groupsError} = await supabase.from('tournaments')
+    .select('id,name,is_active').order('name');
+  if (groupsError) throw new Error(`Kunne ikke hente spilsamlinger: ${groupsError.message}. Kør sql/06_tournament_notes.sql i Supabase.`);
+  const active = (groups ?? []).filter(t => t.is_active);
+  if (active.length > 1) throw new Error('Flere turneringer er markeret aktive i Supabase.');
+  activeTournament = active[0] ?? null;
   // Preserve in-progress selections when demo IDs switch to real UUIDs.
   // Every game submitted later must use the live player IDs from Supabase.
   const oldNames=new Map(players.map(p=>[p.id,p.display_name]));
