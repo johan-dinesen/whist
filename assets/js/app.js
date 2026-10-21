@@ -31,6 +31,24 @@ const s = {
 };
 
 
+// Advance only when a user selection actually reveals the next section.
+// Matches the previous form's smooth, centered step-by-step scrolling.
+let pendingStepScroll = null;
+function scrollToStep(id) {
+  if (pendingStepScroll !== null) clearTimeout(pendingStepScroll);
+  pendingStepScroll = setTimeout(() => {
+    pendingStepScroll = null;
+    const element = $(id);
+    if (!element || element.classList.contains('hidden')) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    element.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'center'});
+  }, 100);
+}
+function renderAndAdvance(id) {
+  const wasHidden = $(id).classList.contains('hidden');
+  render();
+  if (wasHidden && !$(id).classList.contains('hidden')) scrollToStep(id);
+}
 function show(id, visible) { $(id).classList.toggle('hidden', !visible); }
 function labelFrom(list, value) { return list.find(a => a[0] === value)?.[1] ?? String(value ?? ''); }
 function getName(id) { return players.find(p => p.id === id)?.display_name ?? 'Ukendt spiller'; }
@@ -67,7 +85,7 @@ function renderPlayers() {
     id=>s.playerIds.includes(id), id=>{
       if (s.playerIds.includes(id)) s.playerIds = s.playerIds.filter(x=>x!==id);
       else if (s.playerIds.length < 4) s.playerIds.push(id);
-      resetFrom(1); render();
+      resetFrom(1); renderAndAdvance('call-step');
     }, { guest: id=>players.find(p=>p.id===id)?.is_guest,
       disabled: id=>s.playerIds.length===4 && !s.playerIds.includes(id) });
   $('player-count').textContent = `${s.playerIds.length} / 4`;
@@ -77,14 +95,14 @@ function render() {
   const full = s.playerIds.length === 4;
   show('call-step', full);
   if (!full) { ['caller-step','tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
-  buttons('call-options', CALLS, v=>s.callType===v, v=>{s.callType=v;resetFrom(2);render();});
+  buttons('call-options', CALLS, v=>s.callType===v, v=>{s.callType=v;resetFrom(2);renderAndAdvance('caller-step');});
   show('caller-step', Boolean(s.callType));
   if (!s.callType) { ['tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
   $('caller-help').textContent = isSolo() ? 'Vælg én eller flere meldere.' : 'Vælg én melder.';
   buttons('caller-options', sortedChosen().map(p=>[p.id,p.display_name]), id=>s.callerIds.includes(id), id=>{
     if (isSolo()) s.callerIds = s.callerIds.includes(id) ? s.callerIds.filter(x=>x!==id) : [...s.callerIds,id];
     else s.callerIds=[id];
-    resetFrom(3);render();
+    resetFrom(3);renderAndAdvance(isSolo() ? 'result-step' : 'tricks-step');
   });
   const hasCaller = s.callerIds.length > 0;
   show('tricks-step', hasCaller && !isSolo());
@@ -93,11 +111,11 @@ function render() {
   show('trump-step', !isSolo() && canTrump);
   show('partner-step', !isSolo() && canTrump && Boolean(s.trump));
   if (!isSolo() && hasCaller) {
-    buttons('tricks-options', [9,10,11,12,13].map(x=>[x,String(x)]),v=>s.tricks===v,v=>{s.tricks=v;resetFrom(4);render();});
-    buttons('vip-options', [1,2,3].map(x=>[x,String(x)]),v=>s.vipDepth===v,v=>{s.vipDepth=v;resetFrom(5);render();});
+    buttons('tricks-options', [9,10,11,12,13].map(x=>[x,String(x)]),v=>s.tricks===v,v=>{s.tricks=v;resetFrom(4);renderAndAdvance(s.callType==='vip' ? 'vip-step' : 'trump-step');});
+    buttons('vip-options', [1,2,3].map(x=>[x,String(x)]),v=>s.vipDepth===v,v=>{s.vipDepth=v;resetFrom(5);renderAndAdvance('trump-step');});
     const options = s.callType==='gode' ? TRUMPS.filter(a=>['clubs','no_trump'].includes(a[0])) : TRUMPS;
-    buttons('trump-options',options,v=>s.trump===v,v=>{s.trump=v;resetFrom(6);render();});
-    buttons('partner-options',sortedChosen().map(p=>[p.id,p.display_name]),v=>s.partnerId===v,v=>{s.partnerId=v;resetFrom(7);render();});
+    buttons('trump-options',options,v=>s.trump===v,v=>{s.trump=v;resetFrom(6);renderAndAdvance('partner-step');});
+    buttons('partner-options',sortedChosen().map(p=>[p.id,p.display_name]),v=>s.partnerId===v,v=>{s.partnerId=v;resetFrom(7);renderAndAdvance('result-step');});
   }
   const canResult = isSolo() ? hasCaller : Boolean(s.partnerId);
   show('result-step', canResult);
@@ -112,7 +130,7 @@ function renderResult() {
   if (!isSolo()) {
     $('result-options').style.display='grid';
     $('result-help').textContent='Vælg resultat fra +4 til −7.';
-    buttons('result-options', SCORES.map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;submissionTime=null;render();});
+    buttons('result-options', SCORES.map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;submissionTime=null;renderAndAdvance('review-panel');});
     return;
   }
   $('result-help').textContent='Vælg udfald for hver melder.';
@@ -125,7 +143,7 @@ function renderResult() {
     for (const result of results) {
       const b=document.createElement('button'); b.type='button';b.className='choice';b.textContent=result;
       b.setAttribute('aria-pressed',String(s.soloResults[id]===result));
-      b.addEventListener('click',()=>{s.soloResults[id]=result;requestId=null;submissionTime=null;render();});opts.append(b);
+      b.addEventListener('click',()=>{s.soloResults[id]=result;requestId=null;submissionTime=null;renderAndAdvance('review-panel');});opts.append(b);
     }
     wrap.append(opts);root.append(wrap);
   }
@@ -145,6 +163,8 @@ function renderReview() {
     const dd=document.createElement('dd');dd.textContent=value;root.append(dt,dd);});
 }
 function newGame() {
+  if (pendingStepScroll !== null) clearTimeout(pendingStepScroll);
+  pendingStepScroll = null;
   s.playerIds=[];resetFrom(1);
   $('show-guests').checked=false;
   message('save-message','');
