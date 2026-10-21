@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.2">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.3">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.2</span>
+      <span class="version">v0.2.3</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -49,16 +49,35 @@
         <div id="stats-lower" class="stats-lower"></div>
       </div>
       <div id="chart-view" class="hidden" aria-label="Pointdiagram med positive og negative nettopoint">
-        <p class="chart-explanation">Nettopoint for hver spiller på samme skala. Søjler over nul er gevinster; søjler under nul er tab.</p>
         <div class="rank-bar-scroll" tabindex="0" role="region" aria-label="Søjlediagram, rul vandret for flere spillere">
           <div id="rank-bar-chart" class="rank-bar-chart"></div>
         </div>
         <p class="rank-chart-scroll-tip">Rul vandret for at se alle spillere.</p>
       </div>
     </section>
+    <section class="panel metrics-panel" aria-labelledby="metrics-title">
+      <div class="ranking-head">
+        <div><h2 id="metrics-title">Meldingsstatistik</h2><p class="rank-subtitle">Beregnet for de samme spilsamlinger og gæstevalg som Stillingen.</p></div>
+      </div>
+      <p id="metrics-state" class="ranking-empty" role="status">Indlæser statistik …</p>
+      <div id="metrics-content" class="hidden">
+        <div class="metric-table-scroll" tabindex="0" role="region" aria-label="Spillerstatistik, rul vandret for flere målinger">
+          <table class="metric-table" id="metric-table">
+            <thead><tr id="metric-head"><th scope="col">Spiller</th></tr></thead>
+            <tbody id="metric-body"></tbody>
+          </table>
+        </div>
+        <p id="metrics-legacy-note" class="metric-legacy-note hidden"></p>
+        <p class="metric-footnote">Procenter er andele af egne meldinger. Stikafvigelser beregnes kun, når antal stik er kendt.</p>
+        <details class="metric-help">
+          <summary>Sådan beregnes statistikken</summary>
+          <dl id="metric-definitions"></dl>
+        </details>
+      </div>
+    </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
-  <script type="module" src="assets/js/stats.js?v=0.2.2"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.3"></script>
 </body>
 </html>

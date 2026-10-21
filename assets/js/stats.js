@@ -2,6 +2,7 @@ import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail} from './stat-metrics.js';
 
 const $ = id => document.getElementById(id);
 const profileCacheVersion = String(Date.now());
@@ -132,6 +133,70 @@ function renderRankings(rows) {
   renderPodium(standings);
   drawBarChart(standings);
 }
+// Independent module: table definitions live in stat-metrics.js, so more
+// statistics can be added without changing the podium or chart renderers.
+function renderMetricDefinitions() {
+  const terms=$('metric-definitions');
+  terms.replaceChildren();
+  for(const metric of METRICS){
+    const dt=document.createElement('dt');dt.textContent=metric.label;
+    const dd=document.createElement('dd');dd.textContent=metric.help;
+    terms.append(dt,dd);
+  }
+}
+function renderMeldingStatistics(raw) {
+  const people=normalizeMeldingStatistics(raw);
+  const state=$('metrics-state');
+  const content=$('metrics-content');
+  const head=$('metric-head');
+  const body=$('metric-body');
+  const legacy=$('metrics-legacy-note');
+  content.classList.toggle('hidden', people.length===0);
+  state.classList.toggle('hidden', people.length!==0);
+  if(!people.length){
+    state.textContent='Ingen spil i de valgte spilsamlinger.';
+    head.replaceChildren();body.replaceChildren();
+    return;
+  }
+  const nameHeading=document.createElement('th');
+  nameHeading.scope='col'; nameHeading.textContent='Spiller';
+  head.replaceChildren(nameHeading);
+  for(const metric of METRICS){
+    const th=document.createElement('th');
+    th.scope='col'; th.textContent=metric.short;
+    th.title=metric.help;
+    th.setAttribute('aria-label',metric.label + '. '+metric.help);
+    head.append(th);
+  }
+  body.replaceChildren();
+  for(const player of people){
+    const tr=document.createElement('tr');
+    const personCell=document.createElement('th');
+    personCell.scope='row'; personCell.className='metric-player';
+    const info=document.createElement('span');info.className='metric-player-info';
+    const name=document.createElement('strong');name.textContent=player.name;
+    const games=document.createElement('small');games.textContent=`${player.games} spil`;
+    info.append(name,games);
+    personCell.append(avatar(player,'metric-player-avatar'),info);
+    tr.append(personCell);
+    for(const metric of METRICS){
+      const td=document.createElement('td');
+      td.textContent=displayMetric(metric,player);
+      td.title=`${metric.label}: ${metricDetail(metric,player)}. ${metric.help}`;
+      td.setAttribute('aria-label',td.title);
+      if(metric.type==='percentage' && player[metric.valueKey]!==null) td.classList.add('metric-percent');
+      if(metric.key==='pointsPerHand'){
+        const v=player.avgPointsPerHand;
+        td.classList.add(v>0?'gain':v<0?'loss':'');
+      }
+      tr.append(td);
+    }
+    body.append(tr);
+  }
+  const unknown=people.reduce((total,p)=>total+p.unknown,0);
+  legacy.classList.toggle('hidden',unknown===0);
+  if(unknown)legacy.textContent=`${unknown} historiske solo-sejre er kun gemt som “Vundet” uden stikantal. De tæller som meldinger, men ikke som under-/præcismeldinger eller i stikafvigelsen.`;
+}
 function changeView(next) {
   view=next;
   for(const button of document.querySelectorAll('[data-stats-view]')){
@@ -145,26 +210,47 @@ async function refresh() {
   const request=++activeRequest;
   $('stats-refresh').disabled=true;
   showError('');
-  // Never display a ranking for old filters while a new selection loads.
+  // Discard old results as soon as the selection changes.
   standings=[];
   $('standings-empty').textContent='Indlæser stilling …';
   $('standings-empty').classList.remove('hidden');
   $('podium-view').classList.add('hidden');
   $('chart-view').classList.add('hidden');
   $('stats-view-toggle').classList.add('hidden');
-  try{
-    const {data,error}=await supabase.rpc('get_standings_for_notes',{
-      ...selectionParams(selectedNotes),
-      p_include_guests:$('stats-include-guests').checked
-    });
-    if(request!==activeRequest)return;
-    if(error)throw error;
-    renderRankings(data??[]);
-  }catch(err){if(request===activeRequest){
+  $('metrics-state').textContent='Indlæser statistik …';
+  $('metrics-state').classList.remove('hidden');
+  $('metrics-content').classList.add('hidden');
+  const params={
+    ...selectionParams(selectedNotes),
+    p_include_guests:$('stats-include-guests').checked
+  };
+  // Read the two independent modules in parallel. A problem in one should
+  // not prevent the other from loading.
+  const settled=await Promise.allSettled([
+    supabase.rpc('get_standings_for_notes',params),
+    supabase.rpc('get_melding_statistics_for_notes',params)
+  ]);
+  if(request!==activeRequest)return;
+  const errors=[];
+  const [rankingResult, metricResult]=settled;
+  if(rankingResult.status==='fulfilled' && !rankingResult.value.error){
+    try{renderRankings(rankingResult.value.data??[]);}
+    catch(err){errors.push(`Stilling: ${err.message}`);$('standings-empty').textContent='Stillingen kunne ikke indlæses.';}
+  }else{
+    const error=rankingResult.status==='rejected'?rankingResult.reason:rankingResult.value.error;
+    errors.push(`Stilling: ${error.message||String(error)}`);
     $('standings-empty').textContent='Stillingen kunne ikke indlæses.';
-    showError(`Kunne ikke hente stillingen: ${err.message}`);
-  }}
-  finally{if(request===activeRequest)$('stats-refresh').disabled=false;}
+  }
+  if(metricResult.status==='fulfilled' && !metricResult.value.error){
+    try{renderMeldingStatistics(metricResult.value.data??[]);}
+    catch(err){errors.push(`Meldingsstatistik: ${err.message}`);$('metrics-state').textContent='Statistikken kunne ikke indlæses.';}
+  }else{
+    const error=metricResult.status==='rejected'?metricResult.reason:metricResult.value.error;
+    errors.push(`Meldingsstatistik: ${error.message||String(error)}`);
+    $('metrics-state').textContent='Statistikken kunne ikke indlæses.';
+  }
+  if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
+  $('stats-refresh').disabled=false;
 }
 async function init(){
   try{
@@ -190,6 +276,7 @@ async function init(){
     await refresh();
   }catch(err){showError(`Statistik kunne ikke åbnes: ${err.message}`);}
 }
+renderMetricDefinitions();
 $('stats-refresh').addEventListener('click',refresh);
 $('stats-include-guests').addEventListener('change',()=>{
   saveIncludeGuests($('stats-include-guests').checked);
