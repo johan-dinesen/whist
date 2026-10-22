@@ -6,6 +6,7 @@ import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, player
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js';
 import {drawScoreHistory} from './score-history-chart.js';
+import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=0.2.11';
 
 const $ = id => document.getElementById(id);
 const profileCacheVersion = String(Date.now());
@@ -319,6 +320,81 @@ function renderSynergy(raw) {
     body.append(tr);
   }
 }
+// Hænder is independent from standings, Synergi and Meldingsstatistik.
+// Calls (rather than participants) are the observation unit. This matters
+// for Sol, where several people can call in the same physical game.
+function renderHands(raw) {
+  const {players, hands} = normalizeHandsResponse(raw);
+  const state = $('hands-state');
+  const content = $('hands-content');
+  const head = $('hands-head');
+  const body = $('hands-body');
+  head.replaceChildren();
+  body.replaceChildren();
+  content.classList.toggle('hidden', hands.length === 0);
+  state.classList.toggle('hidden', hands.length !== 0);
+  $('hands-count').textContent = hands.length ? `${hands.length} meldingstyper · ${players.length} spillere` : '';
+  if (!hands.length) {
+    state.textContent = 'Ingen meldinger i de valgte spilsamlinger.';
+    return;
+  }
+
+  const first = document.createElement('tr');
+  first.className = 'hands-header-top';
+  const fixedTitles = [['Melding', 'hands-hand'],['Antal', 'hands-total'],['Gns.', 'hands-total']];
+  for (const [label, classname] of fixedTitles) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.rowSpan = 2;
+    th.className = classname;
+    th.textContent = label;
+    first.append(th);
+  }
+  const second = document.createElement('tr');
+  second.className = 'hands-header-sub';
+  for (const player of players) {
+    const th = document.createElement('th');
+    th.scope = 'colgroup';
+    th.colSpan = 2;
+    th.className = 'hands-player-group';
+    th.textContent = player.name;
+    first.append(th);
+    for (const [name, className] of [['Antal', 'hands-player-start'], ['Gns./%', '']]) {
+      const sub = document.createElement('th');
+      sub.scope = 'col';
+      sub.className = className;
+      sub.textContent = name;
+      second.append(sub);
+    }
+  }
+  head.append(first, second);
+
+  for (const hand of hands) {
+    const tr = document.createElement('tr');
+    const label = document.createElement('th');
+    label.scope = 'row';
+    label.className = 'hands-hand';
+    label.textContent = hand.label;
+    tr.append(label);
+    for (const text of [String(hand.count), formatHandAverage(hand.average, hand.isSolo, hand.count)]) {
+      const td = document.createElement('td');
+      td.className = 'hands-total';
+      td.textContent = text;
+      tr.append(td);
+    }
+    for (const [index, p] of hand.byPlayer.entries()) {
+      const count = document.createElement('td');
+      count.className = 'hands-player-start';
+      count.textContent = p.count ? String(p.count) : '—';
+      const mean = document.createElement('td');
+      mean.textContent = formatHandAverage(p.average, hand.isSolo, p.count);
+      mean.title = `${players[index].name}, ${hand.label}: ${p.count} meldinger${p.count ? `, ${mean.textContent} i gennemsnit` : ''}`;
+      tr.append(count, mean);
+    }
+    body.append(tr);
+  }
+}
+
 // Chart.js must be constructed only after its parent tab is visible;
 // otherwise it can measure a zero-width canvas on mobile.
 function mountHistoryChart() {
@@ -383,6 +459,10 @@ async function refresh() {
   $('synergy-state').classList.remove('hidden');
   $('synergy-content').classList.add('hidden');
   $('synergy-count').textContent='';
+  $('hands-state').textContent='Indlæser hænder …';
+  $('hands-state').classList.remove('hidden');
+  $('hands-content').classList.add('hidden');
+  $('hands-count').textContent='';
   historyChart?.destroy();
   historyChart=null;
   historyModel=null;
@@ -398,7 +478,8 @@ async function refresh() {
     supabase.rpc('get_standings_for_notes',params),
     supabase.rpc('get_melding_statistics_for_notes',params),
     supabase.rpc('get_synergy_for_notes',params),
-    supabase.rpc('get_standings_history_for_notes',params)
+    supabase.rpc('get_standings_history_for_notes',params),
+    supabase.rpc('get_hands_statistics_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
@@ -442,6 +523,18 @@ async function refresh() {
     const error=graphResult.status==='rejected'?graphResult.reason:graphResult.value.error;
     errors.push(`Stillingshistorik: ${error.message||String(error)}`);
     $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
+  }
+  const handsResult = settled[4];
+  if (handsResult.status === 'fulfilled' && !handsResult.value.error) {
+    try { renderHands(handsResult.value.data); }
+    catch(err) {
+      errors.push(`Hænder: ${err.message}`);
+      $('hands-state').textContent = 'Hænder kunne ikke indlæses.';
+    }
+  } else {
+    const err = handsResult.status === 'rejected' ? handsResult.reason : handsResult.value.error;
+    errors.push(`Hænder: ${err?.message || String(err)}`);
+    $('hands-state').textContent = 'Hænder kunne ikke indlæses.';
   }
   if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
   $('stats-refresh').disabled=false;

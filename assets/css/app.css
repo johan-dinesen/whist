@@ -443,3 +443,43 @@
   .metric-column-player .metric-player-avatar{width:25px;height:25px}
   .metric-column-player strong{font-size:11px}
 }
+
+
+/* v0.2.11: Hænder. Compact, two-tier headers and player-pair columns. */
+.hands-panel{padding-bottom:20px}
+.hands-scroll{width:100%;max-height:min(76vh,720px);overflow:auto;overscroll-behavior:contain;border:1px solid #34495d;border-radius:10px;background:#121e2b;scrollbar-color:#466780 #142330}
+.hands-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.hands-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums}
+.hands-table th,.hands-table td{border-bottom:1px solid #2c3c4f;border-right:1px solid #2b3d50;text-align:center;padding:7px 7px;line-height:1.3}
+.hands-table tr>*:last-child{border-right:0}
+.hands-table tbody tr:last-child>*{border-bottom:0}
+.hands-table thead tr.hands-header-top{height:38px}
+.hands-table thead tr.hands-header-sub{height:29px}
+.hands-table thead th{background:#263b4d;color:#eaf5fc;font-weight:750}
+.hands-table thead tr.hands-header-top th{position:sticky;top:0;z-index:4}
+.hands-table thead tr.hands-header-sub th{position:sticky;top:38px;z-index:3;background:#203347;font-size:10px;color:#bcd2e1}
+.hands-table thead th.hands-hand{z-index:7!important}
+.hands-table tbody tr:nth-child(odd){background:#162431}
+.hands-table tbody tr:nth-child(even){background:#1b2b3a}
+.hands-table tbody tr:hover{background:#284058}
+.hands-table .hands-hand{min-width:86px;font-weight:750;text-align:left;padding-left:10px;position:sticky;left:0;z-index:2;background:#203246}
+.hands-table tbody tr:nth-child(even) .hands-hand{background:#1e2e40}
+.hands-table tbody tr:hover .hands-hand{background:#284058}
+.hands-table .hands-total{min-width:55px;background:rgba(66,94,121,.13);font-weight:700}
+.hands-table tbody .hands-total{color:#d9eaf6}
+.hands-table .hands-player-group{min-width:124px;text-align:center;border-left:1px solid #455e75}
+.hands-table .hands-player-start{border-left:1px solid #455e75}
+.hands-table tbody td:not(.hands-total){min-width:58px}
+.hands-table .metric-help p,.hands-panel .metric-help p{color:var(--muted);font-size:12px;margin:9px 0 0;line-height:1.55}
+@media(max-width:620px){
+  .hands-panel{padding:16px 10px 19px}
+  .hands-table{font-size:11px}
+  .hands-table th,.hands-table td{padding:6px 5px}
+  .hands-table .hands-hand{min-width:76px;padding-left:7px}
+  .hands-table .hands-total{min-width:43px}
+  .hands-table .hands-player-group{min-width:102px}
+  .hands-table tbody td:not(.hands-total){min-width:51px}
+  .hands-table thead tr.hands-header-top{height:34px}
+  .hands-table thead tr.hands-header-sub{height:26px}
+  .hands-table thead tr.hands-header-sub th{top:34px}
+}

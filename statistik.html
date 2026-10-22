@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.10">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.11">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.10</span>
+      <span class="version">v0.2.11</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -103,10 +103,31 @@
         </details>
       </div>
     </section>
+    <section class="panel hands-panel" aria-labelledby="hands-title">
+      <div class="ranking-head">
+        <div>
+          <h2 id="hands-title">Hænder</h2>
+          <p id="hands-count" class="rank-subtitle" aria-live="polite"></p>
+        </div>
+      </div>
+      <p id="hands-state" class="ranking-empty" role="status">Indlæser hænder …</p>
+      <div id="hands-content" class="hidden">
+        <div class="hands-scroll" tabindex="0" role="region" aria-label="Oversigt over meldinger, antal og gennemsnit fordelt på spillere. Rul vandret for flere spillere.">
+          <table id="hands-table" class="hands-table">
+            <thead id="hands-head"></thead>
+            <tbody id="hands-body"></tbody>
+          </table>
+        </div>
+        <details class="metric-help">
+          <summary>Sådan beregnes Hænder</summary>
+          <p>Antal er antallet af meldinger. For Alm, Gode, Halve og Vip er Gns. det gennemsnitlige resultat i stik med fortegn. For Sol og Bordlægger er Gns./% andelen af vundne meldinger. Ved flere samtidige solomeldere tæller hver melders melding separat.</p>
+        </details>
+      </div>
+    </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=0.2.10"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.11"></script>
 </body>
 </html>
