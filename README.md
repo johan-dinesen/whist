@@ -1,26 +1,35 @@
-# Whist v0.2.8 — Meldingsstatistik: gennemsnit og afvigelser
+# Whist v0.2.9: relativ afvigelse uden layoutskift
 
-Dette er en frontend-opdatering oven på v0.2.7. Ingen SQL-migration.
+Dette er en **frontend-opdatering** til v0.2.8. Ingen databaseændringer og ingen SQL-migration.
 
-## Ændringer
+## Opdaterede beregninger
 
-1. **Meldinger** er nu en procentdel: `100 × antal egne meldinger / antal spillede hænder`.
-2. Den øverste række **Gennemsnit** viser det aritmetiske gennemsnit af de individuelle spilleres statistik. Hver spiller vægtes lige meget, uanset antal spillede hænder. Spillere uden en defineret måling i en given kolonne (fx Under uden nogen meldinger) medtages ikke i den kolonnes gennemsnit; deres celle vises som `—`.
-3. Knappen **Vis afvigelse** til højre for overskriften skifter mellem faktiske spillerresultater og forskelle fra spillergennemsnittet. I afvigelsesvisningen forbliver gennemsnitsrækken i faktiske tal, så den fungerer som reference.
-4. Procentkolonner (Meldinger, Under, Over og Præcis) viser forskellen i **procentpoint (pp)**, fx `+12,3 pp`. Stikafvigelse, absolut stikafvigelse og point pr. spil viser forskellen i deres normale enheder, fx `−0,25`.
-5. Tabellen følger som før Spilsamlinger, gæstespil og alfabetisk spillerrækkefølge. Podie, Pointdiagram, Stillingshistorik, Synergi og de bagvedliggende SQL-beregninger er uændrede.
+I Meldingsstatistik bruger **Vis afvigelse** nu præcis:
 
-## Opdater disse fire filer i GitHub
+`100 * |spillerens værdi - gennemsnittet| / gennemsnittet`
+
+- Alle syv statistikker vises som procent ved aktivering af **Vis afvigelse**. Ingen procentpoint eller numeriske differencer.
+- Gennemsnit-rækken viser fortsat de absolutte gennemsnitsværdier som reference.
+- Hvis gennemsnittet er 0 eller praktisk taget 0, vises `—`, da forholdet ikke er defineret.
+- Ved **negative** gennemsnit bliver det matematiske resultat negativt, fordi nævneren ikke er taget i absolutværdi. Hvis der i stedet ønskes altid positive afvigelser, skal nævneren være `|gennemsnit|`. Denne version følger den angivne formel bogstaveligt.
+
+## Layout
+
+Den forklarende linje under Vis afvigelse er fjernet helt fra HTML, ikke kun skjult. Dermed bliver tabellens lodrette placering uændret, når visningen skiftes.
+
+## Installer
+
+Opdatér kun disse fire filer i GitHub:
 
 - `statistik.html`
 - `assets/js/stats.js`
 - `assets/js/stat-metrics.js`
 - `assets/css/app.css`
 
-Behold `assets/js/config.js` og resten af filerne. Commit og push, og genindlæs siden. Versionsnummeret er `v0.2.8`.
+Behold alle andre filer, især `assets/js/config.js`. Commit/push og genindlæs Statistik. Versionsnummeret er `v0.2.9`.
 
-## Verifikation
+## Test
 
-- JavaScript-syntaks for `stats.js` og `stat-metrics.js` testet med Node.
-- Enhedstest for procentandel, ligevægtet gennemsnit, procentpointsafvigelser, ingen meldinger og alfabetisk sortering.
-- Chromium-test på 320, 390 og 900 pixels: gennemsnitsrække, knap/toggle, delta-tilstand og layout. Brugte testdata og ikke live Supabase.
+- Node.js-syntaks og beregningstests for positive og negative gennemsnit, nul-gennemsnit og manglende målinger.
+- Browserfixture ved 320, 390 og 900 px bekræfter, at tabellens lodrette position ikke ændres ved klik, og at den ekstra linje er fjernet.
+- Ikke testet mod en live Supabase-instans.

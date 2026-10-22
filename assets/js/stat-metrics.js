@@ -121,18 +121,16 @@ export function displayAverage(metric, means) {
   return metric.type==='percentage' ? `${formatNumber(value,1)} %` : formatNumber(value,2);
 }
 
-// Relative mode means an ADDITIVE difference from the equal-player average.
-// Percentage-based columns use percentage points (pp), not relative % growth.
+// Relative deviation as requested: |player value - player average| / average * 100.
+// A zero average has no defined relative deviation, so render an em dash.
+// For a negative average this signed-denominator formula gives negative percentages.
 export function displayDifference(metric, player, means) {
   const val=metricValue(metric,player);
   const avg=means[metric.key];
-  if(val===null || avg===null)return '—';
-  const digits=metric.type==='percentage'?1:2;
-  const difference=val-avg;
-  const eps=Math.pow(10,-digits)/2;
-  const rounded=Math.abs(difference)<eps?0:difference;
-  const sign=rounded>0?'+':'';
-  return `${sign}${formatNumber(rounded,digits)}${metric.type==='percentage'?' pp':''}`;
+  if(val===null || avg===null || !Number.isFinite(avg) || Math.abs(avg)<1e-12)return '—';
+  const relative=100*Math.abs(val-avg)/avg;
+  if(!Number.isFinite(relative))return '—';
+  return `${formatNumber(relative,1)} %`;
 }
 
 export function metricDetail(metric, player) {

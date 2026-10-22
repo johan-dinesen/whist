@@ -2,7 +2,7 @@ import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.8';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.9';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js';
 import {drawScoreHistory} from './score-history-chart.js';
@@ -158,7 +158,6 @@ function updateMetricModeButton() {
   button.disabled = metricPeople.length === 0;
   button.setAttribute('aria-pressed', String(metricMode === 'difference'));
   button.textContent = metricMode === 'difference' ? 'Vis værdier' : 'Vis afvigelse';
-  $('metric-mode-note').classList.toggle('hidden', metricMode !== 'difference' || !metricPeople.length);
 }
 function renderMetricTable() {
   const people=metricPeople;
@@ -221,8 +220,9 @@ function renderMetricTable() {
         const value=metricValue(metric,player);
         const avg=means[metric.key];
         if(value!==null&&avg!==null){
-          const difference=value-avg;
-          if(Math.abs(difference)>1e-9) td.classList.add(difference>0?'metric-above':'metric-below');
+          // All relative deviations use one neutral style: the displayed result
+          // is an absolute difference divided by the (possibly signed) average.
+          if(avg!==0 && Math.abs(value-avg)>1e-9) td.classList.add('metric-relative');
         }
       }else if(metric.key==='pointsPerHand'){
         const v=player.avgPointsPerHand;

@@ -409,12 +409,10 @@
 .metric-mode-toggle:hover:not(:disabled){border-color:var(--blue);background:#22465f}
 .metric-mode-toggle[aria-pressed="true"]{border-color:var(--blue);background:#123c58;color:#fff}
 .metric-mode-toggle:disabled{opacity:.5;cursor:not-allowed}
-.metric-mode-note{font-size:11px!important;color:var(--muted);margin:4px 0 10px!important}
 .metric-table tbody tr.metric-average-row{background:#253b4d}
 .metric-table tbody tr.metric-average-row th,.metric-table tbody tr.metric-average-row td{border-bottom:2px solid #51718b;color:#f2faff;font-weight:750}
 .metric-table tbody tr.metric-average-row:hover{background:#253b4d}
-.metric-table td.metric-above{color:#d0e8fb;font-weight:750}
-.metric-table td.metric-below{color:#d0e8fb;font-weight:750}
+.metric-table td.metric-relative{color:#d0e8fb;font-weight:750}
 @media(max-width:480px){
   .metric-mode-toggle{font-size:11px;padding:6px 8px;min-height:32px}
   .metrics-panel .ranking-head{gap:6px}
