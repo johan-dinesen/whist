@@ -418,3 +418,28 @@
   .metrics-panel .ranking-head{gap:6px}
   .metrics-panel .ranking-head h2{font-size:18px}
 }
+
+/* v0.2.10: transposed Meldingsstatistik: measures down, players across. */
+.metric-table{width:max-content;min-width:100%;table-layout:auto}
+.metric-table thead th{position:static;text-align:center;vertical-align:middle;min-width:94px;padding:9px 8px}
+.metric-table thead th.metric-heading{min-width:142px;width:142px;text-align:left;padding-left:12px}
+.metric-table tbody th.metric-row-label{position:static;min-width:142px;width:142px;max-width:180px;text-align:left;white-space:normal;line-height:1.25;font-size:12px;font-weight:650;padding:10px 12px}
+.metric-table tbody td{min-width:94px;text-align:center;padding:10px 8px}
+.metric-table thead th.metric-average-column{min-width:105px;background:#30475c;border-left:1px solid #4a6880;border-right:1px solid #4a6880}
+.metric-table tbody td.metric-average-column{background:#253b4d;color:#f2faff;font-weight:750;border-left:1px solid #4a6880;border-right:1px solid #4a6880}
+.metric-header-name{display:block;font-size:12px;font-weight:750}
+.metric-table thead th.metric-average-column small{display:block;font-size:10px;color:#b6c9da;font-weight:500;margin-top:3px}
+.metric-column-player{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0}
+.metric-column-player .metric-player-avatar{width:29px;height:29px;flex:none;margin-bottom:2px}
+.metric-column-player strong{font-size:12px;line-height:1.15;white-space:nowrap}
+.metric-column-player small{font-size:10px;color:#adc1d3;font-weight:500;white-space:nowrap}
+.metric-table tbody td.metric-relative{color:#d0e8fb;font-weight:750}
+@media(max-width:620px){
+  .metric-table{font-size:11px}
+  .metric-table thead th.metric-heading,.metric-table tbody th.metric-row-label{min-width:116px;width:116px;max-width:116px;padding:8px 7px}
+  .metric-table thead th.metric-average-column,.metric-table tbody td.metric-average-column{min-width:84px;padding:8px 5px}
+  .metric-table thead th.metric-player-heading,.metric-table tbody td:not(.metric-average-column){min-width:83px;padding:8px 5px}
+  .metric-table tbody th.metric-row-label{font-size:11px}
+  .metric-column-player .metric-player-avatar{width:25px;height:25px}
+  .metric-column-player strong{font-size:11px}
+}

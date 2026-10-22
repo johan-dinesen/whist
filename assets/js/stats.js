@@ -2,7 +2,7 @@ import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.9';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.10';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js';
 import {drawScoreHistory} from './score-history-chart.js';
@@ -160,73 +160,84 @@ function updateMetricModeButton() {
   button.textContent = metricMode === 'difference' ? 'Vis værdier' : 'Vis afvigelse';
 }
 function renderMetricTable() {
-  const people=metricPeople;
-  const head=$('metric-head');
-  const body=$('metric-body');
-  const means=playerAverages(people);
+  const people = metricPeople;
+  const head = $('metric-head');
+  const body = $('metric-body');
+  const means = playerAverages(people);
+  const relative = metricMode === 'difference';
   updateMetricModeButton();
-  const nameHeading=document.createElement('th');
-  nameHeading.scope='col'; nameHeading.textContent='Spiller';
-  head.replaceChildren(nameHeading);
-  for(const metric of METRICS){
-    const th=document.createElement('th');
-    th.scope='col'; th.textContent=metric.short;
-    th.title=metric.help;
-    th.setAttribute('aria-label',metric.label + '. '+metric.help);
+
+  // Players form the columns. A new metric is therefore just another row.
+  const metricHeading = document.createElement('th');
+  metricHeading.scope = 'col';
+  metricHeading.className = 'metric-heading';
+  metricHeading.textContent = 'Statistik';
+  const avgHeading = document.createElement('th');
+  avgHeading.scope = 'col';
+  avgHeading.className = 'metric-average-column';
+  const avgTitle = document.createElement('span');
+  avgTitle.className = 'metric-header-name';
+  avgTitle.textContent = 'Gennemsnit';
+  const avgSub = document.createElement('small');
+  avgSub.textContent = `${people.length} spillere`;
+  avgHeading.append(avgTitle, avgSub);
+  head.replaceChildren(metricHeading, avgHeading);
+
+  for (const player of people) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.className = 'metric-player-heading';
+    const identity = document.createElement('span');
+    identity.className = 'metric-column-player';
+    const name = document.createElement('strong');
+    name.textContent = player.name;
+    const games = document.createElement('small');
+    games.textContent = `${player.games} spil`;
+    identity.append(avatar(player, 'metric-player-avatar'), name, games);
+    th.append(identity);
     head.append(th);
   }
+
   body.replaceChildren();
-  if(!people.length)return;
-  // First row is the unweighted arithmetic mean of individual player metrics.
-  // It remains an absolute reference even while player rows show differences.
-  const avgRow=document.createElement('tr');
-  avgRow.className='metric-average-row';
-  const avgHeading=document.createElement('th');
-  avgHeading.scope='row';avgHeading.className='metric-player';
-  const avgInfo=document.createElement('span');avgInfo.className='metric-player-info';
-  const avgName=document.createElement('strong');avgName.textContent='Gennemsnit';
-  const avgSub=document.createElement('small');avgSub.textContent=`${people.length} spillere`;
-  avgInfo.append(avgName,avgSub);avgHeading.append(avgInfo);avgRow.append(avgHeading);
-  for(const metric of METRICS){
-    const td=document.createElement('td');
-    td.textContent=displayAverage(metric,means);
-    td.title=`${metric.label}: gennemsnit af spillernes individuelle værdier`;
-    avgRow.append(td);
-  }
-  body.append(avgRow);
-  for(const player of people){
-    const tr=document.createElement('tr');
-    const personCell=document.createElement('th');
-    personCell.scope='row'; personCell.className='metric-player';
-    const info=document.createElement('span');info.className='metric-player-info';
-    const name=document.createElement('strong');name.textContent=player.name;
-    const games=document.createElement('small');games.textContent=`${player.games} spil`;
-    info.append(name,games);
-    const identity=document.createElement('span');identity.className='metric-player-identity';
-    identity.append(avatar(player,'metric-player-avatar'),info);
-    personCell.append(identity);
-    tr.append(personCell);
-    for(const metric of METRICS){
-      const td=document.createElement('td');
-      const relative=metricMode==='difference';
-      td.textContent=relative?displayDifference(metric,player,means):displayMetric(metric,player);
-      const detail=metricDetail(metric,player);
-      td.title=relative
-        ? `${metric.label}: ${detail}. ${td.textContent} i forhold til spillergennemsnittet ${displayAverage(metric,means)}. ${metric.help}`
-        : `${metric.label}: ${detail}. ${metric.help}`;
-      td.setAttribute('aria-label',td.title);
-      if(metric.type==='percentage' && metricValue(metric,player)!==null && !relative)td.classList.add('metric-percent');
-      if(relative){
-        const value=metricValue(metric,player);
-        const avg=means[metric.key];
-        if(value!==null&&avg!==null){
-          // All relative deviations use one neutral style: the displayed result
-          // is an absolute difference divided by the (possibly signed) average.
-          if(avg!==0 && Math.abs(value-avg)>1e-9) td.classList.add('metric-relative');
+  if (!people.length) return;
+  for (const metric of METRICS) {
+    const tr = document.createElement('tr');
+    const title = document.createElement('th');
+    title.scope = 'row';
+    title.className = 'metric-row-label';
+    title.textContent = metric.label;
+    title.title = metric.help;
+    tr.append(title);
+
+    const mean = document.createElement('td');
+    mean.className = 'metric-average-column';
+    mean.textContent = displayAverage(metric, means);
+    mean.title = `${metric.label}: gennemsnit af spillernes individuelle værdier`;
+    tr.append(mean);
+
+    for (const player of people) {
+      const td = document.createElement('td');
+      td.textContent = relative
+        ? displayDifference(metric, player, means)
+        : displayMetric(metric, player);
+      const detail = metricDetail(metric, player);
+      td.title = relative
+        ? `${player.name}, ${metric.label}: ${detail}. ${td.textContent} i forhold til spillergennemsnittet ${displayAverage(metric, means)}. ${metric.help}`
+        : `${player.name}, ${metric.label}: ${detail}. ${metric.help}`;
+      td.setAttribute('aria-label', td.title);
+      if (metric.type === 'percentage' && metricValue(metric, player) !== null && !relative) {
+        td.classList.add('metric-percent');
+      }
+      if (relative) {
+        const value = metricValue(metric, player);
+        const avg = means[metric.key];
+        if (value !== null && avg !== null && Math.abs(avg) >= 1e-12 && Math.abs(value - avg) > 1e-9) {
+          td.classList.add('metric-relative');
         }
-      }else if(metric.key==='pointsPerHand'){
-        const v=player.avgPointsPerHand;
-        td.classList.add(v>0?'gain':v<0?'loss':'');
+      } else if (metric.key === 'pointsPerHand') {
+        const value = player.avgPointsPerHand;
+        if (value > 0) td.classList.add('gain');
+        else if (value < 0) td.classList.add('loss');
       }
       tr.append(td);
     }

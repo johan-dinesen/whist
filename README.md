@@ -1,35 +1,23 @@
-# Whist v0.2.9: relativ afvigelse uden layoutskift
+# Whist v0.2.10 · Meldingsstatistik transponeret
 
-Dette er en **frontend-opdatering** til v0.2.8. Ingen databaseændringer og ingen SQL-migration.
+Frontend-only opdatering. Statistikkerne står nu **ned ad rækkerne**, mens **Gennemsnit** og spillere vises som kolonner. Spillerkolonnerne er sorteret alfabetisk, med gennemsnittet først. Flere statistikker kan senere tilføjes som ekstra rækker ved blot at udvide `METRICS` i `assets/js/stat-metrics.js`.
 
-## Opdaterede beregninger
+**Vis afvigelse** bevarer v0.2.9-beregningen: `100 × |spillerens værdi − gennemsnit| / gennemsnit`. Gennemsnittet forbliver et absolut reference-tal i begge visninger. Ved et gennemsnit på nul vises `—`. Ingen ekstra hjælpetekst dukker op, når visningen skiftes.
 
-I Meldingsstatistik bruger **Vis afvigelse** nu præcis:
+På mindre skærme kan tabellen scrolles vandret. Der er ikke sticky spillerkolonner. Al øvrig statistik, scoring, diagrammer og filtre bevares.
 
-`100 * |spillerens værdi - gennemsnittet| / gennemsnittet`
+## Installation
 
-- Alle syv statistikker vises som procent ved aktivering af **Vis afvigelse**. Ingen procentpoint eller numeriske differencer.
-- Gennemsnit-rækken viser fortsat de absolutte gennemsnitsværdier som reference.
-- Hvis gennemsnittet er 0 eller praktisk taget 0, vises `—`, da forholdet ikke er defineret.
-- Ved **negative** gennemsnit bliver det matematiske resultat negativt, fordi nævneren ikke er taget i absolutværdi. Hvis der i stedet ønskes altid positive afvigelser, skal nævneren være `|gennemsnit|`. Denne version følger den angivne formel bogstaveligt.
-
-## Layout
-
-Den forklarende linje under Vis afvigelse er fjernet helt fra HTML, ikke kun skjult. Dermed bliver tabellens lodrette placering uændret, når visningen skiftes.
-
-## Installer
-
-Opdatér kun disse fire filer i GitHub:
+Udskift disse **tre** filer fra ZIP-arkivet:
 
 - `statistik.html`
 - `assets/js/stats.js`
-- `assets/js/stat-metrics.js`
 - `assets/css/app.css`
 
-Behold alle andre filer, især `assets/js/config.js`. Commit/push og genindlæs Statistik. Versionsnummeret er `v0.2.9`.
+Behold `assets/js/stat-metrics.js`, `assets/js/config.js` og alle andre filer uændrede. **Ingen SQL-migration.**
 
-## Test
+Version i siden: `v0.2.10`.
 
-- Node.js-syntaks og beregningstests for positive og negative gennemsnit, nul-gennemsnit og manglende målinger.
-- Browserfixture ved 320, 390 og 900 px bekræfter, at tabellens lodrette position ikke ændres ved klik, og at den ekstra linje er fjernet.
-- Ikke testet mod en live Supabase-instans.
+## Validering
+
+JavaScript-syntaks, dataformatering, alfabetisk sortering og HTML-konsistens er kontrolleret lokalt. Live Supabase er ikke tilgængelig under udviklingen.

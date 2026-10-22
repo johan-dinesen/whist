@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.9">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.10">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.9</span>
+      <span class="version">v0.2.10</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -72,9 +72,9 @@
       </div>
       <p id="metrics-state" class="ranking-empty" role="status">Indlæser statistik …</p>
       <div id="metrics-content" class="hidden">
-        <div class="metric-table-scroll" tabindex="0" role="region" aria-label="Spillerstatistik, rul vandret for flere målinger">
+        <div class="metric-table-scroll" tabindex="0" role="region" aria-label="Meldingsstatistik med målinger som rækker og spillere som kolonner, rul vandret for flere spillere">
           <table class="metric-table" id="metric-table">
-            <thead><tr id="metric-head"><th scope="col">Spiller</th></tr></thead>
+            <thead><tr id="metric-head"><th scope="col">Statistik</th></tr></thead>
             <tbody id="metric-body"></tbody>
           </table>
         </div>
@@ -107,6 +107,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=0.2.9"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.10"></script>
 </body>
 </html>
