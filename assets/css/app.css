@@ -402,6 +402,21 @@
 /* Stillingshistorik is the third Stilling view, not a separate panel. */
 #score-history-view{margin-top:12px}
 
-.synergy-table tbody th {
-  text-align: center;
+/* v0.2.8: average comparison for Meldingsstatistik. */
+.metrics-panel .ranking-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap}
+.metrics-panel .ranking-head>div{min-width:0}
+.metric-mode-toggle{flex:0 0 auto;align-self:flex-start;min-height:34px;border:1px solid #4a647a;background:#1c3448;color:#e4f3ff;border-radius:8px;font-size:12px;font-weight:700;padding:7px 10px;white-space:nowrap}
+.metric-mode-toggle:hover:not(:disabled){border-color:var(--blue);background:#22465f}
+.metric-mode-toggle[aria-pressed="true"]{border-color:var(--blue);background:#123c58;color:#fff}
+.metric-mode-toggle:disabled{opacity:.5;cursor:not-allowed}
+.metric-mode-note{font-size:11px!important;color:var(--muted);margin:4px 0 10px!important}
+.metric-table tbody tr.metric-average-row{background:#253b4d}
+.metric-table tbody tr.metric-average-row th,.metric-table tbody tr.metric-average-row td{border-bottom:2px solid #51718b;color:#f2faff;font-weight:750}
+.metric-table tbody tr.metric-average-row:hover{background:#253b4d}
+.metric-table td.metric-above{color:#d0e8fb;font-weight:750}
+.metric-table td.metric-below{color:#d0e8fb;font-weight:750}
+@media(max-width:480px){
+  .metric-mode-toggle{font-size:11px;padding:6px 8px;min-height:32px}
+  .metrics-panel .ranking-head{gap:6px}
+  .metrics-panel .ranking-head h2{font-size:18px}
 }

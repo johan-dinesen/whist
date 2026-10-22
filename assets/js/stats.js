@@ -2,7 +2,7 @@ import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail} from './stat-metrics.js';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.8';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js';
 import {drawScoreHistory} from './score-history-chart.js';
@@ -17,6 +17,8 @@ let activeRequest = 0;
 let view = 'podium';
 let historyChart = null;
 let historyModel = null;
+let metricPeople = [];
+let metricMode = 'values';
 
 function showError(message) {
   const node = $('stats-status');
@@ -151,19 +153,19 @@ function renderMetricDefinitions() {
     terms.append(dt,dd);
   }
 }
-function renderMeldingStatistics(raw) {
-  const people=normalizeMeldingStatistics(raw);
-  const state=$('metrics-state');
-  const content=$('metrics-content');
+function updateMetricModeButton() {
+  const button=$('metric-mode-toggle');
+  button.disabled = metricPeople.length === 0;
+  button.setAttribute('aria-pressed', String(metricMode === 'difference'));
+  button.textContent = metricMode === 'difference' ? 'Vis værdier' : 'Vis afvigelse';
+  $('metric-mode-note').classList.toggle('hidden', metricMode !== 'difference' || !metricPeople.length);
+}
+function renderMetricTable() {
+  const people=metricPeople;
   const head=$('metric-head');
   const body=$('metric-body');
-  content.classList.toggle('hidden', people.length===0);
-  state.classList.toggle('hidden', people.length!==0);
-  if(!people.length){
-    state.textContent='Ingen spil i de valgte spilsamlinger.';
-    head.replaceChildren();body.replaceChildren();
-    return;
-  }
+  const means=playerAverages(people);
+  updateMetricModeButton();
   const nameHeading=document.createElement('th');
   nameHeading.scope='col'; nameHeading.textContent='Spiller';
   head.replaceChildren(nameHeading);
@@ -175,6 +177,24 @@ function renderMeldingStatistics(raw) {
     head.append(th);
   }
   body.replaceChildren();
+  if(!people.length)return;
+  // First row is the unweighted arithmetic mean of individual player metrics.
+  // It remains an absolute reference even while player rows show differences.
+  const avgRow=document.createElement('tr');
+  avgRow.className='metric-average-row';
+  const avgHeading=document.createElement('th');
+  avgHeading.scope='row';avgHeading.className='metric-player';
+  const avgInfo=document.createElement('span');avgInfo.className='metric-player-info';
+  const avgName=document.createElement('strong');avgName.textContent='Gennemsnit';
+  const avgSub=document.createElement('small');avgSub.textContent=`${people.length} spillere`;
+  avgInfo.append(avgName,avgSub);avgHeading.append(avgInfo);avgRow.append(avgHeading);
+  for(const metric of METRICS){
+    const td=document.createElement('td');
+    td.textContent=displayAverage(metric,means);
+    td.title=`${metric.label}: gennemsnit af spillernes individuelle værdier`;
+    avgRow.append(td);
+  }
+  body.append(avgRow);
   for(const player of people){
     const tr=document.createElement('tr');
     const personCell=document.createElement('th');
@@ -189,11 +209,22 @@ function renderMeldingStatistics(raw) {
     tr.append(personCell);
     for(const metric of METRICS){
       const td=document.createElement('td');
-      td.textContent=displayMetric(metric,player);
-      td.title=`${metric.label}: ${metricDetail(metric,player)}. ${metric.help}`;
+      const relative=metricMode==='difference';
+      td.textContent=relative?displayDifference(metric,player,means):displayMetric(metric,player);
+      const detail=metricDetail(metric,player);
+      td.title=relative
+        ? `${metric.label}: ${detail}. ${td.textContent} i forhold til spillergennemsnittet ${displayAverage(metric,means)}. ${metric.help}`
+        : `${metric.label}: ${detail}. ${metric.help}`;
       td.setAttribute('aria-label',td.title);
-      if(metric.type==='percentage' && player[metric.valueKey]!==null) td.classList.add('metric-percent');
-      if(metric.key==='pointsPerHand'){
+      if(metric.type==='percentage' && metricValue(metric,player)!==null && !relative)td.classList.add('metric-percent');
+      if(relative){
+        const value=metricValue(metric,player);
+        const avg=means[metric.key];
+        if(value!==null&&avg!==null){
+          const difference=value-avg;
+          if(Math.abs(difference)>1e-9) td.classList.add(difference>0?'metric-above':'metric-below');
+        }
+      }else if(metric.key==='pointsPerHand'){
         const v=player.avgPointsPerHand;
         td.classList.add(v>0?'gain':v<0?'loss':'');
       }
@@ -201,6 +232,15 @@ function renderMeldingStatistics(raw) {
     }
     body.append(tr);
   }
+}
+function renderMeldingStatistics(raw) {
+  metricPeople=normalizeMeldingStatistics(raw);
+  const state=$('metrics-state');
+  const content=$('metrics-content');
+  content.classList.toggle('hidden', metricPeople.length===0);
+  state.classList.toggle('hidden', metricPeople.length!==0);
+  if(!metricPeople.length)state.textContent='Ingen spil i de valgte spilsamlinger.';
+  renderMetricTable();
 }
 function renderSynergy(raw) {
   const {players,matrix,maxAbs,partnershipGames} = normalizeSynergy(raw);
@@ -323,6 +363,8 @@ async function refresh() {
   $('chart-view').classList.add('hidden');
   $('score-history-view').classList.add('hidden');
   $('stats-view-toggle').classList.add('hidden');
+  metricPeople=[];
+  updateMetricModeButton();
   $('metrics-state').textContent='Indlæser statistik …';
   $('metrics-state').classList.remove('hidden');
   $('metrics-content').classList.add('hidden');
@@ -418,6 +460,12 @@ async function init(){
   }catch(err){showError(`Statistik kunne ikke åbnes: ${err.message}`);}
 }
 renderMetricDefinitions();
+updateMetricModeButton();
+$('metric-mode-toggle').addEventListener('click',()=>{
+  if(!metricPeople.length)return;
+  metricMode = metricMode==='values'?'difference':'values';
+  renderMetricTable();
+});
 $('stats-refresh').addEventListener('click',refresh);
 $('stats-include-guests').addEventListener('change',()=>{
   saveIncludeGuests($('stats-include-guests').checked);

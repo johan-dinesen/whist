@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.7</span>
+      <span class="version">v0.2.8</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -68,16 +68,18 @@
     <section class="panel metrics-panel" aria-labelledby="metrics-title">
       <div class="ranking-head">
         <div><h2 id="metrics-title">Meldingsstatistik</h2><p class="rank-subtitle">Beregnet for de samme spilsamlinger og gæstevalg som Stillingen.</p></div>
+        <button id="metric-mode-toggle" class="metric-mode-toggle" type="button" aria-pressed="false" disabled>Vis afvigelse</button>
       </div>
       <p id="metrics-state" class="ranking-empty" role="status">Indlæser statistik …</p>
       <div id="metrics-content" class="hidden">
+        <p id="metric-mode-note" class="metric-mode-note hidden">Afvigelse fra spillergennemsnittet. Procenter vises i procentpoint (pp).</p>
         <div class="metric-table-scroll" tabindex="0" role="region" aria-label="Spillerstatistik, rul vandret for flere målinger">
           <table class="metric-table" id="metric-table">
             <thead><tr id="metric-head"><th scope="col">Spiller</th></tr></thead>
             <tbody id="metric-body"></tbody>
           </table>
         </div>
-        <p class="metric-footnote">Procenter beregnes ud fra alle egne meldinger. Stikafvigelser omfatter kun Almindelig, Gode, Halve og Vip.</p>
+        <p class="metric-footnote">Meldinger er andelen af spillede hænder, hvor spilleren meldte. Under, Over og Præcis er andele af egne meldinger. Gennemsnit er beregnet med samme vægt pr. spiller; manglende målinger indgår ikke. Stikafvigelser omfatter kun Almindelig, Gode, Halve og Vip.</p>
         <details class="metric-help">
           <summary>Sådan beregnes statistikken</summary>
           <dl id="metric-definitions"></dl>

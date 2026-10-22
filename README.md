@@ -1,32 +1,26 @@
-# Whist v0.2.7 — Synergi og Stillingshistorik
+# Whist v0.2.8 — Meldingsstatistik: gennemsnit og afvigelser
 
-Dette er en **frontend-only** opdatering oven på Whist v0.2.6.
+Dette er en frontend-opdatering oven på v0.2.7. Ingen SQL-migration.
 
 ## Ændringer
 
-- Synergi anvender nu kompakte celler, så seks spillere (7 × 7 tabelfelter inklusive overskrifter) kan være synlige på en telefon uden vandret rulning. Ved flere spillere bruges vandret rulning.
-- Farveforklaringen med negative/nul/positive point under Synergi er fjernet.
-- Under "Sådan beregnes Synergi" er sætningerne om solomeldinger, spillerudvælgelse og farvestyrke fjernet.
-- Stillingshistorik er nu den tredje visning under **Stilling**, sammen med **Podie** og **Pointdiagram**. Det selvstændige Stillingshistorik-modul længere nede på siden er fjernet.
-- Historikgrafen henter de samme tal som før og tegnes først, når visningen bliver åbnet, så den måler den synlige container korrekt.
+1. **Meldinger** er nu en procentdel: `100 × antal egne meldinger / antal spillede hænder`.
+2. Den øverste række **Gennemsnit** viser det aritmetiske gennemsnit af de individuelle spilleres statistik. Hver spiller vægtes lige meget, uanset antal spillede hænder. Spillere uden en defineret måling i en given kolonne (fx Under uden nogen meldinger) medtages ikke i den kolonnes gennemsnit; deres celle vises som `—`.
+3. Knappen **Vis afvigelse** til højre for overskriften skifter mellem faktiske spillerresultater og forskelle fra spillergennemsnittet. I afvigelsesvisningen forbliver gennemsnitsrækken i faktiske tal, så den fungerer som reference.
+4. Procentkolonner (Meldinger, Under, Over og Præcis) viser forskellen i **procentpoint (pp)**, fx `+12,3 pp`. Stikafvigelse, absolut stikafvigelse og point pr. spil viser forskellen i deres normale enheder, fx `−0,25`.
+5. Tabellen følger som før Spilsamlinger, gæstespil og alfabetisk spillerrækkefølge. Podie, Pointdiagram, Stillingshistorik, Synergi og de bagvedliggende SQL-beregninger er uændrede.
 
-## Installation
-
-Erstat kun:
+## Opdater disse fire filer i GitHub
 
 - `statistik.html`
 - `assets/js/stats.js`
+- `assets/js/stat-metrics.js`
 - `assets/css/app.css`
 
-Behold alle andre filer, herunder `assets/js/config.js`, `assets/js/synergy-model.js`, `assets/js/score-history-model.js` og `assets/js/score-history-chart.js`.
-
-Ingen ny SQL-migration er nødvendig. Den eksisterende SQL fra v0.2.6 (`20_standings_history.sql`) skal stadig være installeret.
+Behold `assets/js/config.js` og resten af filerne. Commit og push, og genindlæs siden. Versionsnummeret er `v0.2.8`.
 
 ## Verifikation
 
-- `node --check assets/js/stats.js` bestået.
-- Browser-test med seks spillere ved 320, 390, 620 og 900 px bestået uden horisontal overflow.
-- Browser-test med syv spillere bekræfter vandret rulning på 320 og 390 px.
-- Browser-test bekræfter, at alle tre faner kan vælges, at grafen initieres med positiv bredde, og at spillerlegenden stadig kan bruges.
-
-**Begrænsning:** Testene er kørt lokalt med simuleret statistik og en diagram-fixture, ikke mod dit live Supabase-projekt.
+- JavaScript-syntaks for `stats.js` og `stat-metrics.js` testet med Node.
+- Enhedstest for procentandel, ligevægtet gennemsnit, procentpointsafvigelser, ingen meldinger og alfabetisk sortering.
+- Chromium-test på 320, 390 og 900 pixels: gennemsnitsrække, knap/toggle, delta-tilstand og layout. Brugte testdata og ikke live Supabase.
