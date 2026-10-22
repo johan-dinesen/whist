@@ -483,3 +483,42 @@
   .hands-table thead tr.hands-header-sub{height:26px}
   .hands-table thead tr.hands-header-sub th{top:34px}
 }
+
+
+/* v0.2.12: compact podium. The game count now sits at the foot of each block. */
+.stats-podium{min-height:0;margin-top:12px;margin-bottom:18px}
+.podium-stand{height:98px;padding:14px 7px 7px;gap:3px}
+.position-1 .podium-stand{height:134px}
+.position-2 .podium-stand{height:114px}
+.position-3 .podium-stand{height:98px}
+.podium-games{margin-top:auto}
+@media(max-width:620px){
+  .stats-podium{min-height:0;margin-top:10px;margin-bottom:14px}
+  .podium-stand{padding:12px 4px 7px;gap:3px}
+  .position-1 .podium-stand{height:124px}
+  .position-2 .podium-stand{height:107px}
+  .position-3 .podium-stand{height:94px}
+}
+
+/* v0.2.12: Melding + Antal + Gns. stick together during horizontal scrolling. */
+#hands-content{--hands-count-left:86px;--hands-average-left:141px}
+.hands-table tbody > tr > :nth-child(2),
+.hands-table thead tr.hands-header-top > :nth-child(2){
+  position:sticky;left:var(--hands-count-left);
+}
+.hands-table tbody > tr > :nth-child(3),
+.hands-table thead tr.hands-header-top > :nth-child(3){
+  position:sticky;left:var(--hands-average-left);
+  border-right:2px solid #526c82;
+}
+/* Fully opaque sticky backgrounds cover the horizontally scrolling player cells. */
+.hands-table tbody tr:nth-child(odd) > .hands-total{background:#203345}
+.hands-table tbody tr:nth-child(even) > .hands-total{background:#23394b}
+.hands-table tbody tr:hover > .hands-total{background:#284058}
+.hands-table tbody > tr > :nth-child(2),
+.hands-table tbody > tr > :nth-child(3){z-index:2}
+.hands-table thead tr.hands-header-top > :nth-child(2),
+.hands-table thead tr.hands-header-top > :nth-child(3){
+  z-index:7;background:#263b4d;
+}
+.hands-table thead tr.hands-header-top > :first-child{z-index:8}

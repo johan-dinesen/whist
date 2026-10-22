@@ -1,47 +1,27 @@
-# Whist v0.2.11: Hænder
+# Whist v0.2.12 — Hænder og mindre podie
 
-Adds a standalone **Hænder** module below Synergi on `statistik.html`.
+Frontend-only update to the existing Statistik page, based on v0.2.11.
 
 ## Install
 
-1. In Supabase Dashboard → SQL Editor, run the complete `sql/21_hands_statistics.sql` file **once**. It installs `public.get_hands_statistics_for_notes(uuid[],boolean,boolean)` and reloads the API schema cache.
-2. In your existing GitHub Pages repository, **replace**:
-   - `statistik.html`
-   - `assets/js/stats.js`
-   - `assets/css/app.css`
-3. **Add**: `assets/js/hands-model.js`.
-4. **Do not replace** `assets/js/config.js` or any existing registration/history/admin/scoring files.
-5. Commit and push. Refresh Statistik and verify version `v0.2.11`.
+Replace these **three** files in your existing GitHub Pages repository:
 
-The migration is read-only with respect to data: it only creates/replaces the RPC. It does not change historical games, scoring functions, profiles or tournament assignments. If the SQL wasn't run, the Hænder module shows its own loading error while the other Statistik modules continue working.
+- `statistik.html`
+- `assets/js/stats.js`
+- `assets/css/app.css`
 
-## What the table means
+Keep all other files unchanged, including `assets/js/hands-model.js`, Supabase configuration, SQL functions, and every other statistic module.
 
-- All filters are identical to the other Statistik modules, including the multi-select Spilsamlinger filter and the **Medtag gæstespil** checkbox.
-- Player columns are alphabetized and include **everyone who played at least one selected game**, even if they made no calls.
-- Only observed hand types occur in the table. Ordinary combinations are identified by number of tricks and call (`9Alm`, `10Gode`, `11Halve`); Vip also includes the depth (`9Vip1`, `9Vip2`, `9Vip3`). Solo calls get separate `Sol`, `Ren Sol`, `Bordlægger` and `Ren Bordlægger` rows.
-- **Antal** is a count of **calls** for the hand type. Multiple players declaring Sol in the same game count as separate Sol calls; ordinary games normally have one caller.
-- **Gns.** for Alm/Gode/Halve/Vip is the average **signed trick result** (`games.score`), *not* average earned points. For example +2, −1, 0 → +0.33.
-- **Gns./%** for solo calls is the percentage of winning calls, using `solo_result` starting with `Vundet`. Historical `Vundet` (without a trick count) counts as a win, and `Tabt` counts as a loss.
-- Trump is not part of the hand type, making the historical data with missing suits compatible.
-- Empty player/hand combinations show a dash; their average is not incorrectly displayed as zero.
+After committing and pushing, refresh the Statistik page and confirm `v0.2.12`.
 
-All calculations run in Supabase, so adding more games or tournaments does not require modifying the browser code.
+## Changes
+
+1. Hænder uses short display names `Bord` and `Ren Bord` for `Bordlægger` and `Ren Bordlægger`. The database call types are unchanged.
+2. The first three Hænder columns (`Melding`, `Antal`, `Gns.`) stay together when scrolling horizontally. Their sticky offsets are computed from the rendered column widths, so they stay aligned on mobile and desktop. Sticky cells use opaque backgrounds and a boundary rule so that player data does not show through.
+3. The top-three Stilling podium is shorter: blocks retain descending heights, but have less empty vertical space, with the `spil` counts aligned near the bottom.
+
+No SQL migration or new dependencies. No changes to score calculations, statistics, tournament filters, profile photos, or authentication.
 
 ## Verification
 
-After running the SQL, this diagnostic should return a registered function:
-
-```sql
-select to_regprocedure('public.get_hands_statistics_for_notes(uuid[],boolean,boolean)');
-```
-
-For a simple SQL Editor smoke test:
-
-```sql
--- Direct SQL Editor calls typically lack a Supabase Auth user and are therefore
--- rejected by this RPC. Test the results from the Statistik page with a valid
--- anonymous Supabase Auth session instead.
-```
-
-The frontend model tests pass with `node tests/hands-model.test.mjs`. JavaScript syntax and the static integration were checked. The live SQL query and Supabase data have **not** been tested in your database.
+The update passed `node --check` for `stats.js` and a headless Chromium visual/layout fixture at 320, 390, 620, and 900 px. Checks included fixed column x positions after horizontal scrolling, shorter podium sizes, and rendering of both Bord labels. The screenshot fixture uses illustrative player data; this update has not been exercised against the live Supabase project.

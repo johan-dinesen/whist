@@ -9,6 +9,19 @@ import {drawScoreHistory} from './score-history-chart.js';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=0.2.11';
 
 const $ = id => document.getElementById(id);
+
+// Keep the three pinned Hænder columns aligned at any viewport width.
+function syncHandsStickyOffsets() {
+  const headers = $('hands-head')?.querySelectorAll('.hands-header-top > th');
+  if (!headers || headers.length < 3) return;
+  const firstWidth = headers[0].getBoundingClientRect().width;
+  const secondWidth = headers[1].getBoundingClientRect().width;
+  if (!firstWidth || !secondWidth) return;
+  const scroll = $('hands-content');
+  scroll.style.setProperty('--hands-count-left', `${firstWidth}px`);
+  scroll.style.setProperty('--hands-average-left', `${firstWidth + secondWidth}px`);
+}
+
 const profileCacheVersion = String(Date.now());
 let supabase = null;
 let groups = [];
@@ -374,7 +387,8 @@ function renderHands(raw) {
     const label = document.createElement('th');
     label.scope = 'row';
     label.className = 'hands-hand';
-    label.textContent = hand.label;
+    label.textContent = hand.label === 'Bordlægger' ? 'Bord' :
+      hand.label === 'Ren Bordlægger' ? 'Ren Bord' : hand.label;
     tr.append(label);
     for (const text of [String(hand.count), formatHandAverage(hand.average, hand.isSolo, hand.count)]) {
       const td = document.createElement('td');
@@ -393,7 +407,12 @@ function renderHands(raw) {
     }
     body.append(tr);
   }
+  // Read measured column widths after table layout rather than assuming fixed
+  // widths; the measured offsets remain accurate on different devices.
+  requestAnimationFrame(syncHandsStickyOffsets);
 }
+
+window.addEventListener('resize', syncHandsStickyOffsets);
 
 // Chart.js must be constructed only after its parent tab is visible;
 // otherwise it can measure a zero-width canvas on mobile.
