@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0-clean">
 </head>
 <body>
   <header class="topbar">
@@ -86,36 +86,20 @@
     <section class="panel metrics-panel" aria-labelledby="metrics-title">
       <div class="ranking-head">
         <div><h2 id="metrics-title">Meldingsstatistik</h2><p class="rank-subtitle">Beregnet for de samme spilsamlinger og gæstevalg som Stillingen.</p></div>
-        <button id="metric-mode-toggle" class="metric-mode-toggle" type="button" aria-pressed="false" disabled>Se trends</button>
       </div>
       <p id="metrics-state" class="ranking-empty" role="status">Indlæser statistik …</p>
       <div id="metrics-content" class="hidden">
-        <div id="metrics-table-view">
-          <div class="metric-table-scroll" tabindex="0" role="region" aria-label="Meldingsstatistik med målinger som rækker og spillere som kolonner, rul vandret for flere spillere">
-            <table class="metric-table" id="metric-table">
-              <thead><tr id="metric-head"><th scope="col">Statistik</th></tr></thead>
-              <tbody id="metric-body"></tbody>
-            </table>
-          </div>
-          <p class="metric-footnote">Meldinger er andelen af spillede hænder, hvor spilleren meldte. Under, Over og Præcis er andele af egne meldinger. Gennemsnit er beregnet med samme vægt pr. spiller; manglende målinger indgår ikke. Stikafvigelser omfatter kun Almindelig, Gode, Halve og Vip.</p>
-          <details class="metric-help">
-            <summary>Sådan beregnes statistikken</summary>
-            <dl id="metric-definitions"></dl>
-          </details>
+        <div class="metric-table-scroll" tabindex="0" role="region" aria-label="Meldingsstatistik med målinger som rækker og spillere som kolonner, rul vandret for flere spillere">
+          <table class="metric-table" id="metric-table">
+            <thead><tr id="metric-head"><th scope="col">Statistik</th></tr></thead>
+            <tbody id="metric-body"></tbody>
+          </table>
         </div>
-        <div id="metrics-trend-view" class="hidden" aria-label="Tidstrend for meldingsstatistik">
-          <div id="metrics-trend-state" class="ranking-empty hidden" role="status"></div>
-          <div id="metrics-trend-content" class="hidden">
-            <div class="metric-trend-toolbar">
-              <div id="metric-trend-buttons" class="metric-trend-buttons" role="group" aria-label="Vælg statistik til Tidstrend"></div>
-              <button id="metric-trend-select-all" class="metric-trend-select-all" type="button" disabled>Fravælg alle</button>
-            </div>
-            <div class="metric-trend-chart-wrap">
-              <canvas id="metric-trend-canvas" role="img" aria-label="Tidstrend med rullende 60-minutters gennemsnit i 15-minutters trin"></canvas>
-            </div>
-            <div id="metric-trend-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere i Tidstrend"></div>
-          </div>
-        </div>
+        <p class="metric-footnote">Meldinger er andelen af spillede hænder, hvor spilleren meldte. Under, Over og Præcis er andele af egne meldinger. Gennemsnit er beregnet med samme vægt pr. spiller; manglende målinger indgår ikke. Stikafvigelser omfatter kun Almindelig, Gode, Halve og Vip.</p>
+        <details class="metric-help">
+          <summary>Sådan beregnes statistikken</summary>
+          <dl id="metric-definitions"></dl>
+        </details>
       </div>
     </section>
     <section class="panel synergy-panel" aria-labelledby="synergy-title">
@@ -161,6 +145,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=1.0.0"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.0-clean"></script>
 </body>
 </html>

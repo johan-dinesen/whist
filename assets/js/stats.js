@@ -2,13 +2,12 @@ import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, metricValue, formatNumber} from './stat-metrics.js?v=1.0.0';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, metricValue} from './stat-metrics.js?v=1.0.0';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
-import {buildTimeTrendModel, buildTrendSeries, formatClockMinute} from './time-trend-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
 
@@ -36,13 +35,6 @@ let historyModel = null;
 let timeMachineIndex = 0;
 let timeMachineTimer = null;
 let metricPeople = [];
-let metricsView = 'table';
-let trendModel = null;
-let trendChart = null;
-let trendMetricKey = METRICS[0]?.key || 'calls';
-let trendSelectedPlayers = new Set();
-let trendDatasetIndex = new Map();
-const trendPalette = ['#e7ba61','#71cdb0','#84b4f5','#ea9291','#ba9bf1','#f4bbd6','#81d9e4','#d9c37b','#97d08e','#c799e2','#c3b5a5','#d8e19a'];
 
 function showError(message) {
   const node = $('stats-status');
@@ -314,256 +306,6 @@ function renderMetricDefinitions() {
     terms.append(dt, dd);
   }
 }
-function trendColor(index) {
-  return trendPalette[index % trendPalette.length];
-}
-function formatTrendValue(metric, value) {
-  if (value == null || !Number.isFinite(Number(value))) return '—';
-  return metric.type === 'percentage' ? `${formatNumber(value, 1)} %` : formatNumber(value, 2);
-}
-function updateMetricModeButton() {
-  const button = $('metric-mode-toggle');
-  button.disabled = metricPeople.length === 0;
-  button.setAttribute('aria-pressed', String(metricsView === 'trend'));
-  button.textContent = metricsView === 'trend' ? 'Se statistik' : 'Se trends';
-}
-function syncMetricViews() {
-  const isTrend = metricsView === 'trend';
-  $('metrics-table-view').classList.toggle('hidden', isTrend);
-  $('metrics-trend-view').classList.toggle('hidden', !isTrend);
-  updateMetricModeButton();
-  if (isTrend) requestAnimationFrame(renderMetricTrend);
-}
-function updateTrendSelectAllButton() {
-  const button = $('metric-trend-select-all');
-  const total = trendModel?.players?.length || 0;
-  const allSelected = total > 0 && trendSelectedPlayers.size === total;
-  button.disabled = total === 0;
-  button.textContent = allSelected ? 'Fravælg alle' : 'Vælg alle';
-}
-function toggleMetricView() {
-  if (!metricPeople.length) return;
-  metricsView = metricsView === 'table' ? 'trend' : 'table';
-  syncMetricViews();
-}
-function renderMetricTrendButtons() {
-  const root = $('metric-trend-buttons');
-  root.replaceChildren();
-  for (const metric of METRICS) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'metric-trend-button';
-    button.textContent = metric.short || metric.label;
-    button.setAttribute('aria-pressed', String(metric.key === trendMetricKey));
-    button.title = metric.label;
-    button.addEventListener('click', () => {
-      if (trendMetricKey === metric.key) return;
-      trendMetricKey = metric.key;
-      renderMetricTrendButtons();
-      renderMetricTrend();
-    });
-    root.append(button);
-  }
-}
-function renderMetricTrendLegend(players) {
-  const legend = $('metric-trend-legend');
-  legend.replaceChildren();
-  for (const player of players) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'score-history-player metric-trend-player';
-    button.dataset.playerId = player.id;
-    button.setAttribute('aria-pressed', String(trendSelectedPlayers.has(player.id)));
-    button.setAttribute('aria-label', `Vis eller skjul ${player.name}`);
-    const person = document.createElement('span');
-    person.className = 'metric-trend-person';
-    person.append(avatar(player, 'metric-player-avatar'));
-    const label = document.createElement('span');
-    label.textContent = player.name;
-    person.append(label);
-    button.append(person);
-    button.addEventListener('click', () => {
-      if (trendSelectedPlayers.has(player.id)) trendSelectedPlayers.delete(player.id);
-      else trendSelectedPlayers.add(player.id);
-      applyTrendVisibility();
-    });
-    legend.append(button);
-  }
-  updateTrendSelectAllButton();
-}
-function applyTrendVisibility() {
-  if (trendChart) {
-    for (const [playerId, indexes] of trendDatasetIndex.entries()) {
-      const visible = trendSelectedPlayers.has(playerId);
-      for (const index of indexes) trendChart.setDatasetVisibility(index, visible);
-    }
-    trendChart.update('none');
-  }
-  for (const button of $('metric-trend-legend').querySelectorAll('[data-player-id]')) {
-    button.setAttribute('aria-pressed', String(trendSelectedPlayers.has(button.dataset.playerId)));
-  }
-  updateTrendSelectAllButton();
-}
-function trendYBounds(metric, players) {
-  const values = players.flatMap(player => player.points.map(point => point.y).filter(value => value !== null && Number.isFinite(value)));
-  if (!values.length) {
-    return metric.type === 'percentage' ? {min: 0, max: 100} : {min: -1, max: 1};
-  }
-  if (metric.type === 'percentage') return {min: 0, max: 100};
-  const rawMin = Math.min(...values, ...players.map(player => player.overall?.value).filter(value => value != null));
-  const rawMax = Math.max(...values, ...players.map(player => player.overall?.value).filter(value => value != null));
-  const span = Math.max(0.2, rawMax - rawMin);
-  const padding = Math.max(0.08, span * 0.12);
-  return {min: rawMin - padding, max: rawMax + padding};
-}
-function renderMetricTrend() {
-  const state = $('metrics-trend-state');
-  const content = $('metrics-trend-content');
-  trendChart?.destroy();
-  trendChart = null;
-  trendDatasetIndex = new Map();
-  renderMetricTrendButtons();
-
-  if (!trendModel?.players?.length) {
-    state.textContent = 'Ingen registrerede klokkeslæt mellem 10.00 og 03.00 i de valgte spilsamlinger.';
-    state.classList.remove('hidden');
-    content.classList.add('hidden');
-    $('metric-trend-legend').replaceChildren();
-    updateTrendSelectAllButton();
-    return;
-  }
-
-  const series = buildTrendSeries(trendModel, trendMetricKey);
-  if (!series.players.length || series.start === null || series.end === null) {
-    state.textContent = 'Ingen registrerede klokkeslæt mellem 10.00 og 03.00 i de valgte spilsamlinger.';
-    state.classList.remove('hidden');
-    content.classList.add('hidden');
-    $('metric-trend-legend').replaceChildren();
-    updateTrendSelectAllButton();
-    return;
-  }
-
-  const availableIds = new Set(series.players.map(player => player.id));
-  trendSelectedPlayers = new Set([...trendSelectedPlayers].filter(id => availableIds.has(id)));
-
-  state.classList.add('hidden');
-  content.classList.remove('hidden');
-
-  const datasets = [];
-  for (const [index, player] of series.players.entries()) {
-    const color = trendColor(index);
-    const indexes = [];
-    datasets.push({
-      label: player.name,
-      data: player.points,
-      borderColor: color,
-      backgroundColor: color,
-      borderWidth: 2.35,
-      pointRadius: 0,
-      pointHoverRadius: 4,
-      pointHitRadius: 10,
-      pointHoverBorderWidth: 2,
-      tension: 0.22,
-      spanGaps: false,
-      fill: false,
-      playerId: player.id,
-      isReference: false
-    });
-    indexes.push(datasets.length - 1);
-    if (player.overall?.value != null && Number.isFinite(player.overall.value)) {
-      datasets.push({
-        label: `${player.name} · gennemsnit`,
-        data: [{x: series.start, y: player.overall.value}, {x: series.end, y: player.overall.value}],
-        borderColor: color,
-        backgroundColor: color,
-        borderWidth: 1.5,
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        tension: 0,
-        spanGaps: true,
-        fill: false,
-        borderDash: [6, 5],
-        playerId: player.id,
-        isReference: true
-      });
-      indexes.push(datasets.length - 1);
-    }
-    trendDatasetIndex.set(player.id, indexes);
-  }
-
-  const {min, max} = trendYBounds(series.metric, series.players);
-  if (!globalThis.Chart) throw new Error('Diagram-biblioteket kunne ikke indlæses');
-  const ctx = $('metric-trend-canvas').getContext('2d');
-  trendChart = new globalThis.Chart(ctx, {
-    type: 'line',
-    data: {datasets},
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      normalized: true,
-      animation: false,
-      parsing: false,
-      interaction: {mode: 'nearest', intersect: false},
-      layout: {padding: {top: 9, right: 12, bottom: 0, left: 0}},
-      plugins: {
-        legend: {display: false},
-        tooltip: {
-          backgroundColor: 'rgba(11,22,34,.95)',
-          borderWidth: 1,
-          borderColor: '#476078',
-          titleColor: '#f3f8fd',
-          bodyColor: '#ecf2f8',
-          padding: 11,
-          filter: item => !item.dataset.isReference && item.raw?.y !== null,
-          callbacks: {
-            title: items => items.length ? `${items[0].raw.timeLabel} · ${items[0].raw.windowLabel}` : '',
-            label: item => `${item.dataset.label}: ${formatTrendValue(series.metric, item.parsed.y)}`,
-            afterLabel: item => {
-              const lines = [];
-              if (item.raw?.summary?.sampleText) lines.push(item.raw.summary.sampleText);
-              if (item.raw?.overall?.value != null) {
-                lines.push(`Eget gennemsnit: ${formatTrendValue(series.metric, item.raw.overall.value)}`);
-              }
-              return lines;
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          type: 'linear',
-          min: series.start,
-          max: series.end,
-          grid: {color: 'rgba(116,150,174,.14)'},
-          border: {color: '#51677c'},
-          ticks: {
-            color: '#a2b4c4',
-            stepSize: 60,
-            callback: value => formatClockMinute(value)
-          },
-          title: {display: true, text: 'Klokkeslæt', color: '#a2b4c4', font: {size: 11, weight: 'normal'}}
-        },
-        y: {
-          min,
-          max,
-          grid: {
-            color: context => Number(context.tick?.value) === 0 ? '#71899d' : 'rgba(116,150,174,.14)',
-            lineWidth: context => Number(context.tick?.value) === 0 ? 1.4 : 1
-          },
-          border: {color: '#51677c'},
-          ticks: {
-            color: '#a2b4c4',
-            maxTicksLimit: 7,
-            callback: value => series.metric.type === 'percentage' ? `${formatNumber(value, 0)} %` : formatNumber(value, 2)
-          },
-          title: {display: false}
-        }
-      }
-    }
-  });
-  renderMetricTrendLegend(series.players);
-  applyTrendVisibility();
-}
 function renderMetricTable() {
   const people = metricPeople;
   const head = $('metric-head');
@@ -638,19 +380,6 @@ function renderMeldingStatistics(raw) {
   state.classList.toggle('hidden', metricPeople.length !== 0);
   if (!metricPeople.length) state.textContent = 'Ingen spil i de valgte spilsamlinger.';
   renderMetricTable();
-  updateMetricModeButton();
-  syncMetricViews();
-}
-function renderMetricTrends(raw) {
-  trendModel = buildTimeTrendModel(raw);
-  const availableIds = new Set(trendModel.players.map(player => player.id));
-  if (!trendSelectedPlayers.size) {
-    trendSelectedPlayers = new Set(availableIds);
-  } else {
-    trendSelectedPlayers = new Set([...trendSelectedPlayers].filter(id => availableIds.has(id)));
-    if (!trendSelectedPlayers.size && availableIds.size) trendSelectedPlayers = new Set(availableIds);
-  }
-  if (metricsView === 'trend') requestAnimationFrame(renderMetricTrend);
 }
 function renderSynergy(raw) {
 
@@ -799,7 +528,6 @@ function renderHands(raw) {
 }
 
 window.addEventListener('resize', syncHandsStickyOffsets);
-window.addEventListener('resize', () => trendChart?.resize());
 
 // Chart.js must be constructed only after its parent tab is visible;
 // otherwise it can measure a zero-width canvas on mobile.
@@ -849,24 +577,6 @@ function changeView(next) {
   if(view==='history')requestAnimationFrame(mountHistoryChart);
   if(view==='chart' && historyModel?.gameCount && standings.length) selectTimeMachineGame(timeMachineIndex);
 }
-async function fetchAllMetricTrendHistory(params) {
-  const all = [];
-  let offset = 0;
-  while (true) {
-    const {data, error} = await supabase.rpc('get_game_history_for_notes', {
-      ...params,
-      p_max_games: 1000,
-      p_offset: offset
-    });
-    if (error) throw error;
-    const rows = data ?? [];
-    all.push(...rows);
-    if (rows.length < 1000) break;
-    offset += rows.length;
-    if (offset > 20000) break;
-  }
-  return all;
-}
 async function refresh() {
   if(!supabase)return;
   const request=++activeRequest;
@@ -885,11 +595,6 @@ async function refresh() {
   $('score-history-view').classList.add('hidden');
   $('stats-view-toggle').classList.add('hidden');
   metricPeople=[];
-  trendModel=null;
-  trendChart?.destroy();
-  trendChart=null;
-  trendDatasetIndex = new Map();
-  updateMetricModeButton();
   $('metrics-state').textContent='Indlæser statistik …';
   $('metrics-state').classList.remove('hidden');
   $('metrics-content').classList.add('hidden');
@@ -917,8 +622,7 @@ async function refresh() {
     supabase.rpc('get_melding_statistics_for_notes',params),
     supabase.rpc('get_synergy_for_notes',params),
     supabase.rpc('get_standings_history_for_notes',params),
-    supabase.rpc('get_hands_statistics_for_notes',params),
-    fetchAllMetricTrendHistory(params)
+    supabase.rpc('get_hands_statistics_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
@@ -938,14 +642,6 @@ async function refresh() {
     const error=metricResult.status==='rejected'?metricResult.reason:metricResult.value.error;
     errors.push(`Meldingsstatistik: ${error.message||String(error)}`);
     $('metrics-state').textContent='Statistikken kunne ikke indlæses.';
-  }
-  const trendResult = settled[5];
-  if (trendResult.status === 'fulfilled') {
-    try { renderMetricTrends(trendResult.value); }
-    catch(err) { errors.push(`Tidstrend: ${err.message}`); }
-  } else {
-    const error = trendResult.reason;
-    errors.push(`Tidstrend: ${error?.message || String(error)}`);
   }
   const synergyResult=settled[2];
   if(synergyResult.status==='fulfilled' && !synergyResult.value.error){
@@ -1013,15 +709,6 @@ async function init(){
   }catch(err){showError(`Statistik kunne ikke åbnes: ${err.message}`);}
 }
 renderMetricDefinitions();
-updateMetricModeButton();
-$('metric-mode-toggle').addEventListener('click', toggleMetricView);
-$('metric-trend-select-all').addEventListener('click', () => {
-  const players = trendModel?.players ?? [];
-  if (!players.length) return;
-  const allSelected = trendSelectedPlayers.size === players.length;
-  trendSelectedPlayers = allSelected ? new Set() : new Set(players.map(player => player.id));
-  applyTrendVisibility();
-});
 $('time-machine-slider').addEventListener('input', event => {
   stopTimeMachine();
   selectTimeMachineGame(Number(event.target.value));
