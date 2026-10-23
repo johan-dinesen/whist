@@ -8,17 +8,17 @@ export const METRICS = [
   },
   {
     key:'under', label:'Undermelding', short:'Under',
-    help:'Andel af egne meldinger med positivt resultat; ved Sol/Bordlægger en sejr med 1 stik.',
+    help:'Andel af klassificerede almindelige meldinger (Almindelig, Gode, Halve og Vip), hvor spilleren fik flere stik end meldt. Solo-meldinger indgår ikke.',
     valueKey:'underPct', countKey:'under', type:'percentage'
   },
   {
     key:'over', label:'Overmelding', short:'Over',
-    help:'Andel af egne meldinger med negativt resultat; for solo gælder ethvert tab.',
+    help:'Andel af klassificerede almindelige meldinger (Almindelig, Gode, Halve og Vip), hvor spilleren fik færre stik end meldt. Solo-meldinger indgår ikke.',
     valueKey:'overPct', countKey:'over', type:'percentage'
   },
   {
     key:'exact', label:'Præcis melding', short:'Præcis',
-    help:'Andel af egne meldinger med resultat 0; solo med 0 stik og vundne Ren Sol/Ren Bordlægger.',
+    help:'Andel af klassificerede almindelige meldinger (Almindelig, Gode, Halve og Vip), hvor spilleren fik præcis det meldte antal stik. Solo-meldinger indgår ikke.',
     valueKey:'exactPct', countKey:'exact', type:'percentage'
   },
   {
@@ -61,7 +61,7 @@ export function normalizeMeldingStatistics(data) {
       under:naturalNumber(r.under_calls,'undermeldinger'),
       over:naturalNumber(r.over_calls,'overmeldinger'),
       exact:naturalNumber(r.exact_calls,'præcise meldinger'),
-      unknown:naturalNumber(r.unclassified_calls,'uklassificerede meldinger'),
+      unknown:naturalNumber(r.unclassified_calls,'øvrige og uklassificerede meldinger'),
       underPct:optionalNumber(r.under_pct,'under-%'),
       overPct:optionalNumber(r.over_pct,'over-%'),
       exactPct:optionalNumber(r.exact_pct,'præcis-%'),
@@ -72,10 +72,13 @@ export function normalizeMeldingStatistics(data) {
     };
     if(!p.id || !p.name || p.games<1 || p.points===null ||
        p.under+p.over+p.exact+p.unknown!==p.calls ||
-       p.calls>p.games || p.deviationSamples>p.calls){
+       p.calls>p.games || p.deviationSamples>p.calls ||
+       p.deviationSamples!==p.under+p.over+p.exact){
       throw new Error('Supabase returnerede ufuldstændige statistikdata.');
     }
-    // Meldinger is a rate per played hand, not a number of calls.
+    // All call types count toward Meldinger %, but Under/Over/Præcis are
+    // mutually exclusive ordinary calls with a known score.
+    p.ordinaryCalls=p.under+p.over+p.exact;
     p.callsPct=100*p.calls/p.games;
     return p;
   }).sort((a,b)=> a.name.localeCompare(b.name,'da',{sensitivity:'base'}) || a.id.localeCompare(b.id));
@@ -118,6 +121,13 @@ export function displayMetric(metric, player) {
 export function displayAverage(metric, means) {
   const value=means[metric.key];
   if(value===null)return '—';
+  // Independent 1-decimal rounding can otherwise display 99,9 % or 100,1 %.
+  // The underlying player percentages, and thus their means, total 100 %.
+  if(metric.key==='exact' && means.under!==null && means.over!==null){
+    const under=Math.round((means.under+Number.EPSILON)*10)/10;
+    const over=Math.round((means.over+Number.EPSILON)*10)/10;
+    return `${formatNumber(100-under-over,1)} %`;
+  }
   return metric.type==='percentage' ? `${formatNumber(value,1)} %` : formatNumber(value,2);
 }
 
@@ -135,7 +145,7 @@ export function displayDifference(metric, player, means) {
 
 export function metricDetail(metric, player) {
   if(metric.key==='calls')return `${player.calls} af ${player.games} spillede hænder`;
-  if(metric.type==='percentage')return `${player[metric.countKey]} af ${player.calls} meldinger`;
+  if(metric.type==='percentage')return `${player[metric.countKey]} af ${player.ordinaryCalls} almindelige meldinger`;
   if(metric.type==='deviation')return `Beregnet ud fra ${player.deviationSamples} meldinger af typen Almindelig, Gode, Halve eller Vip`;
   if(metric.type==='points')return `${formatNumber(player.points,2)} point over ${player.games} spil`;
   return metric.help;
