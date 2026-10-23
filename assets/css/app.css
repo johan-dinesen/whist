@@ -561,3 +561,32 @@
 /* v0.2.14: An image that has been decoded should appear without a second fade.
    During redraws, the existing avatar nodes are preserved instead of recreated. */
 .rank-avatar img{transition:none}
+
+
+/* v0.2.15: Animated Pointdiagram and readable scores around zero. */
+/* Two persistent bars let changes of sign pass smoothly through the baseline. */
+.rank-bar{transition:height 230ms cubic-bezier(.22,1,.36,1)}
+.rank-bar-value{
+  /* The avatar is centred on 49%; keep score labels outside its radius. */
+  --score-photo-clearance:22px;
+  top:calc(49% - max(var(--bar-height), var(--score-photo-clearance)) - 9px - 1.2em);
+  bottom:auto;
+  transition:top 230ms cubic-bezier(.22,1,.36,1);
+}
+.rank-bar-value.positive{
+  top:calc(49% - max(var(--bar-height), var(--score-photo-clearance)) - 9px - 1.2em);
+  bottom:auto;
+}
+.rank-bar-value.negative{
+  top:calc(49% + max(var(--bar-height), var(--score-photo-clearance)) + 9px);
+  bottom:auto;
+}
+.rank-bar-value.zero{
+  top:calc(49% - var(--score-photo-clearance) - 9px - 1.2em);
+  bottom:auto;
+}
+@media(max-width:620px){.rank-bar-value{--score-photo-clearance:19px}}
+@media(max-width:350px){.rank-bar-value{--score-photo-clearance:17px}}
+@media(prefers-reduced-motion:reduce){
+  .rank-bar,.rank-bar-value{transition:none}
+}

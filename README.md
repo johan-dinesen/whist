@@ -1,26 +1,28 @@
-# Whist v0.2.14 · Profilbilleder uden blink
+# Whist v0.2.15 · Blød animation i Pointdiagram
 
-Frontend-only update of `Statistik`, based on v0.2.13. This addresses the brief initials flash (e.g. `D` instead of David's picture) when Tidsmaskinen advances or Meldingsstatistik switches between `Vis værdier` and `Vis afvigelse`.
+Frontend-only update based on Whist v0.2.14. No Supabase or SQL changes.
 
 ## Installation
 
-Replace these three files in your GitHub Pages repository:
+Replace exactly these three files in the GitHub Pages repository:
 
 - `statistik.html`
 - `assets/js/stats.js`
 - `assets/css/app.css`
 
-Do not change any other file. No Supabase SQL migration is needed.
+Keep all other files, including `assets/js/config.js` and the existing time-machine/history model scripts, unchanged.
 
-## What changed
+## Changes
 
-1. Pointdiagram/Tidsmaskinen keeps the same DOM node, including the same loaded image, for each player as the scores, ranks and game counts change. It only creates/removes a player column if the selected player set changes.
-2. Meldingsstatistik's `Vis afvigelse` control updates only the numeric table cells. It never recreates the player headers or their images.
-3. The shared avatar renderer on the Statistik page loads/decodes each profile once per page and remembers the result. Already-loaded photos are visible immediately on subsequent renders; nonexistent photos continue to use initials, without repeated failed requests.
-4. Disabled the redundant image fade-in on an already-loaded photo.
+1. The positive and negative bars now animate height over 230 ms. Separate persistent gain/loss bars let a player cross zero without jumping abruptly from one side of the baseline to the other.
+2. When the ranking changes, the player columns glide horizontally to their new positions over 240 ms. Subsequent updates, even mid-animation, start from the player's actual current visual position. Existing photo nodes are still preserved.
+3. Point values near the baseline are held outside the profile photo area. Once the bar passes the clearance, its value moves with the bar. This applies to positive, negative, and zero scores, including on mobile.
+4. Motion honors `prefers-reduced-motion: reduce`.
+5. HTML asset query strings and visible version updated to v0.2.15 to force browser cache refresh.
 
-The first time an actual photo is fetched on a new page visit, an initial may still be visible briefly until the initial network load completes. This is unavoidable without delaying the initial UI, but subsequent redraws do not expose initials.
+## Local checks
 
-## Verification
+- `tests/browser.py`: existing photo-cache and toggle preservation checks at 320, 390, 900 px.
+- `tests/animate.py`: bar sign transitions, near-zero score/photo separation, rank-order interpolation, repeated rapid updates, avatar preservation, reduced-motion behaviour, and horizontal overflow at 320, 390, 900 px.
 
-`tests/browser.py` (not part of deploy archive) uses offline Chromium at 320, 390 and 900 pixels. It checks that the exact same avatar image elements survive repeated Tidsmaskinen frames, that the same header images survive `Vis afvigelse`/`Vis værdier`, that new table renders reuse previously decoded photos, and that there are no page errors or horizontal page overflow. Tests do not connect to the live Supabase project.
+These checks run with mock data in Chromium. They do not connect to the live Supabase project.

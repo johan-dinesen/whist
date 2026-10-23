@@ -145,10 +145,27 @@ function drawBarChart(rows) {
     zero.setAttribute('aria-hidden', 'true');
     root.prepend(zero);
   }
-  // Preserve each player's existing DOM column and its loaded <img>. Recreating
-  // images at every Tidsmaskinen tick exposes the initials until image.onload.
-  const existing = new Map([...root.querySelectorAll('.rank-bar-column')]
-    .map(column => [column.dataset.playerId, column]));
+
+  // FLIP animation: capture each player's CURRENT visual position before a
+  // ranking change. This includes their position partway through a previous
+  // animation, allowing smooth playback when games advance very quickly.
+  const motionAllowed = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isVisible = motionAllowed && root.getBoundingClientRect().width > 0;
+  const previousLeft = new Map();
+  const currentColumns = [...root.querySelectorAll('.rank-bar-column')];
+  if (isVisible) {
+    for (const column of currentColumns) {
+      previousLeft.set(column.dataset.playerId, column.getBoundingClientRect().left);
+    }
+  }
+  // Cancel position animations only, without interfering with CSS transitions
+  // of the bar heights or score labels inside each column.
+  for (const column of currentColumns) column.getAnimations().forEach(animation => animation.cancel());
+
+  // Keep the same photo elements throughout Tidsmaskinen. Each direction has
+  // its own permanent bar, so crossing zero animates through zero rather than
+  // abruptly jumping from a positive bar to a negative bar.
+  const existing = new Map(currentColumns.map(column => [column.dataset.playerId, column]));
   const ordered = [];
   for (const [i, player] of rows.entries()) {
     const key = String(player.id);
@@ -158,8 +175,12 @@ function drawBarChart(rows) {
       column = document.createElement('div');
       column.className = 'rank-bar-column';
       column.dataset.playerId = key;
-      const bar = document.createElement('div');
+      const gainBar = document.createElement('div');
+      gainBar.className = 'rank-bar rank-bar-positive';
+      const lossBar = document.createElement('div');
+      lossBar.className = 'rank-bar rank-bar-negative';
       const amount = document.createElement('strong');
+      amount.className = 'rank-bar-value zero';
       const photo = avatar(player, 'rank-avatar-chart');
       photo.classList.add('rank-bar-avatar');
       const foot = document.createElement('div');
@@ -167,14 +188,17 @@ function drawBarChart(rows) {
       const name = document.createElement('strong');
       const games = document.createElement('small');
       foot.append(name, games);
-      column.append(bar, amount, photo, foot);
+      column.append(gainBar, lossBar, amount, photo, foot);
     }
     const positive = player.points > 0;
     const negative = player.points < 0;
     const height = `${(35 * Math.abs(player.points) / maxAbs).toFixed(3)}%`;
-    const [bar, amount, , foot] = column.children;
-    bar.className = `rank-bar ${positive ? 'rank-bar-positive' : negative ? 'rank-bar-negative' : 'rank-bar-zero'}`;
-    bar.style.setProperty('--bar-height', height);
+    const gainBar = column.querySelector('.rank-bar-positive');
+    const lossBar = column.querySelector('.rank-bar-negative');
+    const amount = column.querySelector('.rank-bar-value');
+    const foot = column.querySelector('.rank-bar-footer');
+    gainBar.style.setProperty('--bar-height', positive ? height : '0%');
+    lossBar.style.setProperty('--bar-height', negative ? height : '0%');
     amount.className = `rank-bar-value ${positive ? 'positive' : negative ? 'negative' : 'zero'}`;
     amount.style.setProperty('--bar-height', height);
     amount.textContent = signed(player.points);
@@ -185,11 +209,24 @@ function drawBarChart(rows) {
     ordered.push(column);
   }
   for (const stale of existing.values()) stale.remove();
-  // Move only columns whose rank actually changed. Stable nodes retain photos
-  // even during fast playback and when the sign or height of a bar changes.
   for (const [index, column] of ordered.entries()) {
-    const atPosition = root.children[index + 1]; // zero line is child 0
+    const atPosition = root.children[index + 1]; // Zero line is child 0.
     if (atPosition !== column) root.insertBefore(column, atPosition || null);
+  }
+
+  // Use a short transform animation rather than trying to transition CSS grid
+  // order (grid order itself cannot be animated). No images are recreated.
+  if (isVisible) {
+    for (const column of ordered) {
+      const oldLeft = previousLeft.get(column.dataset.playerId);
+      if (oldLeft === undefined) continue; // New player, no old position.
+      const delta = oldLeft - column.getBoundingClientRect().left;
+      if (Math.abs(delta) < 0.5) continue;
+      column.animate(
+        [{transform: `translateX(${delta}px)`}, {transform: 'translateX(0px)'}],
+        {duration: 240, easing: 'cubic-bezier(0.22, 1, 0.36, 1)'}
+      );
+    }
   }
 }
 // The slider changes only Pointdiagram. Podie and Stillingshistorik always
