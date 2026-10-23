@@ -349,8 +349,9 @@ function renderMetricTable() {
     const title = document.createElement('th');
     title.scope = 'row';
     title.className = 'metric-row-label';
-    title.textContent = metric.label;
-    title.title = metric.help;
+    title.textContent = metric.short || metric.label;
+    title.title = `${metric.label}: ${metric.help}`;
+    title.setAttribute('aria-label', metric.label);
     tr.append(title);
 
     const mean = document.createElement('td');
