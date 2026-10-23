@@ -1,4 +1,4 @@
--- Whist v0.1.7: private administration of tournament labels and the default tag.
+-- Whist: private administration of tournament labels and the default tag.
 -- Apply ONCE AFTER 04_shared_password.sql and 06_tournament_notes.sql.
 -- Does not modify any existing games or their tournament assignments.
 -- IMPORTANT: afterwards set the independent admin password using the SQL in README.md.

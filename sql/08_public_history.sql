@@ -1,4 +1,4 @@
--- Whist v0.1.9: allow anyone visiting Historik to read the game history.
+-- Whist: allow anyone visiting Historik to read the game history.
 -- Run after 05_scoring_history.sql and 06_tournament_notes.sql.
 -- Anonymous Supabase Auth sessions have the authenticated DB role.
 -- Registering games STILL requires the 30-day registration-password grant.

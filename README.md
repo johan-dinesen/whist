@@ -1,18 +1,37 @@
-# Whist v0.2.16 · Profilbilleder foran nullinjen
+# Whist v1.0.0
 
-CSS-only layout correction based on Whist v0.2.15.
+The complete Whist website for GitHub Pages, with registration, history,
+statistics, and administration. This archive retains the directory structure
+and functionality of the supplied `whist-main.zip`.
 
-## Installation
+## Release changes
 
-Replace exactly these two files in your GitHub Pages repository:
+- All displayed page versions are **v1.0.0**.
+- Local CSS, JavaScript, and module cache-busting versions use **1.0.0**.
+- The history slider beneath Pointdiagram is now labeled **Stillingsudvikling**,
+  including accessibility and error messages. Internal element IDs and
+  module filenames stay unchanged to preserve functionality.
+- No scoring rules, database functions, player records, or Supabase settings
+  were changed.
 
-- `statistik.html`
-- `assets/css/app.css`
+## Deployment
 
-Keep `assets/js/stats.js`, other JavaScript, Supabase configuration, and SQL unchanged.
+Copy the contents of the `whist-main/` directory into the root of your
+GitHub Pages repository (or retain the same directory layout as before).
+Preserve your existing deployment settings and Supabase project.
 
-## Fix
+This version update requires **no new SQL migrations**. Existing migrations
+in `sql/` are included for reference or initial project setup; do not rerun
+them just to update the website version.
 
-The moving Pointdiagram player columns now have a stacking level above the grey horizontal zero baseline. During the CSS transform-based ranking animation, each column forms a separate stacking context. Previously the baseline could overlap its profile picture despite the picture's higher z-index within the column. Setting the column's z-index to 2, above the baseline's z-index of 1, makes the profile picture remain on top throughout the animation without changing the animation or the photo image elements.
+For standard GitHub Pages deployment, the root should contain
+`index.html`, `historik.html`, `statistik.html`, `administrering.html`,
+and `assets/`.
 
-The CSS URL in `statistik.html` is cache-busted to v0.2.16.
+## Checks
+
+Run `node --test tests/*.test.js tests/*.test.mjs` with Node.js to exercise
+the pure-model test suite. The repository also contains older test scripts; the
+`npm test` command currently stops in a legacy CommonJS test that evaluates an
+ES module as a classic script, an issue present in the supplied ZIP.
+Testing against a live Supabase project requires your own deployed environment.

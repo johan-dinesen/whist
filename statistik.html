@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.16">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.16</span>
+      <span class="version">v1.0.0</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -54,10 +54,10 @@
           <div id="rank-bar-chart" class="rank-bar-chart"></div>
         </div>
         <p class="rank-chart-scroll-tip">Rul vandret for at se alle spillere.</p>
-        <div id="time-machine" class="time-machine" aria-label="Tidsmaskinen: historisk stilling i pointdiagrammet">
+        <div id="time-machine" class="time-machine" aria-label="Stillingsudvikling: historisk stilling i pointdiagrammet">
           <div class="time-machine-head">
             <div>
-              <h3>Tidsmaskinen</h3>
+              <h3>Stillingsudvikling</h3>
               <p id="time-machine-caption" class="rank-subtitle" role="status">Indlæser spilhistorik …</p>
             </div>
             <div class="time-machine-actions">
@@ -146,6 +146,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=0.2.15"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.0"></script>
 </body>
 </html>

@@ -1,10 +1,10 @@
-// Pure snapshot adapter for Tidsmaskinen in Pointdiagram.
+// Pure snapshot adapter for Stillingsudvikling in Pointdiagram.
 // The history model uses one chronological game index shared by every player.
 const names = new Intl.Collator('da', {numeric: true, sensitivity: 'base'});
 
 export function standingsAtGame(history, gameIndex) {
   if (!history || !Number.isSafeInteger(gameIndex) || gameIndex < 0 || gameIndex > history.gameCount) {
-    throw new Error('Ugyldigt spilnummer til Tidsmaskinen');
+    throw new Error('Ugyldigt spilnummer til Stillingsudvikling');
   }
   return history.players.map(player => {
     const points = player.series?.[gameIndex];

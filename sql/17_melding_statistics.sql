@@ -1,4 +1,4 @@
--- Whist v0.2.3: per-player calling/accuracy and average payout statistics.
+-- Whist: per-player calling/accuracy and average payout statistics.
 -- Apply AFTER 05_scoring_history.sql, 06_tournament_notes.sql and
 -- 16_standings.sql. Only creates one READ-ONLY RPC; changes no existing data.
 -- Matches get_standings_for_notes() for tournament and guest filtering.

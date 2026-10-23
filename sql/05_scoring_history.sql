@@ -4,7 +4,7 @@
 --
 -- Confirmed scoring: 9 Gode = 0.40; 10 Gode = 0.80; 11 Gode = 1.60.
 -- For Halve, 9 Halve = 0.50; 10 Halve = 1.00; 11 Halve = 2.00.
--- This calculation is unchanged from v0.1.5.
+-- This calculation is unchanged from the original implementation.
 
 begin;
 

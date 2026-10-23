@@ -1,7 +1,7 @@
--- Whist v0.2.0: first Statistik module, read-only standings.
+-- Whist: first Statistik module, read-only standings.
 -- Run AFTER 05_scoring_history.sql and the public-history repair.
 -- Does NOT create/modify any player, game, tournament, password or picture.
--- Profile pictures already live in the whist-profiles Storage bucket from v0.1.11.
+-- Profile pictures already live in the whist-profiles Storage bucket from the original implementation.
 -- Filter semantics exactly match public.get_game_history_for_notes:
 --  null tournament IDs = all, [] = none except Kredsspil when enabled,
 --  guest=false excludes WHOLE games involving a guest.

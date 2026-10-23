@@ -2,12 +2,12 @@ import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
 import {normalizeStandings} from './ranking-model.js';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.10';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=1.0.0';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
-import {buildScoreHistory} from './score-history-model.js?v=0.2.13';
-import {standingsAtGame} from './time-machine-model.js?v=0.2.13';
+import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
+import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js';
-import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=0.2.11';
+import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
 
@@ -162,7 +162,7 @@ function drawBarChart(rows) {
   // of the bar heights or score labels inside each column.
   for (const column of currentColumns) column.getAnimations().forEach(animation => animation.cancel());
 
-  // Keep the same photo elements throughout Tidsmaskinen. Each direction has
+  // Keep the same photo elements throughout Stillingsudvikling. Each direction has
   // its own permanent bar, so crossing zero animates through zero rather than
   // abruptly jumping from a positive bar to a negative bar.
   const existing = new Map(currentColumns.map(column => [column.dataset.playerId, column]));
@@ -689,13 +689,13 @@ async function refresh() {
       $('score-history-state').classList.remove('hidden');
       $('score-history-content').classList.add('hidden');
       historyModel=null;
-      updateTimeMachineAvailability('Tidsmaskinen kunne ikke indlæses.');
+      updateTimeMachineAvailability('Stillingsudvikling kunne ikke indlæses.');
     }
   }else{
     const error=graphResult.status==='rejected'?graphResult.reason:graphResult.value.error;
     errors.push(`Stillingshistorik: ${error.message||String(error)}`);
     $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
-    updateTimeMachineAvailability('Tidsmaskinen kunne ikke indlæses.');
+    updateTimeMachineAvailability('Stillingsudvikling kunne ikke indlæses.');
   }
   const handsResult = settled[4];
   if (handsResult.status === 'fulfilled' && !handsResult.value.error) {

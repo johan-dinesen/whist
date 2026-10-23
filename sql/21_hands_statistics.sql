@@ -1,4 +1,4 @@
--- Whist v0.2.11: Hænder, per-call-type breakdown for Statistik.
+-- Whist: Hænder, per-call-type breakdown for Statistik.
 -- Run after 05_scoring_history.sql, 06_tournament_notes.sql and 16_standings.sql.
 -- Read-only RPC. It creates/replaces a function; no games or players are changed.
 -- Matches the existing Spilsamlinger and Medtag gæstespil filter semantics.
