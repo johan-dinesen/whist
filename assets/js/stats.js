@@ -4,7 +4,8 @@ import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionPa
 import {normalizeStandings} from './ranking-model.js';
 import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, displayDifference, metricValue} from './stat-metrics.js?v=0.2.10';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
-import {buildScoreHistory} from './score-history-model.js';
+import {buildScoreHistory} from './score-history-model.js?v=0.2.13';
+import {standingsAtGame} from './time-machine-model.js?v=0.2.13';
 import {drawScoreHistory} from './score-history-chart.js';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=0.2.11';
 
@@ -31,6 +32,8 @@ let activeRequest = 0;
 let view = 'podium';
 let historyChart = null;
 let historyModel = null;
+let timeMachineIndex = 0;
+let timeMachineTimer = null;
 let metricPeople = [];
 let metricMode = 'values';
 
@@ -141,6 +144,55 @@ function drawBarChart(rows) {
     root.append(column);
   });
 }
+// The slider changes only Pointdiagram. Podie and Stillingshistorik always
+// show their usual standings, and every frame uses the filtered game order.
+function stopTimeMachine() {
+  if (timeMachineTimer !== null) {
+    clearInterval(timeMachineTimer);
+    timeMachineTimer = null;
+  }
+  $('time-machine-play').textContent = 'Afspil';
+  $('time-machine-play').setAttribute('aria-pressed', 'false');
+}
+function updateTimeMachineAvailability(message = '') {
+  const ready = Boolean(historyModel?.gameCount && historyModel.players.length);
+  $('time-machine-slider').disabled = !ready;
+  $('time-machine-play').disabled = !ready;
+  $('time-machine-latest').disabled = !ready || timeMachineIndex === historyModel.gameCount;
+  $('time-machine-slider').max = String(ready ? historyModel.gameCount : 0);
+  if (!ready) {
+    $('time-machine-slider').value = '0';
+    $('time-machine-progress').textContent = 'Spil 0 af 0';
+    $('time-machine-caption').textContent = message || 'Indlæser spilhistorik …';
+  }
+}
+function selectTimeMachineGame(index) {
+  if (!historyModel?.gameCount) return;
+  timeMachineIndex = Math.max(0, Math.min(historyModel.gameCount, Math.round(Number(index))));
+  $('time-machine-slider').value = String(timeMachineIndex);
+  $('time-machine-progress').textContent = `Spil ${timeMachineIndex} af ${historyModel.gameCount}`;
+  $('time-machine-caption').textContent = timeMachineIndex === 0
+    ? 'Før første spil' : timeMachineIndex === historyModel.gameCount
+      ? 'Aktuel stilling' : `Stilling efter spil ${timeMachineIndex}`;
+  $('time-machine-latest').disabled = timeMachineIndex === historyModel.gameCount;
+  if (view === 'chart' && standings.length) {
+    drawBarChart(standingsAtGame(historyModel, timeMachineIndex));
+  }
+}
+function playTimeMachine() {
+  if (!historyModel?.gameCount) return;
+  if (timeMachineTimer !== null) {stopTimeMachine();return;}
+  if (timeMachineIndex >= historyModel.gameCount) selectTimeMachineGame(0);
+  $('time-machine-play').textContent = 'Pause';
+  $('time-machine-play').setAttribute('aria-pressed', 'true');
+  const step = Math.max(1, Math.ceil(historyModel.gameCount / 160));
+  timeMachineTimer = setInterval(() => {
+    if (view !== 'chart' || !historyModel?.gameCount) {stopTimeMachine();return;}
+    selectTimeMachineGame(Math.min(historyModel.gameCount, timeMachineIndex + step));
+    if (timeMachineIndex >= historyModel.gameCount) stopTimeMachine();
+  }, 110);
+}
+
 function renderRankings(rows) {
   standings=normalizeStandings(rows);
   $('standings-count').textContent=standings.length ? `${standings.length} spillere` : '';
@@ -153,7 +205,8 @@ function renderRankings(rows) {
   $('score-history-view').classList.toggle('hidden',empty||view!=='history');
   if(empty)return;
   renderPodium(standings);
-  drawBarChart(standings);
+  if (historyModel?.gameCount) selectTimeMachineGame(timeMachineIndex);
+  else drawBarChart(standings);
   if(view==='history')requestAnimationFrame(mountHistoryChart);
 }
 // Independent module: table definitions live in stat-metrics.js, so more
@@ -438,6 +491,10 @@ function mountHistoryChart() {
 }
 function renderScoreHistory(raw) {
   historyModel=buildScoreHistory(raw);
+  timeMachineIndex = historyModel.gameCount;
+  updateTimeMachineAvailability();
+  if (historyModel.gameCount) selectTimeMachineGame(timeMachineIndex);
+  else updateTimeMachineAvailability('Ingen spil i de valgte spilsamlinger.');
   const ready=historyModel.gameCount > 0 && historyModel.players.length > 0;
   const state=$('score-history-state');
   $('score-history-content').classList.toggle('hidden',!ready);
@@ -447,6 +504,7 @@ function renderScoreHistory(raw) {
 }
 function changeView(next) {
   if(!['podium','chart','history'].includes(next))return;
+  if (view === 'chart' && next !== 'chart') stopTimeMachine();
   view=next;
   for(const button of document.querySelectorAll('[data-stats-view]')){
     button.setAttribute('aria-pressed',String(button.dataset.statsView===view));
@@ -455,10 +513,15 @@ function changeView(next) {
   $('chart-view').classList.toggle('hidden',view!=='chart'||!standings.length);
   $('score-history-view').classList.toggle('hidden',view!=='history'||!standings.length);
   if(view==='history')requestAnimationFrame(mountHistoryChart);
+  if(view==='chart' && historyModel?.gameCount && standings.length) selectTimeMachineGame(timeMachineIndex);
 }
 async function refresh() {
   if(!supabase)return;
   const request=++activeRequest;
+  stopTimeMachine();
+  timeMachineIndex = 0;
+  historyModel = null;
+  updateTimeMachineAvailability();
   $('stats-refresh').disabled=true;
   showError('');
   // Discard old results as soon as the selection changes.
@@ -537,11 +600,13 @@ async function refresh() {
       $('score-history-state').classList.remove('hidden');
       $('score-history-content').classList.add('hidden');
       historyModel=null;
+      updateTimeMachineAvailability('Tidsmaskinen kunne ikke indlæses.');
     }
   }else{
     const error=graphResult.status==='rejected'?graphResult.reason:graphResult.value.error;
     errors.push(`Stillingshistorik: ${error.message||String(error)}`);
     $('score-history-state').textContent='Stillingshistorik kunne ikke indlæses.';
+    updateTimeMachineAvailability('Tidsmaskinen kunne ikke indlæses.');
   }
   const handsResult = settled[4];
   if (handsResult.status === 'fulfilled' && !handsResult.value.error) {
@@ -588,6 +653,18 @@ $('metric-mode-toggle').addEventListener('click',()=>{
   if(!metricPeople.length)return;
   metricMode = metricMode==='values'?'difference':'values';
   renderMetricTable();
+});
+$('time-machine-slider').addEventListener('input', event => {
+  stopTimeMachine();
+  selectTimeMachineGame(Number(event.target.value));
+});
+$('time-machine-play').addEventListener('click', playTimeMachine);
+$('time-machine-latest').addEventListener('click', () => {
+  stopTimeMachine();
+  if (historyModel?.gameCount) selectTimeMachineGame(historyModel.gameCount);
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopTimeMachine();
 });
 $('stats-refresh').addEventListener('click',refresh);
 $('stats-include-guests').addEventListener('change',()=>{

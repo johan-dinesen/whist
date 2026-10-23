@@ -522,3 +522,38 @@
   z-index:7;background:#263b4d;
 }
 .hands-table thead tr.hands-header-top > :first-child{z-index:8}
+
+
+/* v0.2.13: Tidsmaskinen integrated below Pointdiagram. */
+.time-machine{margin-top:14px;border:1px solid #34485a;border-radius:12px;
+  background:#121f2c;padding:14px 16px 13px;min-width:0}
+.time-machine-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.time-machine-head>div:first-child{min-width:0}
+.time-machine h3{font-size:14px;font-weight:750;line-height:1.25;margin:0;color:#edf4fa}
+.time-machine-actions{display:flex;align-items:center;gap:7px;flex:none}
+.time-machine-actions button{border:1px solid #456179;background:#223b50;color:#ecf6ff;
+  border-radius:8px;font-size:12px;font-weight:700;min-height:34px;padding:7px 13px}
+.time-machine-actions button:hover:not(:disabled){border-color:#83b1cd;background:#2b4c65}
+.time-machine-actions button:disabled{opacity:.45;cursor:default}
+.time-machine-actions button[aria-pressed=true]{background:#174e5e;border-color:#62b7c1}
+.time-machine-slider{display:block;width:100%;height:25px;margin:0;accent-color:#81bad9;cursor:pointer}
+.time-machine-slider:disabled{cursor:default;opacity:.45}
+.time-machine-slider:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.time-machine-markers{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:8px;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.45}
+.time-machine-markers strong{font-size:12px;font-weight:700;color:#e6f3fb;font-variant-numeric:tabular-nums;
+  text-align:center;white-space:nowrap}
+.time-machine-markers span:last-child{text-align:right}
+@media(max-width:620px){
+  .time-machine{padding:11px 10px 12px;margin-top:12px}
+  .time-machine-head{margin-bottom:10px;gap:7px}
+  .time-machine h3{font-size:13px}
+  .time-machine-actions{gap:5px}
+  .time-machine-actions button{padding:6px 9px;font-size:11px;min-height:32px}
+  .time-machine-markers{font-size:10px;gap:4px}
+  .time-machine-markers strong{font-size:11px}
+}
+@media(max-width:350px){
+  .time-machine-markers{font-size:9px}
+  .time-machine-markers strong{font-size:10px}
+}

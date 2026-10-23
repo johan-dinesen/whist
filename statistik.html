@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=0.2.11">
+  <link rel="stylesheet" href="assets/css/app.css?v=0.2.13">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
   <main class="shell">
     <div class="heading">
       <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
-      <span class="version">v0.2.12</span>
+      <span class="version">v0.2.13</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
@@ -54,6 +54,24 @@
           <div id="rank-bar-chart" class="rank-bar-chart"></div>
         </div>
         <p class="rank-chart-scroll-tip">Rul vandret for at se alle spillere.</p>
+        <div id="time-machine" class="time-machine" aria-label="Tidsmaskinen: historisk stilling i pointdiagrammet">
+          <div class="time-machine-head">
+            <div>
+              <h3>Tidsmaskinen</h3>
+              <p id="time-machine-caption" class="rank-subtitle" role="status">Indlæser spilhistorik …</p>
+            </div>
+            <div class="time-machine-actions">
+              <button type="button" id="time-machine-play" aria-pressed="false" disabled>Afspil</button>
+              <button type="button" id="time-machine-latest" disabled>Seneste</button>
+            </div>
+          </div>
+          <input id="time-machine-slider" class="time-machine-slider" type="range" min="0" max="0" step="1" value="0" disabled aria-label="Vis stillingen efter spil nummer">
+          <div class="time-machine-markers">
+            <span>Før første spil</span>
+            <strong id="time-machine-progress" aria-live="off">Spil 0 af 0</strong>
+            <span>Seneste spil</span>
+          </div>
+        </div>
       </div>
       <div id="score-history-view" class="hidden" aria-label="Stillingshistorik med nettopoint efter hvert spil">
         <p id="score-history-state" class="ranking-empty" role="status">Indlæser stillingshistorik …</p>
@@ -128,6 +146,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=0.2.11"></script>
+  <script type="module" src="assets/js/stats.js?v=0.2.13"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@ export function buildScoreHistory(data) {
     throw new Error('Antallet af spil stemmer ikke med historikken');
   }
   const players = [...data.players].map(p => ({
-    id: String(p.id ?? ''), name: String(p.name ?? '').trim(), cents: 0, series: [0]
+    id: String(p.id ?? ''), name: String(p.name ?? '').trim(), cents: 0, series: [0], participations: 0, gamesPlayed: [0]
   })).sort((a,b) => compareNames.compare(a.name,b.name) || a.id.localeCompare(b.id));
   const byId = new Map();
   for (const p of players) {
@@ -34,14 +34,18 @@ export function buildScoreHistory(data) {
       }
       participants.add(id);
       player.cents += Math.round(value*100);
+      player.participations += 1;
     }
     if (participants.size !== 4) {
       throw new Error('Spil '+game.index+' mangler én eller flere af de fire spillere');
     }
-    for (const player of players) player.series.push(player.cents/100);
+    for (const player of players) {
+      player.series.push(player.cents/100);
+      player.gamesPlayed.push(player.participations);
+    }
   }
   return {
     gameCount,
-    players:players.map(({id,name,series})=>({id,name,series,final:series.at(-1)}))
+    players:players.map(({id,name,series,gamesPlayed})=>({id,name,series,gamesPlayed,final:series.at(-1)}))
   };
 }
