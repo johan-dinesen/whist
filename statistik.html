@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0-clock">
 </head>
 <body>
   <header class="topbar">
@@ -142,10 +142,32 @@
         </details>
       </div>
     </section>
+    <section class="panel hourly-panel" aria-labelledby="hourly-title">
+      <div class="ranking-head hourly-head">
+        <div><h2 id="hourly-title">Efter klokkeslæt</h2></div>
+        <label class="hourly-selector" for="hourly-metric">
+          <span>Vis statistik</span>
+          <select id="hourly-metric">
+            <option value="points">Point/spil</option>
+            <option value="calls">Meldinger %</option>
+            <option value="exact">Præcis melding %</option>
+            <option value="absolute">Absolut stikafvigelse</option>
+            <option value="solo">Solomeldinger %</option>
+          </select>
+        </label>
+      </div>
+      <p id="hourly-state" class="ranking-empty" role="status">Indlæser klokkeslætsstatistik …</p>
+      <div id="hourly-content" class="hidden">
+        <div class="hourly-chart-wrap">
+          <canvas id="hourly-canvas" role="img" aria-label="Udviklingen i den valgte statistik efter klokkeslæt for de markerede spillere"></canvas>
+        </div>
+        <div id="hourly-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere. Stiplede kurver er spillernes egne gennemsnit."></div>
+      </div>
+    </section>
   </main>
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=1.0.0"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.0-clock"></script>
 </body>
 </html>

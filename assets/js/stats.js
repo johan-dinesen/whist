@@ -8,6 +8,8 @@ import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
+import {normalizeHourlyResponse} from './hourly-model.js';
+import {createHourlyChart} from './hourly-chart.js';
 
 const $ = id => document.getElementById(id);
 
@@ -36,6 +38,7 @@ let timeMachineIndex = 0;
 let timeMachineTimer = null;
 let metricPeople = [];
 let metricMode = 'values';
+let hourlyView = null;
 
 function showError(message) {
   const node = $('stats-status');
@@ -604,6 +607,21 @@ function changeView(next) {
   if(view==='history')requestAnimationFrame(mountHistoryChart);
   if(view==='chart' && historyModel?.gameCount && standings.length) selectTimeMachineGame(timeMachineIndex);
 }
+function renderHourlyStatistics(raw) {
+  const model = normalizeHourlyResponse(raw);
+  const ready = model.hours.length > 0 && model.players.length > 0;
+  $('hourly-state').classList.toggle('hidden', ready);
+  $('hourly-content').classList.toggle('hidden', !ready);
+  if (!ready) {
+    $('hourly-state').textContent = 'Ingen spil med registreret klokkeslæt mellem 10:00 og 03:00 i de valgte spilsamlinger.';
+    return;
+  }
+  hourlyView = createHourlyChart({
+    canvas: $('hourly-canvas'), legend: $('hourly-legend'), model,
+    metric: $('hourly-metric').value, avatar
+  });
+}
+
 async function refresh() {
   if(!supabase)return;
   const request=++activeRequest;
@@ -636,6 +654,11 @@ async function refresh() {
   $('hands-count').textContent='';
   historyChart?.destroy();
   historyChart=null;
+  hourlyView?.destroy();
+  hourlyView=null;
+  $('hourly-state').textContent='Indlæser klokkeslætsstatistik …';
+  $('hourly-state').classList.remove('hidden');
+  $('hourly-content').classList.add('hidden');
   historyModel=null;
   $('score-history-state').textContent='Indlæser stillingshistorik …';
   $('score-history-state').classList.remove('hidden');
@@ -650,7 +673,8 @@ async function refresh() {
     supabase.rpc('get_melding_statistics_for_notes',params),
     supabase.rpc('get_synergy_for_notes',params),
     supabase.rpc('get_standings_history_for_notes',params),
-    supabase.rpc('get_hands_statistics_for_notes',params)
+    supabase.rpc('get_hands_statistics_for_notes',params),
+    supabase.rpc('get_hourly_statistics_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
@@ -709,6 +733,20 @@ async function refresh() {
     errors.push(`Hænder: ${err?.message || String(err)}`);
     $('hands-state').textContent = 'Hænder kunne ikke indlæses.';
   }
+  const hourlyResult = settled[5];
+  if (hourlyResult.status === 'fulfilled' && !hourlyResult.value.error) {
+    try { renderHourlyStatistics(hourlyResult.value.data); }
+    catch(err) {
+      errors.push(`Efter klokkeslæt: ${err.message}`);
+      $('hourly-state').textContent = 'Klokkeslætsstatistik kunne ikke indlæses.';
+      $('hourly-state').classList.remove('hidden');
+      $('hourly-content').classList.add('hidden');
+    }
+  } else {
+    const err = hourlyResult.status === 'rejected' ? hourlyResult.reason : hourlyResult.value.error;
+    errors.push(`Efter klokkeslæt: ${err?.message || String(err)}`);
+    $('hourly-state').textContent = 'Klokkeslætsstatistik kunne ikke indlæses.';
+  }
   if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
   $('stats-refresh').disabled=false;
 }
@@ -742,6 +780,9 @@ $('metric-mode-toggle').addEventListener('click',()=>{
   if(!metricPeople.length)return;
   metricMode = metricMode==='values'?'difference':'values';
   updateMetricValues();
+});
+$('hourly-metric').addEventListener('change', event => {
+  hourlyView?.setMetric(event.target.value);
 });
 $('time-machine-slider').addEventListener('input', event => {
   stopTimeMachine();

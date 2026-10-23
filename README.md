@@ -1,37 +1,36 @@
-# Whist v1.0.0
+# Whist 1.0.0: Efter klokkeslæt
 
-The complete Whist website for GitHub Pages, with registration, history,
-statistics, and administration. This archive retains the directory structure
-and functionality of the supplied `whist-main.zip`.
+A new module at the bottom of **Statistik**, following all existing Spilsamlinger and Medtag gæstespil filters.
 
-## Release changes
+## Installation
 
-- All displayed page versions are **v1.0.0**.
-- Local CSS, JavaScript, and module cache-busting versions use **1.0.0**.
-- The history slider beneath Pointdiagram is now labeled **Stillingsudvikling**,
-  including accessibility and error messages. Internal element IDs and
-  module filenames stay unchanged to preserve functionality.
-- No scoring rules, database functions, player records, or Supabase settings
-  were changed.
+1. Run `sql/22_hourly_statistics.sql` in Supabase > SQL Editor **after** existing migration 21.
+2. Upload the five frontend files from this archive to the matching paths in GitHub:
+   - **Replace** `statistik.html`
+   - **Replace** `assets/js/stats.js`
+   - **Replace** `assets/css/app.css`
+   - **Add** `assets/js/hourly-model.js`
+   - **Add** `assets/js/hourly-chart.js`
+3. Keep all other files, particularly `assets/js/config.js`, unchanged.
+4. Refresh the Statistik page. The updated CSS/JS links use a cache-busting suffix; the displayed site version remains **v1.0.0**.
 
-## Deployment
+## Behaviour
 
-Copy the contents of the `whist-main/` directory into the root of your
-GitHub Pages repository (or retain the same directory layout as before).
-Preserve your existing deployment settings and Supabase project.
+- One line chart, five choices: Point/spil, Meldinger %, Præcis melding %, Absolut stikafvigelse, Solomeldinger %.
+- One solid curve per player for observed hourly averages; a thinner dashed curve of the same colour for the player's **overall average over eligible timestamped games**.
+- Legend buttons independently show/hide both curves for a player. Player photographs use the existing image cache.
+- Hover/tap an observation to see the value, number of observations and player's overall average.
+- The graph's x-axis runs only from the first to the last observed hour, constrained to 10:00 through 02:59. Midnight buckets are plotted after 23:00, and an hour with no matching games remains a gap.
+- Averages are properly weighted from **sums and counts**, not a simple mean of hourly means.
+- Solo calls with multiple callers are counted individually. "Præcis melding" follows the existing historical win/trick classification and uses **all calls** as denominator, even if a legacy solo win is unclassified. Absolute trick deviation uses only ordinary/Vip calls.
+- The new RPC only reads data. All earlier modules, standings logic and stored games remain untouched.
 
-This version update requires **no new SQL migrations**. Existing migrations
-in `sql/` are included for reference or initial project setup; do not rerun
-them just to update the website version.
+## Timestamp assumptions
 
-For standard GitHub Pages deployment, the root should contain
-`index.html`, `historik.html`, `statistik.html`, `administrering.html`,
-and `assets/`.
+- Only non-NULL `games.played_at` is used. Import times (`created_at`) and artificial year sorting keys are NEVER used.
+- The timestamp is translated to the **playing-location timezone before** extracting its clock hour. Current mapping: tournament names containing `Helsinki` use `Europe/Helsinki`; all others, including Kredsspil, use `Europe/Copenhagen`. For future games played elsewhere, adjust the timezone mapping in this new SQL function before including them.
+- A game at 03:00 or later (up to 09:59) is excluded. A game at 02:59 is included.
 
-## Checks
+## Tests
 
-Run `node --test tests/*.test.js tests/*.test.mjs` with Node.js to exercise
-the pure-model test suite. The repository also contains older test scripts; the
-`npm test` command currently stops in a legacy CommonJS test that evaluates an
-ES module as a classic script, an issue present in the supplied ZIP.
-Testing against a live Supabase project requires your own deployed environment.
+The new model's 5 automated tests and 13 existing scoring/model tests passed locally. Browser interaction checks at 320, 390, 620 and 900px passed using a Chart.js-compatible test double (the production Chart.js CDN and live Supabase function were not available for end-to-end verification in this environment). SQL must be applied and verified in your own Supabase project.

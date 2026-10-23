@@ -596,3 +596,25 @@
    The FLIP transform creates a stacking context on the moving column; an
    avatar's own z-index cannot otherwise rise above the baseline sibling. */
 .rank-bar-chart > .rank-bar-column { z-index: 2; }
+
+
+/* Efter klokkeslæt: one graph, metric selector and click-to-filter legend. */
+.hourly-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.hourly-head h2{margin:0}
+.hourly-selector{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:650}
+.hourly-selector select{min-height:38px;max-width:min(62vw,260px);border:1px solid #465e75;background:#192b3c;color:#f0f6fc;border-radius:8px;padding:7px 30px 7px 10px;font:inherit;font-size:13px;cursor:pointer}
+.hourly-selector select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.hourly-chart-wrap{position:relative;width:100%;height:370px;min-height:300px;background:#121e2b;border:1px solid #34495d;border-radius:11px;padding:14px 12px 9px;box-sizing:border-box}
+.hourly-chart-wrap canvas{width:100%!important;height:100%!important}
+.hourly-panel .score-history-legend{margin-top:12px}
+.hourly-player{padding:5px 8px;gap:6px}
+.hourly-avatar{width:24px;height:24px;border-width:1px}
+.hourly-avatar .rank-initials{font-size:9px}
+@media(max-width:620px){
+  .hourly-panel{padding:16px 12px 19px}
+  .hourly-head{align-items:flex-start;gap:10px}
+  .hourly-selector{width:100%;justify-content:space-between}
+  .hourly-selector select{flex:1;max-width:240px;min-width:0}
+  .hourly-chart-wrap{height:320px;padding:9px 6px 6px}
+  .hourly-player{font-size:11px;padding:5px 7px}
+}
