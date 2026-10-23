@@ -46,6 +46,43 @@ function signed(value) {
   const n = Number(value);
   return formatPoints(n);
 }
+// One fetch/decode per profile per page. Keep the decoded resource available
+// when another statistics view needs a new avatar element. Missing photos are
+// remembered too, so repeated redraws do not repeatedly request 404 URLs.
+const photoCache = new Map();
+function profileImage(player) {
+  const url = profileUrl(supabase, player.id, profileCacheVersion);
+  let entry = photoCache.get(url);
+  if (entry) return entry;
+  const source = new Image();
+  entry = {source, status: 'loading', waiting: new Set()};
+  photoCache.set(url, entry);
+  source.onload = async () => {
+    // Wait for decoding before revealing any cloned image. An already-loaded
+    // image must not briefly fall back to an initial during a redraw.
+    try { await source.decode(); } catch (_) { /* decode() is optional on some browsers */ }
+    entry.status = source.naturalWidth ? 'ready' : 'missing';
+    if (entry.status === 'ready') {
+      for (const figure of entry.waiting) showProfileImage(figure, entry);
+    }
+    entry.waiting.clear();
+  };
+  source.onerror = () => {
+    entry.status = 'missing';
+    entry.waiting.clear();
+  };
+  source.src = url;
+  return entry;
+}
+function showProfileImage(figure, entry) {
+  if (figure.classList.contains('has-photo')) return;
+  const img = entry.source.cloneNode(false);
+  img.alt = '';
+  img.loading = 'eager';
+  img.decoding = 'sync';
+  figure.append(img);
+  figure.classList.add('has-photo');
+}
 function avatar(player, size = '') {
   const figure = document.createElement('span');
   figure.className = `rank-avatar ${size}`.trim();
@@ -53,17 +90,9 @@ function avatar(player, size = '') {
   initials.className = 'rank-initials';
   initials.textContent = player.name.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
   figure.append(initials);
-  const img = document.createElement('img');
-  img.alt = '';
-  // Eager loading is required: the initial CSS hides the image until onload.
-  // Lazy-loaded, display:none images can otherwise remain unfetched indefinitely.
-  img.loading = 'eager';
-  img.decoding = 'async';
-  // Stored photos have a stable UUID-based filename. Missing photos show initials.
-  img.onload = () => figure.classList.add('has-photo');
-  img.onerror = () => figure.classList.remove('has-photo');
-  img.src = profileUrl(supabase, player.id, profileCacheVersion);
-  figure.append(img);
+  const entry = profileImage(player);
+  if (entry.status === 'ready') showProfileImage(figure, entry);
+  else if (entry.status === 'loading') entry.waiting.add(figure);
   return figure;
 }
 function playerScore(parent, p) {
@@ -103,46 +132,65 @@ function renderPodium(rows) {
 // Positive values rise above zero; negative values descend beneath it.
 function drawBarChart(rows) {
   const root = $('rank-bar-chart');
-  root.replaceChildren();
   root.style.setProperty('--rank-count', String(rows.length));
-  // Show up to six equal-width players in the visible chart area on every device.
-  // Additional players occupy the same width and can be reached by scrolling.
+  // Six players fit at once. Extra players can still be scrolled horizontally.
   root.style.width = rows.length > 6 ? `${(rows.length / 6 * 100).toFixed(4)}%` : '100%';
   root.style.minWidth = '0';
   document.querySelector('.rank-chart-scroll-tip').classList.toggle('has-overflow', rows.length > 6);
-  document.querySelector('.rank-bar-scroll').scrollLeft = 0;
   const maxAbs = Math.max(0.01, ...rows.map(p => Math.abs(p.points)));
-  const zero = document.createElement('div');
-  zero.className = 'rank-zero-line';
-  zero.setAttribute('aria-hidden', 'true');
-  root.append(zero);
-  rows.forEach((player, i) => {
-    const column = document.createElement('div');
-    column.className = 'rank-bar-column';
+  let zero = root.querySelector('.rank-zero-line');
+  if (!zero) {
+    zero = document.createElement('div');
+    zero.className = 'rank-zero-line';
+    zero.setAttribute('aria-hidden', 'true');
+    root.prepend(zero);
+  }
+  // Preserve each player's existing DOM column and its loaded <img>. Recreating
+  // images at every Tidsmaskinen tick exposes the initials until image.onload.
+  const existing = new Map([...root.querySelectorAll('.rank-bar-column')]
+    .map(column => [column.dataset.playerId, column]));
+  const ordered = [];
+  for (const [i, player] of rows.entries()) {
+    const key = String(player.id);
+    let column = existing.get(key);
+    if (column) existing.delete(key);
+    else {
+      column = document.createElement('div');
+      column.className = 'rank-bar-column';
+      column.dataset.playerId = key;
+      const bar = document.createElement('div');
+      const amount = document.createElement('strong');
+      const photo = avatar(player, 'rank-avatar-chart');
+      photo.classList.add('rank-bar-avatar');
+      const foot = document.createElement('div');
+      foot.className = 'rank-bar-footer';
+      const name = document.createElement('strong');
+      const games = document.createElement('small');
+      foot.append(name, games);
+      column.append(bar, amount, photo, foot);
+    }
     const positive = player.points > 0;
     const negative = player.points < 0;
-    const height = 35 * Math.abs(player.points) / maxAbs;
-    const bar = document.createElement('div');
+    const height = `${(35 * Math.abs(player.points) / maxAbs).toFixed(3)}%`;
+    const [bar, amount, , foot] = column.children;
     bar.className = `rank-bar ${positive ? 'rank-bar-positive' : negative ? 'rank-bar-negative' : 'rank-bar-zero'}`;
-    bar.style.setProperty('--bar-height', `${height.toFixed(3)}%`);
-    const amount = document.createElement('strong');
+    bar.style.setProperty('--bar-height', height);
     amount.className = `rank-bar-value ${positive ? 'positive' : negative ? 'negative' : 'zero'}`;
-    amount.style.setProperty('--bar-height', `${height.toFixed(3)}%`);
+    amount.style.setProperty('--bar-height', height);
     amount.textContent = signed(player.points);
-    const photo = avatar(player, 'rank-avatar-chart');
-    photo.classList.add('rank-bar-avatar');
-    const foot = document.createElement('div');
-    foot.className = 'rank-bar-footer';
-    const name = document.createElement('strong');
-    name.textContent = player.name;
-    name.title = player.name;
-    const games = document.createElement('small');
-    games.textContent = `${player.games} spil`;
-    foot.append(name, games);
+    foot.querySelector('strong').textContent = player.name;
+    foot.querySelector('strong').title = player.name;
+    foot.querySelector('small').textContent = `${player.games} spil`;
     column.setAttribute('aria-label', `${i+1}. ${player.name}, ${signed(player.points)} point, ${player.games} spil`);
-    column.append(bar, amount, photo, foot);
-    root.append(column);
-  });
+    ordered.push(column);
+  }
+  for (const stale of existing.values()) stale.remove();
+  // Move only columns whose rank actually changed. Stable nodes retain photos
+  // even during fast playback and when the sign or height of a bar changes.
+  for (const [index, column] of ordered.entries()) {
+    const atPosition = root.children[index + 1]; // zero line is child 0
+    if (atPosition !== column) root.insertBefore(column, atPosition || null);
+  }
 }
 // The slider changes only Pointdiagram. Podie and Stillingshistorik always
 // show their usual standings, and every frame uses the filtered game order.
@@ -226,13 +274,42 @@ function updateMetricModeButton() {
   button.setAttribute('aria-pressed', String(metricMode === 'difference'));
   button.textContent = metricMode === 'difference' ? 'Vis værdier' : 'Vis afvigelse';
 }
+// Switching values/relative deviation updates the existing numeric cells only.
+// The player headings (and their loaded profile pictures) never get rebuilt.
+function updateMetricValues() {
+  const people = metricPeople;
+  const means = playerAverages(people);
+  const relative = metricMode === 'difference';
+  updateMetricModeButton();
+  const rows = $('metric-body').rows;
+  for (const [metricIndex, metric] of METRICS.entries()) {
+    const tr = rows[metricIndex];
+    if (!tr) continue;
+    for (const [playerIndex, player] of people.entries()) {
+      const td = tr.cells[playerIndex + 2];
+      if (!td) continue;
+      td.textContent = relative
+        ? displayDifference(metric, player, means)
+        : displayMetric(metric, player);
+      const detail = metricDetail(metric, player);
+      td.title = relative
+        ? `${player.name}, ${metric.label}: ${detail}. ${td.textContent} i forhold til spillergennemsnittet ${displayAverage(metric, means)}. ${metric.help}`
+        : `${player.name}, ${metric.label}: ${detail}. ${metric.help}`;
+      td.setAttribute('aria-label', td.title);
+      td.classList.toggle('metric-percent', metric.type === 'percentage' && metricValue(metric, player) !== null && !relative);
+      const value = metricValue(metric, player);
+      const avg = means[metric.key];
+      td.classList.toggle('metric-relative', relative && value !== null && avg !== null && Math.abs(avg) >= 1e-12 && Math.abs(value - avg) > 1e-9);
+      td.classList.toggle('gain', !relative && metric.key === 'pointsPerHand' && player.avgPointsPerHand > 0);
+      td.classList.toggle('loss', !relative && metric.key === 'pointsPerHand' && player.avgPointsPerHand < 0);
+    }
+  }
+}
 function renderMetricTable() {
   const people = metricPeople;
   const head = $('metric-head');
   const body = $('metric-body');
   const means = playerAverages(people);
-  const relative = metricMode === 'difference';
-  updateMetricModeButton();
 
   // Players form the columns. A new metric is therefore just another row.
   const metricHeading = document.createElement('th');
@@ -266,7 +343,7 @@ function renderMetricTable() {
   }
 
   body.replaceChildren();
-  if (!people.length) return;
+  if (!people.length) { updateMetricModeButton(); return; }
   for (const metric of METRICS) {
     const tr = document.createElement('tr');
     const title = document.createElement('th');
@@ -281,35 +358,10 @@ function renderMetricTable() {
     mean.textContent = displayAverage(metric, means);
     mean.title = `${metric.label}: gennemsnit af spillernes individuelle værdier`;
     tr.append(mean);
-
-    for (const player of people) {
-      const td = document.createElement('td');
-      td.textContent = relative
-        ? displayDifference(metric, player, means)
-        : displayMetric(metric, player);
-      const detail = metricDetail(metric, player);
-      td.title = relative
-        ? `${player.name}, ${metric.label}: ${detail}. ${td.textContent} i forhold til spillergennemsnittet ${displayAverage(metric, means)}. ${metric.help}`
-        : `${player.name}, ${metric.label}: ${detail}. ${metric.help}`;
-      td.setAttribute('aria-label', td.title);
-      if (metric.type === 'percentage' && metricValue(metric, player) !== null && !relative) {
-        td.classList.add('metric-percent');
-      }
-      if (relative) {
-        const value = metricValue(metric, player);
-        const avg = means[metric.key];
-        if (value !== null && avg !== null && Math.abs(avg) >= 1e-12 && Math.abs(value - avg) > 1e-9) {
-          td.classList.add('metric-relative');
-        }
-      } else if (metric.key === 'pointsPerHand') {
-        const value = player.avgPointsPerHand;
-        if (value > 0) td.classList.add('gain');
-        else if (value < 0) td.classList.add('loss');
-      }
-      tr.append(td);
-    }
+    for (const player of people) tr.append(document.createElement('td'));
     body.append(tr);
   }
+  updateMetricValues();
 }
 function renderMeldingStatistics(raw) {
   metricPeople=normalizeMeldingStatistics(raw);
@@ -652,7 +704,7 @@ updateMetricModeButton();
 $('metric-mode-toggle').addEventListener('click',()=>{
   if(!metricPeople.length)return;
   metricMode = metricMode==='values'?'difference':'values';
-  renderMetricTable();
+  updateMetricValues();
 });
 $('time-machine-slider').addEventListener('input', event => {
   stopTimeMachine();

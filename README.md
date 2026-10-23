@@ -1,31 +1,26 @@
-# Whist v0.2.13 · Tidsmaskinen i Pointdiagram
+# Whist v0.2.14 · Profilbilleder uden blink
 
-Frontend-only update of **Statistik**, based on v0.2.12. The new Tidsmaskinen sits **directly beneath Pointdiagram** inside the Stilling module. There is no extra module and the existing Stillingshistorik tab remains.
+Frontend-only update of `Statistik`, based on v0.2.13. This addresses the brief initials flash (e.g. `D` instead of David's picture) when Tidsmaskinen advances or Meldingsstatistik switches between `Vis værdier` and `Vis afvigelse`.
 
 ## Installation
 
-Upload/replace these files in the GitHub Pages repository:
+Replace these three files in your GitHub Pages repository:
 
-- `statistik.html` (replace)
-- `assets/css/app.css` (replace)
-- `assets/js/stats.js` (replace)
-- `assets/js/score-history-model.js` (replace)
-- `assets/js/time-machine-model.js` (**add**)
+- `statistik.html`
+- `assets/js/stats.js`
+- `assets/css/app.css`
 
-**Do not replace** the existing configuration, remaining JS helpers, registration page, history page or SQL files.
+Do not change any other file. No Supabase SQL migration is needed.
 
-**No new SQL is necessary.** This feature uses the existing read-only `get_standings_history_for_notes` RPC, introduced in SQL migration 20. If Stillingshistorik already works, that function is already installed.
+## What changed
 
-Commit and push, then reload the Statistik page and look for `v0.2.13`.
+1. Pointdiagram/Tidsmaskinen keeps the same DOM node, including the same loaded image, for each player as the scores, ranks and game counts change. It only creates/removes a player column if the selected player set changes.
+2. Meldingsstatistik's `Vis afvigelse` control updates only the numeric table cells. It never recreates the player headers or their images.
+3. The shared avatar renderer on the Statistik page loads/decodes each profile once per page and remembers the result. Already-loaded photos are visible immediately on subsequent renders; nonexistent photos continue to use initials, without repeated failed requests.
+4. Disabled the redundant image fade-in on an already-loaded photo.
 
-## Behavior
-
-- Choose **Stilling → Pointdiagram**. Drag the slider underneath the bars to select game 0 through the final game in the currently selected Spilsamlinger / guest filter.
-- The bar values, their order, and each player's `X spil` count are recalculated **as they stood after the selected game**. At game 0, all selected players have zero points and zero played games. A player who hadn't joined yet remains at zero.
-- `Afspil` / `Pause` animates the bars from the selected position; if already at the last game, play begins from game 0. For long selections the animation may skip some frames; the slider always supports **every integer game index**.
-- `Seneste` jumps to the final game, which matches the present-day Pointdiagram. Moving to Podie / Stillingshistorik does not change their data. Returning to Pointdiagram preserves the selected time-machine position until the filters are refreshed.
-- Refreshing filters resets Tidsmaskinen to the latest game. If the history RPC is unavailable, the present-day Pointdiagram still functions and the slider is disabled.
+The first time an actual photo is fetched on a new page visit, an initial may still be visible briefly until the initial network load completes. This is unavoidable without delaying the initial UI, but subsequent redraws do not expose initials.
 
 ## Verification
 
-The `tests/model.mjs` local checks cover initial and intermediate frames, cumulative points, individual game counts, player ordering, and invalid indices. `tests/browser.py` exercises the actual UI controller and historic model in offline Chromium at 320, 390, 620, and 900 pixels, including slider, play/pause, latest, and tab switching. These checks do not access the live Supabase project.
+`tests/browser.py` (not part of deploy archive) uses offline Chromium at 320, 390 and 900 pixels. It checks that the exact same avatar image elements survive repeated Tidsmaskinen frames, that the same header images survive `Vis afvigelse`/`Vis værdier`, that new table renders reuse previously decoded photos, and that there are no page errors or horizontal page overflow. Tests do not connect to the live Supabase project.

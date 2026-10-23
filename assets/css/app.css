@@ -557,3 +557,7 @@
   .time-machine-markers{font-size:9px}
   .time-machine-markers strong{font-size:10px}
 }
+
+/* v0.2.14: An image that has been decoded should appear without a second fade.
+   During redraws, the existing avatar nodes are preserved instead of recreated. */
+.rank-avatar img{transition:none}
