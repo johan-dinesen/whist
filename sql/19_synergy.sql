@@ -1,4 +1,4 @@
--- Whist: Synergi / partnership matrix.
+-- Whist v0.2.5: Synergi / partnership matrix.
 -- Run AFTER 05_scoring_history.sql, 16_standings.sql and 18_ordinary_deviation_only.sql.
 -- Read-only RPC: does not insert, update or delete any games.
 -- Includes all players who participated in >=1 qualifying game, even if they

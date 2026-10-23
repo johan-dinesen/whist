@@ -1,4 +1,4 @@
--- Whist: Stillingshistorik.
+-- Whist v0.2.6 · Stillingshistorik.
 -- Requires existing scoring view public.game_player_payouts, and the
 -- historical metadata columns introduced by the Slettestrand 2023 import.
 -- READ-ONLY. Does not alter existing games or scores.

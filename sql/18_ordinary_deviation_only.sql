@@ -1,4 +1,4 @@
--- Whist: update calling statistics to calculate deviation from ordinary calls only.
+-- Whist v0.2.4: update calling statistics to calculate deviation from ordinary calls only.
 -- Apply AFTER 17_melding_statistics.sql. Replaces only the existing READ-ONLY RPC;
 -- existing games, tournament assignments, profiles and passwords are unchanged.
 -- Matches get_standings_for_notes() for tournament and guest filtering.

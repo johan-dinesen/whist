@@ -1,4 +1,4 @@
--- Whist: explicit tournament notes and Kredsspil.
+-- Whist v0.1.6: explicit tournament notes and Kredsspil.
 -- Run AFTER 05_scoring_history.sql, once, in Supabase SQL Editor.
 -- Non-destructive. All old games remain linked to the same tournament_id.
 -- A NULL tournament_id means Kredsspil; Kredsspil is deliberately NOT a

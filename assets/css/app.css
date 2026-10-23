@@ -38,7 +38,7 @@
 .history-empty{text-align:center;padding:24px;color:var(--muted)}
 @media(max-width:620px){.site-nav{gap:12px}.history-controls .button{width:100%}}
 
-/* compact game-group selection and multi-note filters. */
+/* v0.1.6: compact game-group selection and multi-note filters. */
 .scope-panel{padding:18px 23px}
 .scope-panel h2{font-size:17px}
 .scope-panel .muted{font-size:13px}
@@ -57,7 +57,7 @@
 .load-more-button{display:block;margin:14px auto 0}
 @media(max-width:620px){.scope-panel{padding:15px 17px}.scope-choices .choice{flex:1 1 130px}.history-controls .button{width:auto}}
 
-/* denser history with a fixed header inside its scrollable viewport. */
+/* v0.1.6: denser history with a fixed header inside its scrollable viewport. */
 .history-table-wrap{
   overflow:auto;
   max-height:min(72vh,720px);
@@ -101,7 +101,7 @@
   .history-table .payout-heading,.history-table .payout-cell{padding-left:5px;padding-right:5px;min-width:45px}
 }
 
-/* private tournament administration */
+/* v0.1.7: private tournament administration */
 .admin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 18px}
 .admin-toolbar p{font-size:13px}
 .admin-toolbar .button{min-height:40px;padding:9px 13px;flex:0 0 auto}
@@ -122,11 +122,11 @@
 /* Keep all three navigation links accessible on small phones. */
 @media(max-width:530px){.topbar-inner{height:auto;min-height:64px;flex-wrap:wrap;padding:10px 0;gap:5px}.site-nav{width:100%;justify-content:space-between;gap:8px;font-size:12px}.brand{font-size:17px}}
 
-/* quiet connection state, but preserve actionable error messages. */
+/* v0.1.10: quiet connection state, but preserve actionable error messages. */
 .connection-error{margin:4px 0 14px;color:#ffc2a7;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
 #refresh-history.refresh-history-btn{min-height:34px;padding:6px 10px;font-size:12px;border-radius:7px;width:auto}
 
-/* compact per-player profile picture manager. */
+/* v0.1.11: compact per-player profile picture manager. */
 .profile-editor{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:16px}
 .profile-avatar{width:144px;height:144px;border-radius:50%;background:var(--surface2);border:2px solid #405166;display:grid;place-items:center;overflow:hidden;flex:none;position:relative}
 .profile-initials{font-size:39px;font-weight:800;color:var(--muted)}
@@ -143,7 +143,7 @@
 .admin-toolbar p{margin-right:auto}
 @media(max-width:620px){.profile-editor{gap:14px}.profile-avatar{height:116px;width:116px}.profile-file-controls{flex-basis:100%}.admin-toolbar{flex-direction:row;flex-wrap:wrap}}
 
-/* standings. Preserves existing Whist theme and profile uploader. */
+/* v0.2.0: standings. Preserves existing Whist theme and profile uploader. */
 .ranking-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
 .ranking-head h2{margin:0}
 .rank-subtitle{margin:4px 0 0!important;font-size:12px;color:var(--muted)}
@@ -217,7 +217,7 @@
 }
 @media(max-width:350px){.podium-name{font-size:11px}.podium-score{font-size:17px}}
 
-/* clean podium and a signed vertical-bar standings visualization. */
+/* v0.2.1: clean podium and a signed vertical-bar standings visualization. */
 .podium-stand{justify-content:flex-start}
 .rank-avatar img{display:block;opacity:0;transition:opacity .14s ease}
 .rank-avatar.has-photo img{opacity:1}
@@ -252,7 +252,7 @@
 .rank-chart-scroll-tip{display:none;font-size:11px;color:var(--muted);margin:8px 0 0!important;text-align:center}
 @media(max-width:620px){.rank-chart-scroll-tip{display:block}}
 
-/* six chart columns fit the viewport; additional players scroll sideways. */
+/* v0.2.2: six chart columns fit the viewport; additional players scroll sideways. */
 .rank-bar-chart{width:100%;min-width:0}
 .rank-bar-scroll{min-width:0}
 .rank-bar-footer strong{padding:0 2px}
@@ -274,7 +274,7 @@
   .rank-bar-value{font-size:9px}
 }
 
-/* compact, non-sticky player column; statistics scroll as one table. */
+/* v0.2.4: compact, non-sticky player column; statistics scroll as one table. */
 .metrics-panel{padding-bottom:21px}
 .metric-table-scroll{overflow:auto;overscroll-behavior-x:contain;border:1px solid #34495d;border-radius:10px;background:#121e2b;scrollbar-color:#466780 #142330}
 .metric-table-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
@@ -350,7 +350,7 @@
 }
 
 
-/* independent cumulative standings history module. */
+/* v0.2.6 · independent cumulative standings history module. */
 .score-history-panel{padding-bottom:21px}
 .score-history-chart-wrap{position:relative;width:100%;height:390px;min-height:320px;
   border:1px solid #34495d;border-radius:11px;padding:15px 13px 8px;
@@ -371,7 +371,7 @@
   .score-history-player{font-size:11px;padding:7px 8px}
 }
 
-/* six-player synergy matrix fits within the mobile viewport. */
+/* v0.2.7: six-player synergy matrix fits within the mobile viewport. */
 .synergy-scroll{width:100%;max-width:740px;margin-inline:auto}
 .synergy-table{width:100%;min-width:0;table-layout:fixed}
 .synergy-table.is-compact{width:100%;min-width:0}
@@ -402,7 +402,7 @@
 /* Stillingshistorik is the third Stilling view, not a separate panel. */
 #score-history-view{margin-top:12px}
 
-/* average comparison for Meldingsstatistik. */
+/* v1.0.0: Meldingsstatistik table + Tidstrend toggle. */
 .metrics-panel .ranking-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap}
 .metrics-panel .ranking-head>div{min-width:0}
 .metric-mode-toggle{flex:0 0 auto;align-self:flex-start;min-height:34px;border:1px solid #4a647a;background:#1c3448;color:#e4f3ff;border-radius:8px;font-size:12px;font-weight:700;padding:7px 10px;white-space:nowrap}
@@ -419,7 +419,27 @@
   .metrics-panel .ranking-head h2{font-size:18px}
 }
 
-/* transposed Meldingsstatistik: measures down, players across. */
+.metric-trend-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.metric-trend-buttons{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.metric-trend-button,.metric-trend-select-all{border:1px solid #4a647a;background:#1c3448;color:#e4f3ff;border-radius:8px;font-size:12px;font-weight:700;min-height:34px;padding:7px 10px;white-space:nowrap}
+.metric-trend-button:hover,.metric-trend-select-all:hover:not(:disabled){border-color:var(--blue);background:#22465f}
+.metric-trend-button[aria-pressed=true]{border-color:var(--blue);background:#123c58;color:#fff}
+.metric-trend-select-all:disabled{opacity:.5;cursor:not-allowed}
+.metric-trend-chart-wrap{position:relative;width:100%;height:390px;min-height:320px;border:1px solid #34495d;border-radius:11px;padding:15px 13px 8px;background:#121e2b;box-sizing:border-box}
+.metric-trend-chart-wrap canvas{width:100%!important;height:100%!important}
+.metric-trend-player{padding:7px 10px}
+.metric-trend-person{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.metric-trend-person .metric-player-avatar{width:24px;height:24px;flex:none}
+@media(max-width:620px){
+  .metric-trend-chart-wrap{height:315px;min-height:295px;padding:9px 7px 4px}
+  .metric-trend-button,.metric-trend-select-all{font-size:11px;padding:6px 8px;min-height:32px}
+  .metric-trend-toolbar{gap:8px}
+}
+@media(max-width:420px){
+  .metric-trend-buttons{width:100%}
+}
+
+/* v0.2.10: transposed Meldingsstatistik: measures down, players across. */
 .metric-table{width:max-content;min-width:100%;table-layout:auto}
 .metric-table thead th{position:static;text-align:center;vertical-align:middle;min-width:94px;padding:9px 8px}
 .metric-table thead th.metric-heading{min-width:142px;width:142px;text-align:left;padding-left:12px}
@@ -445,7 +465,7 @@
 }
 
 
-/* Hænder. Compact, two-tier headers and player-pair columns. */
+/* v0.2.11: Hænder. Compact, two-tier headers and player-pair columns. */
 .hands-panel{padding-bottom:20px}
 .hands-scroll{width:100%;max-height:min(76vh,720px);overflow:auto;overscroll-behavior:contain;border:1px solid #34495d;border-radius:10px;background:#121e2b;scrollbar-color:#466780 #142330}
 .hands-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
@@ -485,7 +505,7 @@
 }
 
 
-/* compact podium. The game count now sits at the foot of each block. */
+/* v0.2.12: compact podium. The game count now sits at the foot of each block. */
 .stats-podium{min-height:0;margin-top:12px;margin-bottom:18px}
 .podium-stand{height:98px;padding:14px 7px 7px;gap:3px}
 .position-1 .podium-stand{height:134px}
@@ -500,7 +520,7 @@
   .position-3 .podium-stand{height:94px}
 }
 
-/* Melding + Antal + Gns. stick together during horizontal scrolling. */
+/* v0.2.12: Melding + Antal + Gns. stick together during horizontal scrolling. */
 #hands-content{--hands-count-left:86px;--hands-average-left:141px}
 .hands-table tbody > tr > :nth-child(2),
 .hands-table thead tr.hands-header-top > :nth-child(2){
@@ -524,7 +544,7 @@
 .hands-table thead tr.hands-header-top > :first-child{z-index:8}
 
 
-/* Stillingsudvikling integrated below Pointdiagram. */
+/* v1.0.0: Stillingsudvikling integrated below Pointdiagram. */
 .time-machine{margin-top:14px;border:1px solid #34485a;border-radius:12px;
   background:#121f2c;padding:14px 16px 13px;min-width:0}
 .time-machine-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
@@ -558,12 +578,12 @@
   .time-machine-markers strong{font-size:10px}
 }
 
-/* An image that has been decoded should appear without a second fade.
+/* v0.2.14: An image that has been decoded should appear without a second fade.
    During redraws, the existing avatar nodes are preserved instead of recreated. */
 .rank-avatar img{transition:none}
 
 
-/* Animated Pointdiagram and readable scores around zero. */
+/* v0.2.15: Animated Pointdiagram and readable scores around zero. */
 /* Two persistent bars let changes of sign pass smoothly through the baseline. */
 .rank-bar{transition:height 230ms cubic-bezier(.22,1,.36,1)}
 .rank-bar-value{
@@ -592,29 +612,7 @@
 }
 
 
-/* Keep the whole animated player column above the zero baseline.
+/* v0.2.16: Keep the whole animated player column above the zero baseline.
    The FLIP transform creates a stacking context on the moving column; an
    avatar's own z-index cannot otherwise rise above the baseline sibling. */
 .rank-bar-chart > .rank-bar-column { z-index: 2; }
-
-
-/* Efter klokkeslæt: one graph, metric selector and click-to-filter legend. */
-.hourly-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.hourly-head h2{margin:0}
-.hourly-selector{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:650}
-.hourly-selector select{min-height:38px;max-width:min(62vw,260px);border:1px solid #465e75;background:#192b3c;color:#f0f6fc;border-radius:8px;padding:7px 30px 7px 10px;font:inherit;font-size:13px;cursor:pointer}
-.hourly-selector select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.hourly-chart-wrap{position:relative;width:100%;height:370px;min-height:300px;background:#121e2b;border:1px solid #34495d;border-radius:11px;padding:14px 12px 9px;box-sizing:border-box}
-.hourly-chart-wrap canvas{width:100%!important;height:100%!important}
-.hourly-panel .score-history-legend{margin-top:12px}
-.hourly-player{padding:5px 8px;gap:6px}
-.hourly-avatar{width:24px;height:24px;border-width:1px}
-.hourly-avatar .rank-initials{font-size:9px}
-@media(max-width:620px){
-  .hourly-panel{padding:16px 12px 19px}
-  .hourly-head{align-items:flex-start;gap:10px}
-  .hourly-selector{width:100%;justify-content:space-between}
-  .hourly-selector select{flex:1;max-width:240px;min-width:0}
-  .hourly-chart-wrap{height:320px;padding:9px 6px 6px}
-  .hourly-player{font-size:11px;padding:5px 7px}
-}
