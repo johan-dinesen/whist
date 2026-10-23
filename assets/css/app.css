@@ -579,3 +579,102 @@
    The FLIP transform creates a stacking context on the moving column; an
    avatar's own z-index cannot otherwise rise above the baseline sibling. */
 .rank-bar-chart > .rank-bar-column { z-index: 2; }
+
+
+/* Meldingsstatistik: content-sized columns and a border hugging the table.
+   The two leading columns remain visible during horizontal scrolling. */
+.metrics-panel .metric-table-scroll{
+  width:fit-content;
+  max-width:100%;
+  margin-inline:auto;
+  --metric-average-left:0px;
+}
+.metrics-panel .metric-table{
+  width:max-content;
+  min-width:0;
+  margin:0;
+  table-layout:auto;
+}
+.metrics-panel .metric-table thead th,
+.metrics-panel .metric-table tbody th,
+.metrics-panel .metric-table tbody td{
+  width:auto;
+  min-width:0;
+  max-width:none;
+  white-space:nowrap;
+  box-sizing:border-box;
+  padding-left:6px;
+  padding-right:6px;
+}
+.metrics-panel .metric-table thead th.metric-heading,
+.metrics-panel .metric-table tbody th.metric-row-label{
+  width:auto;
+  min-width:0;
+  max-width:none;
+  padding-left:7px;
+  padding-right:7px;
+  text-align:left;
+}
+.metrics-panel .metric-table thead th.metric-average-column,
+.metrics-panel .metric-table tbody td.metric-average-column{
+  width:auto;
+  min-width:0;
+  padding-left:6px;
+  padding-right:6px;
+}
+.metrics-panel .metric-table thead th.metric-player-heading,
+.metrics-panel .metric-table tbody td:not(.metric-average-column){
+  width:auto;
+  min-width:0;
+  padding-left:5px;
+  padding-right:5px;
+}
+/* Do not let a wider title or a caption impose unnecessary column width. */
+.metrics-panel .metric-table th.metric-heading{
+  position:sticky;
+  left:0;
+  top:0;
+  z-index:8;
+  background:#2d3953;
+}
+.metrics-panel .metric-table thead th.metric-average-column{
+  position:sticky;
+  left:var(--metric-average-left);
+  top:0;
+  z-index:7;
+  background:#374961;
+}
+.metrics-panel .metric-table tbody th.metric-row-label{
+  position:sticky;
+  left:0;
+  z-index:6;
+  background:#202b3e;
+}
+.metrics-panel .metric-table tbody tr:nth-child(even) th.metric-row-label{background:#252f41}
+.metrics-panel .metric-table tbody tr:hover th.metric-row-label{background:#2c4054}
+.metrics-panel .metric-table tbody td.metric-average-column{
+  position:sticky;
+  left:var(--metric-average-left);
+  z-index:5;
+  background:#304359;
+}
+.metrics-panel .metric-table tbody tr:hover td.metric-average-column{background:#37536a}
+.metrics-panel .metric-table thead th.metric-player-heading{
+  position:sticky;
+  top:0;
+  z-index:2;
+}
+/* Synergi row names must be centred in their pinned column. */
+.synergy-table tbody > tr > th:first-child{
+  text-align:center;
+  padding-inline:4px;
+}
+@media(max-width:620px){
+  .metrics-panel .metric-table thead th,
+  .metrics-panel .metric-table tbody th,
+  .metrics-panel .metric-table tbody td{padding-left:4px;padding-right:4px}
+  .metrics-panel .metric-table thead th.metric-heading,
+  .metrics-panel .metric-table tbody th.metric-row-label{padding-inline:5px}
+  .metrics-panel .metric-table thead th.metric-player-heading,
+  .metrics-panel .metric-table tbody td:not(.metric-average-column){padding-inline:4px}
+}

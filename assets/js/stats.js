@@ -11,6 +11,16 @@ import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0
 
 const $ = id => document.getElementById(id);
 
+// The first column is sized by its widest actual cell. Pin the second column
+// immediately after it, using the measured width rather than a CSS guess.
+function syncMetricStickyOffsets() {
+  const labelHeader = $('metric-head')?.querySelector('th.metric-heading');
+  const scroll = document.querySelector('.metric-table-scroll');
+  if (!labelHeader || !scroll) return;
+  const width = labelHeader.getBoundingClientRect().width;
+  if (width > 0) scroll.style.setProperty('--metric-average-left', `${width}px`);
+}
+
 // Keep the three pinned Hænder columns aligned at any viewport width.
 function syncHandsStickyOffsets() {
   const headers = $('hands-head')?.querySelectorAll('.hands-header-top > th');
@@ -321,10 +331,9 @@ function renderMetricTable() {
   avgHeading.className = 'metric-average-column';
   const avgTitle = document.createElement('span');
   avgTitle.className = 'metric-header-name';
-  avgTitle.textContent = 'Gennemsnit';
-  const avgSub = document.createElement('small');
-  avgSub.textContent = `${people.length} spillere`;
-  avgHeading.append(avgTitle, avgSub);
+  avgTitle.textContent = 'Gns.';
+  avgHeading.title = 'Gennemsnit af spillernes individuelle værdier';
+  avgHeading.append(avgTitle);
   head.replaceChildren(metricHeading, avgHeading);
 
   for (const player of people) {
@@ -372,6 +381,7 @@ function renderMetricTable() {
     }
     body.append(tr);
   }
+  requestAnimationFrame(syncMetricStickyOffsets);
 }
 function renderMeldingStatistics(raw) {
   metricPeople = normalizeMeldingStatistics(raw);
@@ -529,6 +539,7 @@ function renderHands(raw) {
 }
 
 window.addEventListener('resize', syncHandsStickyOffsets);
+window.addEventListener('resize', syncMetricStickyOffsets);
 
 // Chart.js must be constructed only after its parent tab is visible;
 // otherwise it can measure a zero-width canvas on mobile.
