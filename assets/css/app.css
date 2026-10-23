@@ -590,3 +590,9 @@
 @media(prefers-reduced-motion:reduce){
   .rank-bar,.rank-bar-value{transition:none}
 }
+
+
+/* v0.2.16: Keep the whole animated player column above the zero baseline.
+   The FLIP transform creates a stacking context on the moving column; an
+   avatar's own z-index cannot otherwise rise above the baseline sibling. */
+.rank-bar-chart > .rank-bar-column { z-index: 2; }

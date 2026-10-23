@@ -1,28 +1,18 @@
-# Whist v0.2.15 · Blød animation i Pointdiagram
+# Whist v0.2.16 · Profilbilleder foran nullinjen
 
-Frontend-only update based on Whist v0.2.14. No Supabase or SQL changes.
+CSS-only layout correction based on Whist v0.2.15.
 
 ## Installation
 
-Replace exactly these three files in the GitHub Pages repository:
+Replace exactly these two files in your GitHub Pages repository:
 
 - `statistik.html`
-- `assets/js/stats.js`
 - `assets/css/app.css`
 
-Keep all other files, including `assets/js/config.js` and the existing time-machine/history model scripts, unchanged.
+Keep `assets/js/stats.js`, other JavaScript, Supabase configuration, and SQL unchanged.
 
-## Changes
+## Fix
 
-1. The positive and negative bars now animate height over 230 ms. Separate persistent gain/loss bars let a player cross zero without jumping abruptly from one side of the baseline to the other.
-2. When the ranking changes, the player columns glide horizontally to their new positions over 240 ms. Subsequent updates, even mid-animation, start from the player's actual current visual position. Existing photo nodes are still preserved.
-3. Point values near the baseline are held outside the profile photo area. Once the bar passes the clearance, its value moves with the bar. This applies to positive, negative, and zero scores, including on mobile.
-4. Motion honors `prefers-reduced-motion: reduce`.
-5. HTML asset query strings and visible version updated to v0.2.15 to force browser cache refresh.
+The moving Pointdiagram player columns now have a stacking level above the grey horizontal zero baseline. During the CSS transform-based ranking animation, each column forms a separate stacking context. Previously the baseline could overlap its profile picture despite the picture's higher z-index within the column. Setting the column's z-index to 2, above the baseline's z-index of 1, makes the profile picture remain on top throughout the animation without changing the animation or the photo image elements.
 
-## Local checks
-
-- `tests/browser.py`: existing photo-cache and toggle preservation checks at 320, 390, 900 px.
-- `tests/animate.py`: bar sign transitions, near-zero score/photo separation, rank-order interpolation, repeated rapid updates, avatar preservation, reduced-motion behaviour, and horizontal overflow at 320, 390, 900 px.
-
-These checks run with mock data in Chromium. They do not connect to the live Supabase project.
+The CSS URL in `statistik.html` is cache-busted to v0.2.16.
