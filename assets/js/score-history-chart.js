@@ -3,7 +3,7 @@
 const palette = ['#e7ba61','#71cdb0','#84b4f5','#ea9291','#ba9bf1','#f4bbd6',
   '#81d9e4','#d9c37b','#97d08e','#c799e2','#c3b5a5','#d8e19a'];
 
-export function drawScoreHistory({canvas,legend,model}) {
+export function drawScoreHistory({canvas,legend,model,avatar}) {
   if (!globalThis.Chart) throw new Error('Diagram-biblioteket kunne ikke indlæses');
   const format = n => Number(n).toLocaleString('da-DK',{
     minimumFractionDigits:2,maximumFractionDigits:2
@@ -73,7 +73,8 @@ export function drawScoreHistory({canvas,legend,model}) {
     const marker=document.createElement('span');
     marker.className='score-history-marker';marker.style.backgroundColor=colorOf(i);
     const name=document.createElement('span');name.textContent=player.name;
-    button.append(marker,name);
+    if (typeof avatar === 'function') button.append(marker, avatar(player), name);
+    else button.append(marker,name);
     button.addEventListener('click',()=>{
       const next=!chart.isDatasetVisible(i);
       chart.setDatasetVisibility(i,next);

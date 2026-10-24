@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0-layout">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.2">
 </head>
 <body>
   <header class="topbar">
@@ -42,6 +42,7 @@
           <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
           <button type="button" data-stats-view="chart" aria-pressed="false">Pointdiagram</button>
           <button type="button" data-stats-view="history" aria-pressed="false">Stillingshistorik</button>
+          <button type="button" data-stats-view="sources" aria-pressed="false">Pointkilder</button>
         </div>
       </div>
       <p id="standings-empty" class="ranking-empty">Indlæser stilling …</p>
@@ -80,6 +81,21 @@
             <canvas id="score-history-canvas" role="img" aria-label="Kurver over spillernes akkumulerede nettopoint efter hvert spil"></canvas>
           </div>
           <div id="score-history-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere i diagrammet"></div>
+        </div>
+      </div>
+      <div id="point-sources-view" class="hidden" aria-label="Pointkilder fordelt på spillerroller">
+        <p id="point-sources-state" class="ranking-empty" role="status">Indlæser pointkilder …</p>
+        <div id="point-sources-content" class="hidden">
+          <div class="point-sources-legend" role="list" aria-label="Pointkilder efter rolle">
+            <span role="listitem"><i class="point-source-key" style="--source-color:#e7ba61"></i>Melder</span>
+            <span role="listitem"><i class="point-source-key" style="--source-color:#71cdb0"></i>Makker</span>
+            <span role="listitem"><i class="point-source-key" style="--source-color:#84b4f5"></i>Modstander</span>
+            <span role="listitem"><i class="point-source-key" style="--source-color:#ea9291"></i>Solospil</span>
+          </div>
+          <div class="point-sources-chart-wrap">
+            <canvas id="point-sources-canvas" role="img" aria-label="Netto pointfordeling per spiller som melder, makker, modstander og i solospil"></canvas>
+          </div>
+          <p class="point-sources-caption">Farverne viser nettoresultatet i hver rolle. Til venstre for nul er tab; til højre er gevinst. Solospil omfatter solo-meldere, mens øvrige spillere tæller som modstandere. Tryk på en søjle for at se point og antal spil.</p>
         </div>
       </div>
     </section>
@@ -145,6 +161,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=1.0.1"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.2"></script>
 </body>
 </html>

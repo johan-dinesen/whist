@@ -6,7 +6,9 @@ import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, player
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
-import {drawScoreHistory} from './score-history-chart.js';
+import {drawScoreHistory} from './score-history-chart.js?v=1.0.2';
+import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.2';
+import {drawPointSources} from './point-sources-chart.js?v=1.0.2';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
@@ -41,6 +43,8 @@ let standings = [];
 let activeRequest = 0;
 let view = 'podium';
 let historyChart = null;
+let sourcesChart = null;
+let sourcesPeople = [];
 let historyModel = null;
 let timeMachineIndex = 0;
 let timeMachineTimer = null;
@@ -297,11 +301,13 @@ function renderRankings(rows) {
   $('podium-view').classList.toggle('hidden',empty||view!=='podium');
   $('chart-view').classList.toggle('hidden',empty||view!=='chart');
   $('score-history-view').classList.toggle('hidden',empty||view!=='history');
+  $('point-sources-view').classList.toggle('hidden',empty||view!=='sources');
   if(empty)return;
   renderPodium(standings);
   if (historyModel?.gameCount) selectTimeMachineGame(timeMachineIndex);
   else drawBarChart(standings);
   if(view==='history')requestAnimationFrame(mountHistoryChart);
+  if(view==='sources')requestAnimationFrame(mountPointSourcesChart);
 }
 // Independent module: table definitions live in stat-metrics.js, so more
 // statistics can be added without changing the podium or chart renderers.
@@ -551,7 +557,8 @@ function mountHistoryChart() {
       historyChart=drawScoreHistory({
         canvas:$('score-history-canvas'),
         legend:$('score-history-legend'),
-        model:historyModel
+        model:historyModel,
+        avatar: player => avatar(player, 'score-history-avatar')
       });
     } else {
       historyChart.resize();
@@ -576,8 +583,38 @@ function renderScoreHistory(raw) {
   if(!ready)state.textContent='Ingen spil i de valgte spilsamlinger.';
   if(ready && view==='history')requestAnimationFrame(mountHistoryChart);
 }
+function mountPointSourcesChart() {
+  if (view !== 'sources' || !standings.length || !sourcesPeople.length ||
+      $('point-sources-view').classList.contains('hidden')) return;
+  try {
+    if (!sourcesChart) {
+      const wrapper = document.querySelector('.point-sources-chart-wrap');
+      wrapper.style.height = `${Math.max(310, sourcesPeople.length * 56 + 90)}px`;
+      sourcesChart = drawPointSources({
+        canvas:$('point-sources-canvas'),
+        players:sourcesPeople
+      });
+    } else sourcesChart.resize();
+  } catch (err) {
+    $('point-sources-content').classList.add('hidden');
+    $('point-sources-state').textContent = 'Pointkilder kunne ikke indlæses.';
+    $('point-sources-state').classList.remove('hidden');
+    showError(`Pointkilder: ${err.message}`);
+  }
+}
+function renderPointSources(raw) {
+  const state = $('point-sources-state');
+  const content = $('point-sources-content');
+  sourcesPeople = normalizePointSources(raw);
+  if (standings.length) verifyPointSourcesAgainstStandings(sourcesPeople, standings);
+  const ready = sourcesPeople.length > 0;
+  content.classList.toggle('hidden', !ready);
+  state.classList.toggle('hidden', ready);
+  if (!ready) state.textContent='Ingen spil i de valgte spilsamlinger.';
+  if (ready && view === 'sources') requestAnimationFrame(mountPointSourcesChart);
+}
 function changeView(next) {
-  if(!['podium','chart','history'].includes(next))return;
+  if(!['podium','chart','history','sources'].includes(next))return;
   if (view === 'chart' && next !== 'chart') stopTimeMachine();
   view=next;
   for(const button of document.querySelectorAll('[data-stats-view]')){
@@ -586,7 +623,9 @@ function changeView(next) {
   $('podium-view').classList.toggle('hidden',view!=='podium'||!standings.length);
   $('chart-view').classList.toggle('hidden',view!=='chart'||!standings.length);
   $('score-history-view').classList.toggle('hidden',view!=='history'||!standings.length);
+  $('point-sources-view').classList.toggle('hidden',view!=='sources'||!standings.length);
   if(view==='history')requestAnimationFrame(mountHistoryChart);
+  if(view==='sources')requestAnimationFrame(mountPointSourcesChart);
   if(view==='chart' && historyModel?.gameCount && standings.length) selectTimeMachineGame(timeMachineIndex);
 }
 async function refresh() {
@@ -605,6 +644,7 @@ async function refresh() {
   $('podium-view').classList.add('hidden');
   $('chart-view').classList.add('hidden');
   $('score-history-view').classList.add('hidden');
+  $('point-sources-view').classList.add('hidden');
   $('stats-view-toggle').classList.add('hidden');
   metricPeople=[];
   $('metrics-state').textContent='Indlæser statistik …';
@@ -620,6 +660,12 @@ async function refresh() {
   $('hands-count').textContent='';
   historyChart?.destroy();
   historyChart=null;
+  sourcesChart?.destroy();
+  sourcesChart=null;
+  sourcesPeople=[];
+  $('point-sources-state').textContent='Indlæser pointkilder …';
+  $('point-sources-state').classList.remove('hidden');
+  $('point-sources-content').classList.add('hidden');
   historyModel=null;
   $('score-history-state').textContent='Indlæser stillingshistorik …';
   $('score-history-state').classList.remove('hidden');
@@ -634,7 +680,8 @@ async function refresh() {
     supabase.rpc('get_melding_statistics_for_notes',params),
     supabase.rpc('get_synergy_for_notes',params),
     supabase.rpc('get_standings_history_for_notes',params),
-    supabase.rpc('get_hands_statistics_for_notes',params)
+    supabase.rpc('get_hands_statistics_for_notes',params),
+    supabase.rpc('get_point_sources_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
@@ -692,6 +739,20 @@ async function refresh() {
     const err = handsResult.status === 'rejected' ? handsResult.reason : handsResult.value.error;
     errors.push(`Hænder: ${err?.message || String(err)}`);
     $('hands-state').textContent = 'Hænder kunne ikke indlæses.';
+  }
+  const sourcesResult = settled[5];
+  if (sourcesResult.status === 'fulfilled' && !sourcesResult.value.error) {
+    try { renderPointSources(sourcesResult.value.data ?? []); }
+    catch (err) {
+      errors.push(`Pointkilder: ${err.message}`);
+      $('point-sources-state').textContent='Pointkilder kunne ikke indlæses.';
+      $('point-sources-state').classList.remove('hidden');
+      $('point-sources-content').classList.add('hidden');
+    }
+  } else {
+    const err = sourcesResult.status === 'rejected' ? sourcesResult.reason : sourcesResult.value.error;
+    errors.push(`Pointkilder: ${err?.message || String(err)}`);
+    $('point-sources-state').textContent='Pointkilder kunne ikke indlæses.';
   }
   if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
   $('stats-refresh').disabled=false;
