@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Profilbilleder og spilsamlinger i Whist.">
   <title>Whist | Administrering</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.1">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.2">
 </head>
 <body>
   <header class="topbar">
@@ -47,14 +47,25 @@
             <option value="">Vælg spiller</option>
           </select>
           <div id="profile-editor" class="profile-editor hidden">
-            <div class="profile-avatar" aria-label="Nuværende profilbillede">
+            <div id="profile-avatar" class="profile-avatar" aria-label="Nuværende profilbillede">
               <span id="profile-initials" class="profile-initials"></span>
               <img id="profile-image" alt="" class="hidden" />
+              <canvas id="profile-crop-canvas" class="hidden" width="512" height="512"
+                tabindex="0" role="img" aria-label="Beskær billedet ved at trække eller bruge piletasterne"
+                aria-describedby="profile-crop-help"></canvas>
             </div>
             <div class="profile-file-controls">
               <label for="profile-file" class="field-label">Billede (JPG, PNG eller WebP)</label>
               <input id="profile-file" type="file" accept="image/jpeg,image/png,image/webp">
-              <p class="profile-hint">Billedet beskæres til et kvadrat.</p>
+              <p id="profile-crop-help" class="profile-hint">Vælg et billede for at placere motivet i cirklen, før du gemmer.</p>
+              <div id="profile-crop-controls" class="profile-crop-controls hidden">
+                <div class="profile-zoom-heading">
+                  <label for="profile-zoom" class="field-label">Zoom</label>
+                  <output id="profile-zoom-value" for="profile-zoom">1,00×</output>
+                </div>
+                <input id="profile-zoom" type="range" min="1" max="4" value="1" step="0.01">
+                <button id="profile-crop-reset" class="button secondary" type="button">Nulstil udsnit</button>
+              </div>
               <button id="profile-upload-btn" class="button primary" type="submit" disabled>Gem profilbillede</button>
             </div>
           </div>
@@ -99,6 +110,6 @@
   </main>
   <footer class="shell footer">Whist · Administrering</footer>
   <noscript><div class="shell notice notice-warning">JavaScript er nødvendigt for at bruge Administrering.</div></noscript>
-  <script type="module" src="assets/js/admin.js?v=1.0.1"></script>
+  <script type="module" src="assets/js/admin.js?v=1.0.2"></script>
 </body>
 </html>

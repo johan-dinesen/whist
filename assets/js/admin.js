@@ -1,4 +1,4 @@
-import { PROFILE_BUCKET, profileUrl, prepareAvatar } from './profiles.js';
+import { PROFILE_BUCKET, profileUrl, loadAvatarImage, avatarCrop, moveAvatarCrop, drawAvatarCrop, prepareAvatar } from './profiles.js';
 
 const $ = id => document.getElementById(id);
 const isPreview = new URLSearchParams(location.search).has('preview');
@@ -9,7 +9,10 @@ let tournaments = [];
 let currentId = null;
 let selectedId = null;
 let selectedFile = null;
-let previewBlobUrl = null;
+let selectedImage = null;
+let crop = {zoom: 1, x: 0, y: 0};
+let cropGeneration = 0;
+let activeDrag = null;
 let uploadBusy = false;
 let recentGames = [];
 let deletingGameId = null;
@@ -105,12 +108,27 @@ async function fetchTournaments() {
   selectedId = currentId;
   drawTournaments();
 }
-function clearPendingFile() {
+function clearPendingFile({keepInput = false} = {}) {
+  ++cropGeneration; // Ignore any image load which finishes after switching players/files.
   selectedFile = null;
-  $('profile-file').value = '';
-  if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
-  previewBlobUrl = null;
+  selectedImage = null;
+  activeDrag = null;
+  crop = {zoom: 1, x: 0, y: 0};
+  if (!keepInput) $('profile-file').value = '';
+  $('profile-zoom').value = '1';
+  $('profile-zoom-value').textContent = '1,00×';
+  show('profile-crop-canvas', false);
+  show('profile-crop-controls', false);
+  $('profile-avatar').classList.remove('is-editing');
+  $('profile-avatar').setAttribute('aria-label', 'Nuværende profilbillede');
+  $('profile-crop-help').textContent = 'Vælg et billede for at placere motivet i cirklen, før du gemmer.';
   $('profile-upload-btn').disabled = true;
+}
+function renderCropPreview() {
+  if (!selectedImage) return;
+  crop = drawAvatarCrop($('profile-crop-canvas'), selectedImage, crop);
+  $('profile-zoom').value = String(crop.zoom);
+  $('profile-zoom-value').textContent = `${crop.zoom.toLocaleString('da-DK', {minimumFractionDigits:2,maximumFractionDigits:2})}×`;
 }
 function setImage(src) {
   const img = $('profile-image');
@@ -296,25 +314,72 @@ $('admin-switch-code-btn').addEventListener('click', () => {
 });
 
 $('profile-player').addEventListener('change', renderSelectedPlayer);
-$('profile-file').addEventListener('change', () => {
+$('profile-file').addEventListener('change', async () => {
   const file = $('profile-file').files[0];
-  // Preserve the new selection before clearing any previous preview.
-  if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
-  previewBlobUrl = null;
-  selectedFile = null;
-  $('profile-upload-btn').disabled = true;
-  if (!file) return;
-  selectedFile = file;
-  if (!players.some(p => p.id === $('profile-player').value)) return;
-  message('profile-message', `Valgt: ${file.name}`);
-  if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 10*1024*1024) {
-    message('profile-message', 'Vælg et JPG-, PNG- eller WebP-billede under 10 MB.', true);
-    selectedFile = null;
-    return;
+  clearPendingFile({keepInput: true});
+  const generation = cropGeneration;
+  if (!file || !players.some(p => p.id === $('profile-player').value)) return;
+  message('profile-message', 'Åbner billedet ...');
+  try {
+    const image = await loadAvatarImage(file);
+    if (generation !== cropGeneration) return;
+    selectedFile = file;
+    selectedImage = image;
+    show('profile-crop-canvas', true);
+    show('profile-crop-controls', true);
+    $('profile-avatar').classList.add('is-editing');
+    $('profile-avatar').setAttribute('aria-label', 'Beskær profilbillede');
+    $('profile-crop-help').textContent = 'Træk billedet i cirklen for at flytte motivet, og brug Zoom til at forstørre. Du kan også bruge piletasterne.';
+    renderCropPreview();
+    $('profile-upload-btn').disabled = false;
+    message('profile-message', 'Udsnittet i cirklen er det, der gemmes.');
+  } catch (error) {
+    if (generation !== cropGeneration) return;
+    handleError(error, 'profile-message');
+    $('profile-upload-btn').disabled = true;
   }
-  previewBlobUrl = URL.createObjectURL(file);
-  setImage(previewBlobUrl);
-  $('profile-upload-btn').disabled = false;
+});
+
+$('profile-zoom').addEventListener('input', () => {
+  if (!selectedImage || uploadBusy) return;
+  crop = avatarCrop(selectedImage, {...crop, zoom: Number($('profile-zoom').value)});
+  renderCropPreview();
+});
+$('profile-crop-reset').addEventListener('click', () => {
+  if (!selectedImage || uploadBusy) return;
+  crop = {zoom: 1, x: 0, y: 0};
+  renderCropPreview();
+});
+const cropCanvas = $('profile-crop-canvas');
+cropCanvas.addEventListener('pointerdown', event => {
+  if (!selectedImage || uploadBusy || (event.button !== undefined && event.button !== 0)) return;
+  event.preventDefault();
+  activeDrag = {id: event.pointerId, x: event.clientX, y: event.clientY};
+  cropCanvas.setPointerCapture(event.pointerId);
+});
+cropCanvas.addEventListener('pointermove', event => {
+  if (!selectedImage || !activeDrag || event.pointerId !== activeDrag.id || uploadBusy) return;
+  const dx = event.clientX - activeDrag.x;
+  const dy = event.clientY - activeDrag.y;
+  activeDrag.x = event.clientX;
+  activeDrag.y = event.clientY;
+  crop = moveAvatarCrop(selectedImage, crop, dx, dy, cropCanvas.getBoundingClientRect().width);
+  renderCropPreview();
+});
+function endCropDrag(event) {
+  if (activeDrag?.id === event.pointerId) activeDrag = null;
+}
+cropCanvas.addEventListener('pointerup', endCropDrag);
+cropCanvas.addEventListener('pointercancel', endCropDrag);
+cropCanvas.addEventListener('lostpointercapture', endCropDrag);
+cropCanvas.addEventListener('keydown', event => {
+  if (!selectedImage || uploadBusy || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;
+  event.preventDefault();
+  const step = event.shiftKey ? 20 : 6;
+  const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
+  const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+  crop = moveAvatarCrop(selectedImage, crop, dx, dy, cropCanvas.getBoundingClientRect().width);
+  renderCropPreview();
 });
 
 $('profile-form').addEventListener('submit', async event => {
@@ -322,15 +387,17 @@ $('profile-form').addEventListener('submit', async event => {
   if (!supabase || uploadBusy) return;
   const playerId = $('profile-player').value;
   const player = players.find(p => p.id === playerId);
-  if (!player || !selectedFile) return;
+  if (!player || !selectedFile || !selectedImage) return;
   uploadBusy = true;
   const button = $('profile-upload-btn');
   button.disabled = true;
   $('profile-player').disabled = true;
   $('profile-file').disabled = true;
+  $('profile-zoom').disabled = true;
+  $('profile-crop-reset').disabled = true;
   message('profile-message', 'Behandler og gemmer billedet ...');
   try {
-    const blob = await prepareAvatar(selectedFile);
+    const blob = await prepareAvatar(selectedFile, {image: selectedImage, ...crop});
     const { error } = await supabase.storage.from(PROFILE_BUCKET)
       .upload(`${playerId}.webp`, blob, {
         contentType:'image/webp', cacheControl:'3600', upsert:true
@@ -346,6 +413,8 @@ $('profile-form').addEventListener('submit', async event => {
     uploadBusy = false;
     $('profile-player').disabled = false;
     $('profile-file').disabled = false;
+    $('profile-zoom').disabled = false;
+    $('profile-crop-reset').disabled = false;
   }
 });
 
