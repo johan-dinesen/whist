@@ -929,8 +929,7 @@
   .point-sources-legend{font-size:12px;gap:6px 12px}
   .point-source-key{width:12px;height:11px}
 }
-/* Historik: stack multiple callers instead of widening the Melder column.
-   Keep payouts at the top of any taller multi-caller row. */
+/* Historik: stack multiple callers without widening the Melder column. */
 .history-table .history-callers{white-space:nowrap}
 .history-table .history-caller-name{display:block}
 .history-table tbody td{vertical-align:middle}
@@ -1011,4 +1010,29 @@
   .profile-editor{gap:9px}
   .profile-avatar.is-editing{width:min(310px,100%,40dvh,max(130px,calc(100dvh - 390px)));height:auto;aspect-ratio:1}
   .profile-file-controls{flex-basis:auto;width:100%}
+}
+
+/* Historik: keep the entire Registrerede spil panel within 75% of the viewport.
+   Its table scrolls independently while the title and compact load button remain visible. */
+.history-games-panel{
+  display:flex;
+  flex-direction:column;
+  max-height:75vh;
+  max-height:75dvh;
+  min-height:0;
+}
+.history-games-panel .history-table-wrap{
+  flex:0 1 auto;
+  min-height:0;
+  max-height:none;
+}
+.history-games-panel .load-more-button{
+  flex:0 0 auto;
+  min-height:32px;
+  padding:6px 9px;
+  border-radius:99px;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:650;
+  margin:12px auto 0;
 }

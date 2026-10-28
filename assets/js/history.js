@@ -9,7 +9,7 @@ const LABELS = {
 };
 const TRUMPS = {hearts:'♥',clubs:'♣',diamonds:'♦',spades:'♠',no_trump:'NT'};
 const SOLO = new Set(['sol','ren_sol','bordlaegger','ren_bordlaegger']);
-const PAGE_SIZE = 250;
+const PAGE_SIZE = 25;
 let supabase = null;
 let groups = [];
 let selectedNotes = new Set(); // Empty = all categories, including Kredsspil.
