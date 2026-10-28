@@ -8,7 +8,7 @@ import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js?v=1.0.2';
 import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.2';
-import {drawPointSources} from './point-sources-chart.js?v=1.0.2';
+import {drawPointSources} from './point-sources-chart.js?v=1.0.5';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
@@ -43,7 +43,7 @@ let standings = [];
 let activeRequest = 0;
 let view = 'podium';
 let historyChart = null;
-let sourcesChart = null;
+let sourcesRendered = false;
 let sourcesPeople = [];
 let historyModel = null;
 let timeMachineIndex = 0;
@@ -587,14 +587,14 @@ function mountPointSourcesChart() {
   if (view !== 'sources' || !standings.length || !sourcesPeople.length ||
       $('point-sources-view').classList.contains('hidden')) return;
   try {
-    if (!sourcesChart) {
-      const wrapper = document.querySelector('.point-sources-chart-wrap');
-      wrapper.style.height = `${Math.max(310, sourcesPeople.length * 56 + 90)}px`;
-      sourcesChart = drawPointSources({
-        canvas:$('point-sources-canvas'),
-        players:sourcesPeople
+    if (!sourcesRendered) {
+      drawPointSources({
+        container:$('point-sources-bars'),
+        players:sourcesPeople,
+        avatar
       });
-    } else sourcesChart.resize();
+      sourcesRendered = true;
+    }
   } catch (err) {
     $('point-sources-content').classList.add('hidden');
     $('point-sources-state').textContent = 'Pointkilder kunne ikke indlæses.';
@@ -635,7 +635,6 @@ async function refresh() {
   timeMachineIndex = 0;
   historyModel = null;
   updateTimeMachineAvailability();
-  $('stats-refresh').disabled=true;
   showError('');
   // Discard old results as soon as the selection changes.
   standings=[];
@@ -660,8 +659,8 @@ async function refresh() {
   $('hands-count').textContent='';
   historyChart?.destroy();
   historyChart=null;
-  sourcesChart?.destroy();
-  sourcesChart=null;
+  sourcesRendered=false;
+  $('point-sources-bars').replaceChildren();
   sourcesPeople=[];
   $('point-sources-state').textContent='Indlæser pointkilder …';
   $('point-sources-state').classList.remove('hidden');
@@ -755,7 +754,6 @@ async function refresh() {
     $('point-sources-state').textContent='Pointkilder kunne ikke indlæses.';
   }
   if(errors.length)showError(`Kunne ikke hente data: ${errors.join(' | ')}`);
-  $('stats-refresh').disabled=false;
 }
 async function init(){
   try{
@@ -794,7 +792,6 @@ $('time-machine-latest').addEventListener('click', () => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopTimeMachine();
 });
-$('stats-refresh').addEventListener('click',refresh);
 $('stats-include-guests').addEventListener('change',()=>{
   saveIncludeGuests($('stats-include-guests').checked);
   refresh();

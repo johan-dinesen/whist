@@ -1,63 +1,99 @@
-// Horizontal diverging stacked bars. Positive net contributions extend right
-// of zero, negative ones extend left, and four role totals sum to Stilling.
+// Pointkilder: a photo-centred, signed, stacked horizontal bar for each player.
+// Proportional lengths use ONE shared point scale on both sides. A tiny
+// minimum-width mark keeps very small nonzero contributions tappable.
 import {POINT_SOURCE_ROLES} from './point-sources-model.js';
 
-const format = n => Number(n).toLocaleString('da-DK', {minimumFractionDigits:2,maximumFractionDigits:2});
-export function drawPointSources({canvas, players}) {
-  if (!globalThis.Chart) throw new Error('Diagram-biblioteket kunne ikke indlæses');
-  const datasets = POINT_SOURCE_ROLES.map(role => ({
-    label:role.label,
-    data: players.map(p => p.roles[role.key].points),
-    backgroundColor:role.color,
-    borderColor:role.color,
-    borderWidth:0,
-    borderSkipped:false,
-    borderRadius:3,
-    barThickness:20,
-    stack:'sources',
-    roleKey:role.key
-  }));
-  return new globalThis.Chart(canvas.getContext('2d'), {
-    type:'bar',
-    data:{labels:players.map(p => p.name),datasets},
-    options:{
-      indexAxis:'y',
-      responsive:true,
-      maintainAspectRatio:false,
-      animation:false,
-      layout:{padding:{top:6,right:12,bottom:1,left:2}},
-      interaction:{mode:'nearest',intersect:true},
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'rgba(11,22,34,.95)',
-          borderWidth:1,borderColor:'#476078',
-          titleColor:'#f3f8fd',bodyColor:'#ecf2f8',
-          padding:11,
-          callbacks:{
-            title:items=>items.length ? players[items[0].dataIndex].name : '',
-            label:item=>{
-              const player=players[item.dataIndex];
-              const role=item.dataset.roleKey;
-              const entry=player.roles[role];
-              return `${item.dataset.label}: ${entry.points > 0 ? '+' : ''}${format(entry.points)} point · ${entry.games} spil`;
-            },
-            footer:items=>items.length ? `I alt: ${format(players[items[0].dataIndex].netPoints)} point` : ''
-          }
-        }
-      },
-      scales:{
-        x:{stacked:true,
-          grid:{color:context=>Number(context.tick?.value)===0?'#819bae':'rgba(116,150,174,.13)',
-            lineWidth:context=>Number(context.tick?.value)===0?1.6:1},
-          border:{color:'#51677c'},
-          ticks:{color:'#a2b4c4',maxTicksLimit:8,callback:v=>format(v)},
-          title:{display:true,text:'Nettopoint efter rolle',color:'#a2b4c4',font:{size:11}}
-        },
-        y:{stacked:true,grid:{display:false},border:{display:false},
-          ticks:{color:'#e8f1f8',font:{size:12,weight:650},autoSkip:false}
-        }
-      }
-    }
+const rolesByKey = new Map(POINT_SOURCE_ROLES.map(role => [role.key, role]));
+// Sequence outward from the player's portrait on either side of zero.
+export const NEGATIVE_ROLE_ORDER = ['opponent', 'partner', 'caller', 'solo'];
+export const POSITIVE_ROLE_ORDER = ['partner', 'caller', 'solo', 'opponent'];
+
+const format = value => Number(value).toLocaleString('da-DK', {
+  minimumFractionDigits: 2, maximumFractionDigits: 2
+});
+const signed = value => `${value > 0 ? '+' : ''}${format(value)}`;
+
+export function pointSourceLayout(players) {
+  const rows = players.map(player => {
+    const side = (order, sign) => order.flatMap(key => {
+      const entry = player.roles[key];
+      if (!entry || !(entry.points * sign > 0)) return [];
+      const role = rolesByKey.get(key);
+      return [{key, label: role.label, color: role.color, points: entry.points, games: entry.games}];
+    });
+    const negative = side(NEGATIVE_ROLE_ORDER, -1);
+    const positive = side(POSITIVE_ROLE_ORDER, 1);
+    return {
+      player,
+      negative, positive,
+      negativeTotal: negative.reduce((sum, segment) => sum + Math.abs(segment.points), 0),
+      positiveTotal: positive.reduce((sum, segment) => sum + segment.points, 0)
+    };
   });
+  const maxSide = Math.max(.01, ...rows.flatMap(row => [row.negativeTotal, row.positiveTotal]));
+  return {rows, maxSide};
+}
+
+export function drawPointSources({container, players, avatar}) {
+  const {rows, maxSide} = pointSourceLayout(players);
+  container.replaceChildren();
+
+  const chart = document.createElement('div');
+  chart.className = 'point-sources-bars';
+  chart.setAttribute('role', 'group');
+  chart.setAttribute('aria-label', 'Pointkilder: negative point til venstre og positive point til højre for spillerens billede');
+
+  const detail = document.createElement('p');
+  detail.className = 'point-source-detail hidden';
+  detail.setAttribute('role', 'status');
+  detail.setAttribute('aria-live', 'polite');
+
+  for (const row of rows) {
+    const line = document.createElement('div');
+    line.className = 'point-source-row';
+    line.setAttribute('aria-label', `${row.player.name}: ${signed(row.player.netPoints)} point i alt`);
+    const buildSide = (segments, sideName, sum) => {
+      const track = document.createElement('div');
+      track.className = `point-source-track point-source-track-${sideName}`;
+      const stack = document.createElement('div');
+      stack.className = 'point-source-stack';
+      // A small 2% safety margin for minimum visible segments at the extremes.
+      stack.style.width = `${(sum / maxSide * 98).toFixed(5)}%`;
+      for (const segment of segments) {
+        const button = document.createElement('button');
+        button.className = 'point-source-segment';
+        button.type = 'button';
+        button.style.backgroundColor = segment.color;
+        button.style.flexGrow = String(Math.abs(segment.points));
+        button.style.flexBasis = '0px';
+        const message = `${row.player.name} · ${segment.label}: ${signed(segment.points)} point · ${segment.games} spil`;
+        button.title = message;
+        button.setAttribute('aria-label', message);
+        button.addEventListener('click', () => {
+          if (!detail.classList.contains('hidden') && detail.dataset.active === message) {
+            detail.classList.add('hidden');
+            detail.dataset.active = '';
+          } else {
+            detail.dataset.active = message;
+            detail.textContent = `${message} · Samlet: ${signed(row.player.netPoints)} point`;
+            detail.classList.remove('hidden');
+          }
+        });
+        stack.append(button);
+      }
+      track.append(stack);
+      return track;
+    };
+
+    const photo = avatar(row.player, 'point-source-avatar');
+    photo.title = `${row.player.name}: ${signed(row.player.netPoints)} point i alt`;
+    photo.setAttribute('aria-label', `${row.player.name}: ${signed(row.player.netPoints)} point i alt`);
+    line.append(
+      buildSide(row.negative, 'negative', row.negativeTotal),
+      photo,
+      buildSide(row.positive, 'positive', row.positiveTotal)
+    );
+    chart.append(line);
+  }
+  container.append(chart, detail);
 }

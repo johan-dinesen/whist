@@ -83,5 +83,30 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
     });
     legend.append(button);
   });
+  // The Alle control lives after the player buttons, inside the same legend.
+  const allButton = document.createElement('button');
+  allButton.type = 'button';
+  allButton.className = 'score-history-select-all';
+  allButton.textContent = 'Alle';
+  allButton.setAttribute('aria-label', 'Vælg eller fravælg alle spillere');
+  const updateAllState = () => {
+    const selected = model.players.every((_, i) => chart.isDatasetVisible(i));
+    allButton.setAttribute('aria-pressed', String(selected));
+    allButton.title = selected ? 'Fravælg alle spillere' : 'Vælg alle spillere';
+  };
+  allButton.addEventListener('click', () => {
+    const allSelected = model.players.every((_, i) => chart.isDatasetVisible(i));
+    model.players.forEach((_, i) => chart.setDatasetVisibility(i, !allSelected));
+    for (const button of legend.querySelectorAll('.score-history-player')) {
+      button.setAttribute('aria-pressed', String(!allSelected));
+    }
+    updateAllState();
+    chart.update('none');
+  });
+  legend.append(allButton);
+  for (const playerButton of legend.querySelectorAll('.score-history-player')) {
+    playerButton.addEventListener('click', updateAllState);
+  }
+  updateAllState();
   return chart;
 }

@@ -750,3 +750,131 @@
   flex:none;
 }
 .note-reset-chip[aria-pressed=true]{padding:4px 11px}
+
+/* v1.0.5: Stilling view controls below the visualization. */
+.rank-panel > #stats-view-toggle{
+  margin:16px auto 0;
+  width:max-content;
+  max-width:100%;
+  justify-content:center;
+}
+.score-history-select-all{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#20384b;
+  border:1px solid #526d83;
+  color:#e9f4fd;
+  border-radius:7px;
+  padding:7px 14px;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.3;
+  font-family:inherit;
+  cursor:pointer;
+  min-height:34px;
+}
+.score-history-select-all:hover{border-color:#8bb6d1;background:#2c4b61}
+.score-history-select-all[aria-pressed=true]{border-color:#70a6c4;background:#234b61}
+.score-history-select-all:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+/* Pointkilder: profile at zero, stacked role contributions on both sides.
+   All players use the same length scale, including the signed exceptions. */
+.point-sources-chart-wrap{
+  width:100%;
+  height:auto;
+  min-height:0;
+  padding:12px 10px 11px;
+}
+.point-sources-bars{display:flex;flex-direction:column;gap:1px}
+.point-source-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);
+  align-items:center;
+  position:relative;
+  min-height:56px;
+  padding:4px 0;
+  border-radius:5px;
+}
+.point-source-row:nth-child(even){background:rgba(255,255,255,.018)}
+.point-source-row::before{
+  content:'';
+  display:block;
+  position:absolute;
+  top:0;bottom:0;left:50%;
+  width:1px;
+  background:rgba(151,174,192,.18);
+  pointer-events:none;
+}
+.point-source-track{
+  display:flex;
+  align-items:center;
+  width:100%;
+  height:28px;
+  min-width:0;
+  position:relative;
+  background:rgba(88,117,143,.045);
+}
+.point-source-track-negative{justify-content:flex-end}
+.point-source-track-positive{justify-content:flex-start}
+.point-source-stack{
+  display:flex;
+  flex-direction:row;
+  height:24px;
+  min-width:0;
+  align-items:stretch;
+}
+.point-source-track-negative .point-source-stack{flex-direction:row-reverse}
+.point-source-segment{
+  display:block;
+  min-width:3px;
+  min-height:24px;
+  padding:0;
+  margin:0;
+  cursor:pointer;
+  border:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+  border-radius:0;
+}
+.point-source-track-negative .point-source-segment:last-child{border-radius:3px 0 0 3px}
+.point-source-track-positive .point-source-segment:last-child{border-radius:0 3px 3px 0}
+.point-source-segment:hover,.point-source-segment:focus-visible{
+  outline:2px solid #e1f1fa;
+  outline-offset:0;
+  filter:brightness(1.18);
+  z-index:2;
+}
+.point-source-avatar{
+  position:relative;
+  z-index:3;
+  width:42px;
+  height:42px;
+  border-color:#668198;
+  justify-self:center;
+  box-shadow:0 2px 9px rgba(0,0,0,.42);
+}
+.point-source-detail{
+  margin:10px 3px 0;
+  padding:8px 10px;
+  border:1px solid #405a71;
+  border-radius:7px;
+  background:#1d3447;
+  color:#e6f2fa;
+  font-size:12px;
+  line-height:1.5;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:620px){
+  .rank-panel > #stats-view-toggle{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+    margin-top:13px;
+  }
+  .score-history-select-all{font-size:11px;min-height:32px;padding:6px 11px}
+  .point-sources-chart-wrap{padding:9px 5px 10px}
+  .point-source-row{grid-template-columns:minmax(0,1fr) 39px minmax(0,1fr);min-height:49px}
+  .point-source-avatar{width:35px;height:35px}
+  .point-source-track{height:25px}
+  .point-source-stack,.point-source-segment{height:20px;min-height:20px}
+}
