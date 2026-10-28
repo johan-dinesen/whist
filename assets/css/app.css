@@ -124,7 +124,6 @@
 
 /* v0.1.10: quiet connection state, but preserve actionable error messages. */
 .connection-error{margin:4px 0 14px;color:#ffc2a7;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
-#refresh-history.refresh-history-btn{min-height:34px;padding:6px 10px;font-size:12px;border-radius:7px;width:auto}
 
 /* v0.1.11: compact per-player profile picture manager. */
 .profile-editor{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:16px}
@@ -724,3 +723,30 @@
 .payout-preview-grid > span {
   padding-right: 14px;
 }
+
+
+/* v1.0.4: symmetric two-column Spilsamlinger, with separate Alle reset. */
+.note-filter-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.note-filter-heading h2{margin-bottom:0}
+.note-hint{font-size:13px;line-height:1.45}
+.note-options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:12px 0 14px;
+}
+.note-options .note-chip{
+  width:100%;min-width:0;min-height:32px;
+  padding:6px 9px;
+  font-size:12px;line-height:1.25;
+  white-space:normal;overflow-wrap:anywhere;
+  text-align:center;
+}
+.note-options .note-chip[aria-pressed=true]{padding:5px 8px}
+.note-reset-chip{
+  min-width:64px;min-height:30px;
+  padding:5px 12px;
+  font-size:12px;line-height:1.25;
+  flex:none;
+}
+.note-reset-chip[aria-pressed=true]{padding:4px 11px}

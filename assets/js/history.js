@@ -1,5 +1,5 @@
 import {formatPoints} from './scoring.js';
-import {sortGroups,readSelection,saveIncludeGuests,readIncludeGuests,selectionParams,renderNoteFilters} from './notes.js';
+import {sortGroups,readSelection,saveIncludeGuests,readIncludeGuests,selectionParams,renderNoteFilters} from './notes.js?v=1.0.4';
 
 const $ = id => document.getElementById(id);
 const REGULAR = ['David','Gustav','Johan','Samuel','Sofus','William'];
@@ -106,7 +106,6 @@ async function fetchPage(reset = false) {
   if (fetching) return;
   fetching = true;
   const myGeneration = generation;
-  $('refresh-history').disabled = true;
   $('load-more-history').disabled = true;
   try {
     status('Henter spil og beregner point ...');
@@ -128,7 +127,6 @@ async function fetchPage(reset = false) {
     if (myGeneration === generation) status(`Kunne ikke hente historik: ${err.message}`,true);
   } finally {
     fetching = false;
-    $('refresh-history').disabled = false;
     $('load-more-history').disabled = false;
   }
 }
@@ -188,7 +186,6 @@ async function init() {
     status(`Supabase-fejl: ${err.message}. Kontrollér opsætning og SQL-migrationerne.`,true);
   }
 }
-$('refresh-history').addEventListener('click',refreshHistory);
 $('load-more-history').addEventListener('click',() => fetchPage(false));
 $('include-guests').addEventListener('change',()=>{
   saveIncludeGuests($('include-guests').checked);

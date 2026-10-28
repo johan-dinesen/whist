@@ -46,6 +46,11 @@ export function selectionParams(selection) {
 }
 export function renderNoteFilters(root, groups, selection, onChange) {
   root.replaceChildren();
+  // Keep 'Alle' next to the heading when the tournament options form complete pairs.
+  // If a future odd number of tournament options exists, 'Alle' fills the last pair.
+  const resetSlot = root.parentElement?.querySelector?.('[data-note-reset]');
+  const resetInHeading = Boolean(resetSlot) && (groups.length + 1) % 2 === 0;
+  if (resetSlot) resetSlot.classList.toggle('hidden', !resetInHeading);
   const options = [{key:'kredsspil',name:'Kredsspil'},
     ...groups.map(g => ({key:g.id,name:g.name})),
     {key:'all',name:'Alle'}];
@@ -64,6 +69,12 @@ export function renderNoteFilters(root, groups, selection, onChange) {
       renderNoteFilters(root,groups,selection,onChange);
       onChange();
     });
-    root.append(button);
+    if (key === 'all' && resetInHeading) {
+      button.classList.add('note-reset-chip');
+      button.setAttribute('data-note-reset', '');
+      resetSlot.replaceWith(button);
+    } else {
+      root.append(button);
+    }
   }
 }

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.3">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.4">
 </head>
 <body>
   <header class="topbar">
@@ -27,8 +27,11 @@
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
-      <h2 id="stats-note-title">Spilsamlinger</h2>
-      <p class="muted">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
+      <div class="note-filter-heading">
+        <h2 id="stats-note-title">Spilsamlinger</h2>
+        <button type="button" class="note-chip note-reset-chip" data-note-reset>Alle</button>
+      </div>
+      <p class="muted note-hint">Vælg én eller flere spilsamlinger. “Alle” nulstiller valgene.</p>
       <div id="stats-note-options" class="note-options" role="group" aria-label="Vælg spilsamlinger"></div>
       <div class="history-controls">
         <label class="toggle"><input type="checkbox" id="stats-include-guests"><span>Medtag gæstespil</span></label>
@@ -159,6 +162,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=1.0.2"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.4"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: historik og pointfordeling for alle registrerede spil.">
   <title>Whist | Historik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.3">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.4">
 </head>
 <body>
   <header class="topbar">
@@ -24,12 +24,14 @@
     <p id="history-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section id="history-content">
       <section class="panel" aria-label="Filtre">
-        <h2>Spilsamlinger</h2>
-        <p class="muted note-hint">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
+        <div class="note-filter-heading">
+          <h2>Spilsamlinger</h2>
+          <button type="button" class="note-chip note-reset-chip" data-note-reset>Alle</button>
+        </div>
+        <p class="muted note-hint">Vælg én eller flere spilsamlinger. “Alle” nulstiller valgene.</p>
         <div id="note-options" class="note-options" role="group" aria-label="Vælg spilsamlinger"></div>
         <div class="history-controls">
           <label class="toggle"><input type="checkbox" id="include-guests"><span>Medtag gæstespil</span></label>
-          <button class="button secondary refresh-history-btn" id="refresh-history" type="button">Opdatér historik</button>
         </div>
       </section>
       <section class="panel" aria-label="Historiktabel">
@@ -46,6 +48,6 @@
     </section>
   </main>
   <footer class="shell footer">Whist · Historik og pointfordeling</footer>
-  <script type="module" src="assets/js/history.js?v=1.0.0"></script>
+  <script type="module" src="assets/js/history.js?v=1.0.4"></script>
 </body>
 </html>
