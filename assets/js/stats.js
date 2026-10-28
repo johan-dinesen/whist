@@ -6,9 +6,9 @@ import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, player
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
-import {drawScoreHistory} from './score-history-chart.js?v=1.0.7';
+import {drawScoreHistory} from './score-history-chart.js?v=1.0.8';
 import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.6';
-import {drawPointSources} from './point-sources-chart.js?v=1.0.7';
+import {drawPointSources} from './point-sources-chart.js?v=1.0.8';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);

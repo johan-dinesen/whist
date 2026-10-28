@@ -71,7 +71,7 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
         y:{grid:{color:context=>Number(context.tick?.value)===0?'#71899d':'rgba(116,150,174,.14)',
                  lineWidth:context=>Number(context.tick?.value)===0?1.4:1},
           border:{color:'#51677c'},
-          ticks:{color:'#a2b4c4',maxTicksLimit:7,callback:value=>format(value)},
+          ticks:{color:'#a2b4c4',maxTicksLimit:7,precision:0,callback:value=>Number.isInteger(Number(value))?Number(value).toLocaleString('da-DK'):null},
           title:{display:false}
         }
       }

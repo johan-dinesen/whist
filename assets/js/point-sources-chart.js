@@ -36,10 +36,9 @@ export function pointSourceLayout(players) {
 
 export function drawPointSources({container, players, avatar}) {
   const {rows, maxSide} = pointSourceLayout(players);
-  // Keep the chart's scale readable: 1, 2, 5 or 10 × a power of ten.
-  const base = 10 ** Math.floor(Math.log10(maxSide));
-  const scaled = maxSide / base;
-  const scaleMax = (scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10) * base;
+  // Like Diagram, the biggest absolute stack fills the available 35% half-axis.
+  // Do not round up to 'nice' tick boundaries: doing so shrinks all the bars.
+  const scaleMax = maxSide;
   container.replaceChildren();
   // Popover is outside the horizontally scrolling chart, so it never causes
   // the other statistics panels to move and is never clipped when scrolling.
@@ -85,12 +84,12 @@ export function drawPointSources({container, players, avatar}) {
         button.dataset.pointDetail = 'true';
         button.style.backgroundColor = segment.color;
         button.style.flexGrow = String(Math.abs(segment.points));
-        const label = `${row.player.name} · ${segment.label}: ${signed(segment.points)} point, ${segment.games} spil`;
+        const label = `${row.player.name} · ${segment.label}: ${signed(segment.points)} nettopoint, ${segment.games} spil`;
         button.setAttribute('aria-label', label);
         button.title = label;
         button.addEventListener('click', () => {
           popover.show(button, `${row.player.name} · ${segment.label}`,
-            [`${signed(segment.points)} point`, `${segment.games} spil`],
+            [`${signed(segment.points)} nettopoint`, `${segment.games} spil`],
             `${row.player.id}:${segment.key}`);
         });
         stack.append(button);

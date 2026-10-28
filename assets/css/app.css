@@ -917,3 +917,37 @@
 /* Equal panel height when switching views; long podium lists scroll internally. */
 .rank-view-stage{height:var(--rank-view-height,auto)}
 #podium-view:not(.hidden){height:100%;overflow-y:auto;overscroll-behavior:contain}
+
+
+/* v1.0.8: Stilling touch interaction, readable Historik legend and proper scaling. */
+/* Podie is ordinary static page content, never an inner touch-scroll area.
+   The stage normally matches Diagram, but can grow naturally for long lists. */
+.rank-view-stage{height:auto;min-height:var(--rank-view-height,0px)}
+#podium-view:not(.hidden){height:auto;min-height:var(--rank-view-height,0px);overflow:visible;overscroll-behavior:auto;touch-action:pan-y}
+
+/* Larger legend keys; wrap on narrow screens instead of shrinking photos. */
+#score-history-legend{
+  display:flex;flex-wrap:wrap;justify-content:center;overflow:visible;
+  align-items:center;gap:6px 7px;margin-top:8px
+}
+#score-history-legend .score-history-player{
+  padding:4px 6px;min-height:42px;gap:5px;flex:none
+}
+#score-history-legend .score-history-marker{width:20px;height:4px}
+#score-history-legend .score-history-avatar{width:36px;height:36px}
+#score-history-legend .score-history-select-all{min-height:42px;padding:6px 12px}
+/* Let the canvas occupy the remaining fixed-height stage after legend wrapping. */
+#score-history-content:not(.hidden){height:var(--rank-view-height,540px);min-height:0}
+#score-history-content:not(.hidden) .score-history-chart-wrap{
+  flex:1 1 0;height:auto;min-height:220px
+}
+@media(max-width:620px){
+  #score-history-legend{gap:5px 6px;margin-top:8px}
+  #score-history-legend .score-history-player{padding:4px 5px;gap:4px;min-height:38px}
+  #score-history-legend .score-history-marker{width:14px;height:3px}
+  #score-history-legend .score-history-avatar{width:30px;height:30px}
+  #score-history-legend .score-history-select-all{min-height:38px;padding:6px 9px;font-size:11px}
+  #score-history-content:not(.hidden) .score-history-chart-wrap{
+    height:auto;min-height:220px
+  }
+}
