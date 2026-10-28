@@ -76,7 +76,17 @@ function drawTable(games) {
         .map(p => `${p.name}: ${String(p.solo_result || '').startsWith('Vundet') ? 'vundet' : 'tabt'}`)
         .join(', '));
     }
-    tr.append(cell(gameLabel(game)), result, cell(game.callers),
+    // PostgreSQL joins callers with ', '. Render each on a separate line so
+    // rare multi-caller solo games do not stretch the entire Melder column.
+    const callersCell = cell('');
+    callersCell.classList.add('history-callers');
+    for (const name of String(game.callers ?? '').split(', ').filter(Boolean)) {
+      const line = document.createElement('span');
+      line.className = 'history-caller-name';
+      line.textContent = name;
+      callersCell.append(line);
+    }
+    tr.append(cell(gameLabel(game)), result, callersCell,
       cell(game.partners));
     for (const name of names) {
       const participant = byName.get(name);

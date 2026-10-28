@@ -64,7 +64,7 @@ export function drawPointSources({container, players, avatar}) {
     tick.style.top = `${top}%`;
     if (isLimit) {
       const label = document.createElement('span');
-      label.textContent = `${fraction > 0 ? '+' : '−'}${scaleMax.toLocaleString('da-DK')}`;
+      label.textContent = `${fraction > 0 ? '' : '−'}${scaleMax.toLocaleString('da-DK')}`;
       tick.append(label);
     }
     chart.append(tick);

@@ -895,22 +895,45 @@
 @media(max-width:350px){
   .rank-panel > .ranking-head #stats-view-toggle button{padding-inline:5px;font-size:9px}
 }
-/* Fordeling: actual net-point axis; no misleading totals at the bar ends. */
+/* Fordeling: reference numbers interrupt their own dashed guide line.
+   The labels sit at the exact axis height, with no background or border box. */
 .point-source-axis-tick{
   position:absolute;left:0;right:0;height:0;z-index:1;pointer-events:none;
   border-top:1px dashed rgba(127,156,175,.18)
 }
 .point-source-axis-tick.is-quarter{border-top-color:rgba(127,156,175,.27)}
-/* Keep the only two labels readable above the first mobile player column. */
-.point-source-axis-tick.is-limit{z-index:4;border-top-color:rgba(127,156,175,.35)}
-.point-source-axis-tick.is-limit > span{
-  position:absolute;top:-8px;left:2px;padding:1px 4px;
-  background:#101b27;border:1px solid rgba(127,156,175,.2);
-  border-radius:3px;font-size:10px;font-weight:700;color:#c8d9e6;
-  font-variant-numeric:tabular-nums;line-height:14px;white-space:nowrap
+.point-source-axis-tick.is-limit{
+  --axis-reference:#91aabd;
+  z-index:4;border:0;display:flex;align-items:center;gap:7px
 }
-.point-sources-axis-caption{margin:7px 0 0!important;text-align:center;font-size:11px;color:var(--muted)}
-.point-sources-legend{margin-top:7px}
+.point-source-axis-tick.is-limit::before,
+.point-source-axis-tick.is-limit::after{
+  content:"";flex:1 1 0;min-width:0;border-top:1px dashed var(--axis-reference)
+}
+.point-source-axis-tick.is-limit > span{
+  flex:none;padding:0 1px;border:0;background:transparent;
+  color:var(--axis-reference);font-size:12px;font-weight:700;
+  font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap
+}
+.point-sources-axis-caption{
+  margin:9px 0 0!important;text-align:center;font-size:14px;
+  line-height:1.4;font-weight:650;color:#c6d6e5
+}
+.point-sources-legend{
+  margin-top:9px;flex-wrap:wrap;gap:6px 14px;
+  font-size:14px;line-height:1.35
+}
+.point-sources-legend>span{gap:6px}
+.point-source-key{width:14px;height:12px;border-radius:3px}
+@media(max-width:620px){
+  .point-sources-legend{font-size:12px;gap:6px 12px}
+  .point-source-key{width:12px;height:11px}
+}
+/* Historik: stack multiple callers instead of widening the Melder column.
+   Keep payouts at the top of any taller multi-caller row. */
+.history-table .history-callers{white-space:nowrap}
+.history-table .history-caller-name{display:block}
+.history-table tbody td{vertical-align:top}
 /* Popovers close when tapped anywhere, and show all Historik players neatly. */
 .chart-detail-popover{cursor:pointer;user-select:none;max-height:calc(100% - 12px);overflow-y:auto}
 .chart-detail-lines .chart-detail-row{display:flex;align-items:center;justify-content:space-between;gap:22px;min-width:190px}
