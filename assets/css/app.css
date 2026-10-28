@@ -893,13 +893,15 @@
   position:absolute;left:0;right:0;height:0;z-index:1;pointer-events:none;
   border-top:1px dashed rgba(127,156,175,.18)
 }
-.point-source-axis-tick.is-zero{border-top:0}
-.point-source-axis-tick > span{
-  position:absolute;top:-7px;left:2px;padding:0 2px;background:rgba(16,27,39,.94);
-  border-radius:2px;font-size:10px;color:#9aafc2;font-variant-numeric:tabular-nums;
-  line-height:14px
+.point-source-axis-tick.is-quarter{border-top-color:rgba(127,156,175,.27)}
+/* Keep the only two labels readable above the first mobile player column. */
+.point-source-axis-tick.is-limit{z-index:4;border-top-color:rgba(127,156,175,.35)}
+.point-source-axis-tick.is-limit > span{
+  position:absolute;top:-8px;left:2px;padding:1px 4px;
+  background:#101b27;border:1px solid rgba(127,156,175,.2);
+  border-radius:3px;font-size:10px;font-weight:700;color:#c8d9e6;
+  font-variant-numeric:tabular-nums;line-height:14px;white-space:nowrap
 }
-.point-source-axis-tick.is-zero > span{top:6px;color:#bbcedd}
 .point-sources-axis-caption{margin:7px 0 0!important;text-align:center;font-size:11px;color:var(--muted)}
 .point-sources-legend{margin-top:7px}
 /* Popovers close when tapped anywhere, and show all Historik players neatly. */

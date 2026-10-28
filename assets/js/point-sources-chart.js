@@ -30,15 +30,15 @@ export function pointSourceLayout(players) {
       positiveTotal: positive.reduce((sum, segment) => sum + segment.points, 0)
     };
   });
-  const maxSide = Math.max(.01, ...rows.flatMap(row => [row.negativeTotal, row.positiveTotal]));
-  return {rows, maxSide};
+  const maxSide = Math.max(0, ...rows.flatMap(row => [row.negativeTotal, row.positiveTotal]));
+  // The signed axis is symmetric, and both ends round upwards to a multiple of 5.
+  // Always keep a usable scale even when all players have zero points.
+  const scaleMax = Math.max(5, Math.ceil((maxSide - 1e-9) / 5) * 5);
+  return {rows, maxSide, scaleMax};
 }
 
 export function drawPointSources({container, players, avatar}) {
-  const {rows, maxSide} = pointSourceLayout(players);
-  // Like Diagram, the biggest absolute stack fills the available 35% half-axis.
-  // Do not round up to 'nice' tick boundaries: doing so shrinks all the bars.
-  const scaleMax = maxSide;
+  const {rows, scaleMax} = pointSourceLayout(players);
   container.replaceChildren();
   // Popover is outside the horizontally scrolling chart, so it never causes
   // the other statistics panels to move and is never clipped when scrolling.
@@ -48,21 +48,25 @@ export function drawPointSources({container, players, avatar}) {
   chart.style.setProperty('--rank-count', String(rows.length));
   chart.style.width = rows.length > 6 ? `${(rows.length / 6 * 100).toFixed(4)}%` : '100%';
   chart.setAttribute('role', 'group');
-  chart.setAttribute('aria-label', 'Fordeling: søjler med point fordelt efter rolle');
+  chart.setAttribute('aria-label', `Fordeling: søjler med point fordelt efter rolle. Skala fra minus ${scaleMax} til plus ${scaleMax} med hjælpelinjer ved fjerdedele.`);
   const zero = document.createElement('div');
   zero.className = 'rank-zero-line';
   zero.setAttribute('aria-hidden', 'true');
   chart.append(zero);
-  for (const fraction of [-1, -0.5, 0, 0.5, 1]) {
+  // Dashed quarter steps provide a reference without obscuring mobile bars
+  // with intermediate numbers. Only the upper and lower limits are labelled.
+  for (const fraction of [-1, -0.75, -0.5, -0.25, 0.25, 0.5, 0.75, 1]) {
     // A negative value lies below the centre; positive above it.
     const top = 49 - fraction * 35;
+    const isLimit = Math.abs(fraction) === 1;
     const tick = document.createElement('div');
-    tick.className = `point-source-axis-tick${fraction === 0 ? ' is-zero' : ''}`;
+    tick.className = `point-source-axis-tick${isLimit ? ' is-limit' : ' is-quarter'}`;
     tick.style.top = `${top}%`;
-    const label = document.createElement('span');
-    label.textContent = (fraction > 0 ? '+' : fraction < 0 ? '−' : '') +
-      Math.abs(scaleMax * fraction).toLocaleString('da-DK', {maximumFractionDigits:2});
-    tick.append(label);
+    if (isLimit) {
+      const label = document.createElement('span');
+      label.textContent = `${fraction > 0 ? '+' : '−'}${scaleMax.toLocaleString('da-DK')}`;
+      tick.append(label);
+    }
     chart.append(tick);
   }
 
