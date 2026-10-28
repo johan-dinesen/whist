@@ -118,7 +118,6 @@ function clearPendingFile({keepInput = false} = {}) {
   crop = {zoom: 1, x: 0, y: 0};
   if (!keepInput) $('profile-file').value = '';
   show('profile-crop-canvas', false);
-  show('profile-crop-controls', false);
   $('profile-avatar').classList.remove('is-editing');
   $('profile-avatar').setAttribute('aria-label', 'Nuværende profilbillede');
   $('profile-crop-help').textContent = 'Vælg et billede for at placere motivet i cirklen, før du gemmer.';
@@ -324,13 +323,12 @@ $('profile-file').addEventListener('change', async () => {
     selectedFile = file;
     selectedImage = image;
     show('profile-crop-canvas', true);
-    show('profile-crop-controls', true);
     $('profile-avatar').classList.add('is-editing');
     $('profile-avatar').setAttribute('aria-label', 'Beskær profilbillede');
-    $('profile-crop-help').textContent = 'Træk med én finger for at flytte billedet. Knib med to fingre for at zoome (1–4×). På computer: træk og brug musehjulet.';
+    $('profile-crop-help').textContent = 'Udsnittet i cirklen er det, der gemmes. Træk med én finger for at flytte billedet, og knib med to fingre for at zoome.';
     renderCropPreview();
     $('profile-upload-btn').disabled = false;
-    message('profile-message', 'Udsnittet i cirklen er det, der gemmes.');
+    message('profile-message', '');
   } catch (error) {
     if (generation !== cropGeneration) return;
     handleError(error, 'profile-message');
@@ -338,11 +336,6 @@ $('profile-file').addEventListener('change', async () => {
   }
 });
 
-$('profile-crop-reset').addEventListener('click', () => {
-  if (!selectedImage || uploadBusy) return;
-  crop = {zoom: 1, x: 0, y: 0};
-  renderCropPreview();
-});
 const cropCanvas = $('profile-crop-canvas');
 function pointerGesture() {
   const [a, b] = [...cropPointers.values()];
@@ -433,7 +426,6 @@ $('profile-form').addEventListener('submit', async event => {
   button.disabled = true;
   $('profile-player').disabled = true;
   $('profile-file').disabled = true;
-  $('profile-crop-reset').disabled = true;
   message('profile-message', 'Behandler og gemmer billedet ...');
   try {
     const blob = await prepareAvatar(selectedFile, {image: selectedImage, ...crop});
@@ -452,7 +444,6 @@ $('profile-form').addEventListener('submit', async event => {
     uploadBusy = false;
     $('profile-player').disabled = false;
     $('profile-file').disabled = false;
-    $('profile-crop-reset').disabled = false;
   }
 });
 

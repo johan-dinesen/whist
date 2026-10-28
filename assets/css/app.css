@@ -428,8 +428,10 @@
 }
 
 /* v0.2.11: Hænder. Compact, two-tier headers and player-pair columns. */
-.hands-panel{padding-bottom:20px}
-.hands-scroll{width:100%;max-height:min(76vh,720px);overflow:auto;overscroll-behavior:contain;border:1px solid #34495d;border-radius:10px;background:#121e2b;scrollbar-color:#466780 #142330}
+.hands-panel{padding-bottom:20px;display:flex;flex-direction:column;max-height:75vh;max-height:75dvh}
+.hands-panel #hands-content:not(.hidden){display:flex;flex-direction:column;min-height:0;flex:0 1 auto}
+.hands-scroll{width:100%;min-height:0;flex:0 1 auto;overflow:auto;overscroll-behavior:contain;border:1px solid #34495d;border-radius:10px;background:#121e2b;scrollbar-color:#466780 #142330}
+.hands-panel .metric-help{flex:none}
 .hands-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .hands-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums}
 .hands-table th,.hands-table td{border-bottom:1px solid #2c3c4f;border-right:1px solid #2b3d50;text-align:center;padding:7px 7px;line-height:1.3}
@@ -444,12 +446,15 @@
 .hands-table tbody tr:nth-child(odd){background:#162431}
 .hands-table tbody tr:nth-child(even){background:#1b2b3a}
 .hands-table tbody tr:hover{background:#284058}
-.hands-table .hands-hand{min-width:86px;font-weight:750;text-align:left;padding-left:10px;position:sticky;left:0;z-index:2;background:#203246}
+.hands-table .hands-hand{min-width:0;font-weight:750;text-align:left;padding-inline:6px;position:sticky;left:0;z-index:2;background:#203246}
 .hands-table tbody tr:nth-child(even) .hands-hand{background:#1e2e40}
 .hands-table tbody tr:hover .hands-hand{background:#284058}
 .hands-table .hands-total{min-width:55px;background:rgba(66,94,121,.13);font-weight:700}
 .hands-table tbody .hands-total{color:#d9eaf6}
-.hands-table .hands-player-group{min-width:124px;text-align:center;border-left:1px solid #455e75}
+.hands-table .hands-player-group{min-width:124px;text-align:center;border-left:1px solid #455e75;padding:3px 5px}
+.hands-player-identity{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;vertical-align:middle}
+.hands-table .hands-player-avatar{width:27px;height:27px;flex:0 0 27px;border-width:1px}
+.hands-player-avatar .rank-initials{font-size:10px;line-height:1}
 .hands-table .hands-player-start{border-left:1px solid #455e75}
 .hands-table tbody td:not(.hands-total){min-width:58px}
 .hands-table .metric-help p,.hands-panel .metric-help p{color:var(--muted);font-size:12px;margin:9px 0 0;line-height:1.55}
@@ -457,9 +462,11 @@
   .hands-panel{padding:16px 10px 19px}
   .hands-table{font-size:11px}
   .hands-table th,.hands-table td{padding:6px 5px}
-  .hands-table .hands-hand{min-width:76px;padding-left:7px}
+  .hands-table .hands-hand{min-width:0;padding-inline:5px}
   .hands-table .hands-total{min-width:43px}
-  .hands-table .hands-player-group{min-width:102px}
+  .hands-table .hands-player-group{min-width:102px;padding:2px 4px}
+  .hands-table .hands-player-avatar{width:24px;height:24px;flex-basis:24px}
+  .hands-player-identity{gap:5px}
   .hands-table tbody td:not(.hands-total){min-width:51px}
   .hands-table thead tr.hands-header-top{height:34px}
   .hands-table thead tr.hands-header-sub{height:26px}
@@ -967,11 +974,18 @@
 .button.danger:hover{background:#683039;border-color:#e58a91}
 @media(max-width:620px){.admin-recent-game{align-items:stretch;flex-direction:column;gap:10px}.admin-recent-game .button.danger{width:100%;min-height:43px}}
 
-/* Interactive avatar crop editor: the circular canvas shows the exact saved crop. */
-.profile-avatar.is-editing{width:268px;height:268px;border-color:var(--blue);box-shadow:0 0 0 3px rgba(101,183,236,.12)}
+/* Interactive avatar crop editor: large, centred, without secondary controls. */
+.profile-editor{flex-direction:column;align-items:stretch;gap:9px;margin-top:10px}
+.profile-avatar{align-self:center}
+.profile-avatar.is-editing{width:min(330px,100%,42dvh,max(130px,calc(100dvh - 390px)));height:auto;aspect-ratio:1;border-color:var(--blue);box-shadow:0 0 0 3px rgba(101,183,236,.12)}
 .profile-avatar canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;user-select:none}
 .profile-avatar canvas:active{cursor:grabbing}
 .profile-avatar:focus-within{outline:2px solid var(--blue);outline-offset:4px}
-.profile-crop-controls{width:min(100%,310px);display:flex;flex-direction:column;gap:8px;margin:2px 0 5px}
-.profile-crop-controls .button{min-height:39px;padding:8px 12px;font-size:13px;align-self:flex-start}
-@media(max-width:620px){.profile-avatar.is-editing{width:min(248px,100%);height:auto;aspect-ratio:1;margin-inline:auto}.profile-crop-controls{width:100%}}
+.profile-file-controls{flex:0 1 auto;gap:6px}
+.profile-file-controls .profile-hint{line-height:1.4;margin:0}
+#profile-upload-btn{margin-top:2px}
+@media(max-width:620px){
+  .profile-editor{gap:9px}
+  .profile-avatar.is-editing{width:min(310px,100%,40dvh,max(130px,calc(100dvh - 390px)));height:auto;aspect-ratio:1}
+  .profile-file-controls{flex-basis:auto;width:100%}
+}

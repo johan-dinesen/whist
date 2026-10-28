@@ -504,7 +504,13 @@ function renderHands(raw) {
     th.scope = 'colgroup';
     th.colSpan = 2;
     th.className = 'hands-player-group';
-    th.textContent = player.name;
+    const identity = document.createElement('span');
+    identity.className = 'hands-player-identity';
+    identity.append(avatar(player, 'hands-player-avatar'));
+    const name = document.createElement('span');
+    name.textContent = player.name;
+    identity.append(name);
+    th.append(identity);
     first.append(th);
     for (const [name, className] of [['Antal', 'hands-player-start'], ['Gns./%', '']]) {
       const sub = document.createElement('th');
