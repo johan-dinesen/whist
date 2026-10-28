@@ -30,9 +30,18 @@ export function createChartPopover(parent) {
     selected = key ?? null;
     title.textContent = heading;
     lines.replaceChildren();
-    for (const lineText of details) {
+    for (const detail of details) {
       const line = document.createElement('span');
-      line.textContent = lineText;
+      if (detail && typeof detail === 'object') {
+        line.className = 'chart-detail-row';
+        const name = document.createElement('span');
+        name.textContent = detail.name;
+        const value = document.createElement('strong');
+        value.textContent = detail.value;
+        line.append(name, value);
+      } else {
+        line.textContent = detail;
+      }
       lines.append(line);
     }
     root.classList.remove('hidden');
@@ -56,6 +65,7 @@ export function createChartPopover(parent) {
     hide();
   };
   const onKey = event => { if (event.key === 'Escape') hide(); };
+  root.addEventListener('click', hide); // The entire popup dismisses, including its ×.
   closeButton.addEventListener('click', hide);
   document.addEventListener('pointerdown', onDocumentPointer);
   document.addEventListener('keydown', onKey);

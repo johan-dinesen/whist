@@ -2,7 +2,7 @@
 // positions and photo sizing as Diagram. Per-role signed totals are stacked
 // outwards from the photo; role colours never change when the sign does.
 import {POINT_SOURCE_ROLES} from './point-sources-model.js';
-import {createChartPopover} from './chart-popover.js';
+import {createChartPopover} from './chart-popover.js?v=1.0.7';
 
 const rolesByKey = new Map(POINT_SOURCE_ROLES.map(role => [role.key, role]));
 export const NEGATIVE_ROLE_ORDER = ['opponent', 'partner', 'caller', 'solo'];
@@ -36,10 +36,14 @@ export function pointSourceLayout(players) {
 
 export function drawPointSources({container, players, avatar}) {
   const {rows, maxSide} = pointSourceLayout(players);
+  // Keep the chart's scale readable: 1, 2, 5 or 10 × a power of ten.
+  const base = 10 ** Math.floor(Math.log10(maxSide));
+  const scaled = maxSide / base;
+  const scaleMax = (scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10) * base;
   container.replaceChildren();
   // Popover is outside the horizontally scrolling chart, so it never causes
   // the other statistics panels to move and is never clipped when scrolling.
-  const popover = createChartPopover(container.parentElement);
+  const popover = createChartPopover(container.parentElement.parentElement);
   const chart = document.createElement('div');
   chart.className = 'rank-bar-chart point-sources-bars';
   chart.style.setProperty('--rank-count', String(rows.length));
@@ -50,6 +54,18 @@ export function drawPointSources({container, players, avatar}) {
   zero.className = 'rank-zero-line';
   zero.setAttribute('aria-hidden', 'true');
   chart.append(zero);
+  for (const fraction of [-1, -0.5, 0, 0.5, 1]) {
+    // A negative value lies below the centre; positive above it.
+    const top = 49 - fraction * 35;
+    const tick = document.createElement('div');
+    tick.className = `point-source-axis-tick${fraction === 0 ? ' is-zero' : ''}`;
+    tick.style.top = `${top}%`;
+    const label = document.createElement('span');
+    label.textContent = (fraction > 0 ? '+' : fraction < 0 ? '−' : '') +
+      Math.abs(scaleMax * fraction).toLocaleString('da-DK', {maximumFractionDigits:2});
+    tick.append(label);
+    chart.append(tick);
+  }
 
   for (const row of rows) {
     const column = document.createElement('div');
@@ -60,7 +76,7 @@ export function drawPointSources({container, players, avatar}) {
     const buildStack = (segments, side, total) => {
       const stack = document.createElement('div');
       stack.className = `point-source-vertical-stack point-source-stack-${side}`;
-      const height = 35 * total / maxSide;
+      const height = 35 * total / scaleMax;
       stack.style.height = `${height.toFixed(5)}%`;
       for (const segment of segments) {
         const button = document.createElement('button');
@@ -74,7 +90,7 @@ export function drawPointSources({container, players, avatar}) {
         button.title = label;
         button.addEventListener('click', () => {
           popover.show(button, `${row.player.name} · ${segment.label}`,
-            [`${signed(segment.points)} point`, `${segment.games} spil`, `I alt: ${signed(row.player.netPoints)} point`],
+            [`${signed(segment.points)} point`, `${segment.games} spil`],
             `${row.player.id}:${segment.key}`);
         });
         stack.append(button);
@@ -83,16 +99,6 @@ export function drawPointSources({container, players, avatar}) {
     };
     column.append(buildStack(row.positive, 'positive', row.positiveTotal));
     column.append(buildStack(row.negative, 'negative', row.negativeTotal));
-
-    for (const [side, total] of [['positive', row.positiveTotal], ['negative', row.negativeTotal]]) {
-      if (total <= 0) continue;
-      const label = document.createElement('strong');
-      label.className = `rank-bar-value point-source-total point-source-total-${side}`;
-      label.textContent = signed(side === 'negative' ? -total : total);
-      const height = (35 * total / maxSide).toFixed(5);
-      label.style.setProperty('--source-height', `${height}%`);
-      column.append(label);
-    }
 
     const photo = avatar(row.player, 'rank-avatar-chart');
     photo.classList.add('rank-bar-avatar');

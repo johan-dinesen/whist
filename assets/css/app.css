@@ -859,3 +859,61 @@
 #point-sources-view{margin-top:0}
 .point-sources-chart-wrap{height:auto;min-height:0;padding:0;border:0;background:transparent;border-radius:0}
 .point-sources-legend{margin:11px 0 0}
+
+/* Stilling: stable four-view stage sized to Diagram + Stillingsudvikling. */
+.rank-view-stage{position:relative;min-height:var(--rank-view-height,0px)}
+#podium-view:not(.hidden){min-height:var(--rank-view-height,0px);display:flex;flex-direction:column;justify-content:center}
+#score-history-view{margin-top:0}
+#score-history-content:not(.hidden){display:flex;flex-direction:column;min-height:var(--rank-view-height,0px)}
+#score-history-content:not(.hidden) .score-history-chart-wrap{
+  flex:1 1 auto;height:calc(var(--rank-view-height,560px) - 44px);min-height:290px
+}
+/* Compact picture-and-colour-only Historik selectors: all in one strip. */
+#score-history-legend{gap:5px;margin-top:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;align-items:center}
+#score-history-legend .score-history-player{padding:3px 5px;min-height:30px;gap:4px;flex:none;border-radius:7px}
+#score-history-legend .score-history-marker{width:10px;height:4px;border-radius:2px}
+#score-history-legend .score-history-avatar{width:23px;height:23px}
+#score-history-legend .score-history-select-all{min-height:30px;padding:5px 9px;font-size:11px;flex:none}
+@media(max-width:620px){
+  #score-history-content:not(.hidden) .score-history-chart-wrap{height:calc(var(--rank-view-height,530px) - 44px);min-height:290px}
+  #score-history-legend .score-history-player{padding:2px 4px;gap:3px}
+  #score-history-legend .score-history-avatar{width:21px;height:21px}
+  #score-history-legend .score-history-select-all{padding:4px 7px}
+}
+/* More breathing room while retaining one-line controls on narrow phones. */
+.rank-panel > .ranking-head #stats-view-toggle button{padding-inline:11px}
+@media(max-width:620px){
+  .rank-panel > .ranking-head #stats-view-toggle button{padding-inline:clamp(5px,1.35vw,9px)}
+}
+@media(max-width:350px){
+  .rank-panel > .ranking-head #stats-view-toggle button{padding-inline:5px;font-size:9px}
+}
+/* Fordeling: actual net-point axis; no misleading totals at the bar ends. */
+.point-source-axis-tick{
+  position:absolute;left:0;right:0;height:0;z-index:1;pointer-events:none;
+  border-top:1px dashed rgba(127,156,175,.18)
+}
+.point-source-axis-tick.is-zero{border-top:0}
+.point-source-axis-tick > span{
+  position:absolute;top:-7px;left:2px;padding:0 2px;background:rgba(16,27,39,.94);
+  border-radius:2px;font-size:10px;color:#9aafc2;font-variant-numeric:tabular-nums;
+  line-height:14px
+}
+.point-source-axis-tick.is-zero > span{top:6px;color:#bbcedd}
+.point-sources-axis-caption{margin:7px 0 0!important;text-align:center;font-size:11px;color:var(--muted)}
+.point-sources-legend{margin-top:7px}
+/* Popovers close when tapped anywhere, and show all Historik players neatly. */
+.chart-detail-popover{cursor:pointer;user-select:none;max-height:calc(100% - 12px);overflow-y:auto}
+.chart-detail-lines .chart-detail-row{display:flex;align-items:center;justify-content:space-between;gap:22px;min-width:190px}
+.chart-detail-row strong{font-size:12px;font-weight:700;color:#eff7fc;white-space:nowrap}
+/* Keep six photo-only players plus Alle on one compact mobile row. */
+@media(max-width:620px){
+  #score-history-legend{gap:3px}
+  #score-history-legend .score-history-player{gap:2px;padding:2px 2px;min-height:27px}
+  #score-history-legend .score-history-marker{width:7px;height:3px}
+  #score-history-legend .score-history-avatar{width:19px;height:19px}
+  #score-history-legend .score-history-select-all{min-height:27px;padding:3px 6px;font-size:10px}
+}
+/* Equal panel height when switching views; long podium lists scroll internally. */
+.rank-view-stage{height:var(--rank-view-height,auto)}
+#podium-view:not(.hidden){height:100%;overflow-y:auto;overscroll-behavior:contain}

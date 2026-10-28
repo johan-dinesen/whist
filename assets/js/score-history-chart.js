@@ -1,6 +1,6 @@
 // Independent presentation module; existing Stilling / Synergi renderers untouched.
 // Uses the pinned Chart.js UMD bundle loaded by statistik.html.
-import {createChartPopover} from './chart-popover.js';
+import {createChartPopover} from './chart-popover.js?v=1.0.7';
 const palette = ['#e7ba61','#71cdb0','#84b4f5','#ea9291','#ba9bf1','#f4bbd6',
   '#81d9e4','#d9c37b','#97d08e','#c799e2','#c3b5a5','#d8e19a'];
 
@@ -36,24 +36,24 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
       parsing:false,
       interaction:{mode:'nearest',intersect:false},
       onClick:(event,unused,chartInstance) => {
-        const selected = chartInstance.getElementsAtEventForMode(event,'nearest',{intersect:false},true)?.[0];
-        if (!selected) {popover.hide();return;}
-        const location = selected.element.getCenterPoint();
-        if (Math.hypot(location.x - event.x, location.y - event.y) > 28) {
-          popover.hide();return;
+        const xScale = chartInstance.scales.x;
+        const clicked = xScale.getValueForPixel(event.x);
+        if (!Number.isFinite(clicked) || clicked < -0.5 || clicked > model.gameCount + 0.5) {
+          popover.hide();
+          return;
         }
-        const player = model.players[selected.datasetIndex];
-        const game = selected.index;
-        if (!player || !Number.isInteger(game)) return;
-        const point = chartInstance.data.datasets[selected.datasetIndex].data[game];
-        if (!point) return;
+        // Any position along the x-axis chooses the nearest completed game.
+        // All players' accumulated totals are shown, not only the selected line.
+        const game = Math.min(model.gameCount, Math.max(0, Math.round(clicked)));
+        const details = model.players.map(player => ({
+          name: player.name,
+          value: `${format(player.series[game])} point`
+        }));
         const bounds = canvas.getBoundingClientRect();
-        const x = bounds.left + location.x * (bounds.width / chartInstance.width);
-        const y = bounds.top + location.y * (bounds.height / chartInstance.height);
+        const x = bounds.left + event.x * (bounds.width / chartInstance.width);
+        const y = bounds.top + event.y * (bounds.height / chartInstance.height);
         popover.show({getBoundingClientRect:()=>({left:x,top:y,width:0,height:0})},
-          `${player.name} · Spil ${game}`,
-          [`${format(point.y)} point`, `Akkumuleret efter spil ${game}`],
-          `${player.id}:${game}`);
+          `Efter ${game} spil`, details, `game:${game}`);
       },
       layout:{padding:{top:9,right:10,bottom:1,left:0}},
       plugins:{
@@ -85,9 +85,9 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
     button.setAttribute('aria-label',`Vis eller skjul ${player.name}`);
     const marker=document.createElement('span');
     marker.className='score-history-marker';marker.style.backgroundColor=colorOf(i);
-    const name=document.createElement('span');name.textContent=player.name;
-    if (typeof avatar === 'function') button.append(marker, avatar(player), name);
-    else button.append(marker,name);
+    button.title = player.name;
+    if (typeof avatar === 'function') button.append(marker, avatar(player));
+    else { const name=document.createElement('span');name.textContent=player.name;button.append(marker,name); }
     button.addEventListener('click',()=>{
       const next=!chart.isDatasetVisible(i);
       chart.setDatasetVisibility(i,next);

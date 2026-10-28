@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.6">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.7">
 </head>
 <body>
   <header class="topbar">
@@ -42,12 +42,13 @@
         <div><h2 id="rank-title">Stilling</h2><p class="rank-subtitle" id="standings-count" aria-live="polite"></p></div>
         <div id="stats-view-toggle" class="view-switch hidden" role="group" aria-label="Visning af stilling">
           <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
-          <button type="button" data-stats-view="chart" aria-pressed="false">Diagram</button>
           <button type="button" data-stats-view="history" aria-pressed="false">Historik</button>
+          <button type="button" data-stats-view="chart" aria-pressed="false">Diagram</button>
           <button type="button" data-stats-view="sources" aria-pressed="false">Fordeling</button>
         </div>
       </div>
       <p id="standings-empty" class="ranking-empty">Indlæser stilling …</p>
+      <div id="rank-view-stage" class="rank-view-stage">
       <div id="podium-view" class="hidden" aria-label="Stilling med top tre og øvrige spillere">
         <div id="stats-podium" class="stats-podium"></div>
         <div id="stats-lower" class="stats-lower"></div>
@@ -92,6 +93,7 @@
             <div class="rank-bar-scroll point-sources-chart-scroll" id="point-sources-bars" tabindex="0" role="region" aria-label="Fordeling med spillernes billeder ved nul og nettopoint op og ned"></div>
           </div>
           <p class="rank-chart-scroll-tip" id="point-sources-scroll-tip">Rul vandret for at se alle spillere.</p>
+          <p class="point-sources-axis-caption">Nettopointfordeling</p>
           <div class="point-sources-legend" role="list" aria-label="Fordeling af point efter rolle">
             <span role="listitem"><i class="point-source-key" style="--source-color:#e7ba61"></i>Melder</span>
             <span role="listitem"><i class="point-source-key" style="--source-color:#71cdb0"></i>Makker</span>
@@ -99,6 +101,7 @@
             <span role="listitem"><i class="point-source-key" style="--source-color:#ea9291"></i>Sol</span>
           </div>
         </div>
+      </div>
       </div>
     </section>
     <section class="panel metrics-panel" aria-labelledby="metrics-title">
@@ -162,6 +165,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=1.0.6"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.7"></script>
 </body>
 </html>

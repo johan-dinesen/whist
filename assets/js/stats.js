@@ -6,9 +6,9 @@ import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, player
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
 import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
-import {drawScoreHistory} from './score-history-chart.js?v=1.0.6';
+import {drawScoreHistory} from './score-history-chart.js?v=1.0.7';
 import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.6';
-import {drawPointSources} from './point-sources-chart.js?v=1.0.6';
+import {drawPointSources} from './point-sources-chart.js?v=1.0.7';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
@@ -309,6 +309,7 @@ function renderRankings(rows) {
   else drawBarChart(standings);
   if(view==='history')requestAnimationFrame(mountHistoryChart);
   if(view==='sources')requestAnimationFrame(mountPointSourcesChart);
+  requestAnimationFrame(syncRankViewHeight);
 }
 // Independent module: table definitions live in stat-metrics.js, so more
 // statistics can be added without changing the podium or chart renderers.
@@ -547,6 +548,27 @@ function renderHands(raw) {
 
 window.addEventListener('resize', syncHandsStickyOffsets);
 window.addEventListener('resize', syncMetricStickyOffsets);
+window.addEventListener('resize', () => requestAnimationFrame(syncRankViewHeight));
+
+// Size all four Stilling views by the Diagram's natural height, which includes
+// Stillingsudvikling. The DOM measurement adapts to text zoom and screen width.
+function syncRankViewHeight() {
+  const chartView = $('chart-view');
+  const stage = $('rank-view-stage');
+  if (!standings.length || !stage || !chartView) return;
+  const hidden = chartView.classList.contains('hidden');
+  if (hidden) {
+    chartView.style.visibility = 'hidden';
+    chartView.classList.remove('hidden');
+  }
+  const height = Math.ceil(chartView.getBoundingClientRect().height);
+  if (hidden) {
+    chartView.classList.add('hidden');
+    chartView.style.visibility = '';
+  }
+  if (height > 0) stage.style.setProperty('--rank-view-height', `${height}px`);
+}
+
 
 // Chart.js must be constructed only after its parent tab is visible;
 // otherwise it can measure a zero-width canvas on mobile.
@@ -631,6 +653,7 @@ function changeView(next) {
   if(view==='history')requestAnimationFrame(mountHistoryChart);
   if(view==='sources')requestAnimationFrame(mountPointSourcesChart);
   if(view==='chart' && historyModel?.gameCount && standings.length) selectTimeMachineGame(timeMachineIndex);
+  requestAnimationFrame(syncRankViewHeight);
 }
 async function refresh() {
   if(!supabase)return;
