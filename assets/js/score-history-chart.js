@@ -1,5 +1,6 @@
 // Independent presentation module; existing Stilling / Synergi renderers untouched.
 // Uses the pinned Chart.js UMD bundle loaded by statistik.html.
+import {createChartPopover} from './chart-popover.js';
 const palette = ['#e7ba61','#71cdb0','#84b4f5','#ea9291','#ba9bf1','#f4bbd6',
   '#81d9e4','#d9c37b','#97d08e','#c799e2','#c3b5a5','#d8e19a'];
 
@@ -9,6 +10,7 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
     minimumFractionDigits:2,maximumFractionDigits:2
   });
   const colorOf = i => palette[i%palette.length];
+  const popover = createChartPopover(canvas.parentElement);
   const datasets = model.players.map((p,i)=>({
     label:p.name,
     data:p.series.map((y,x)=>({x,y})),
@@ -16,7 +18,7 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
     backgroundColor:colorOf(i),
     borderWidth:2.3,
     pointRadius:0,
-    pointHitRadius:9,
+    pointHitRadius:13,
     pointHoverRadius:4,
     pointHoverBorderWidth:2,
     tension:0,
@@ -32,20 +34,31 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
       animation:false,
       normalized:true,
       parsing:false,
-      interaction:{mode:'index',intersect:false},
+      interaction:{mode:'nearest',intersect:false},
+      onClick:(event,unused,chartInstance) => {
+        const selected = chartInstance.getElementsAtEventForMode(event,'nearest',{intersect:false},true)?.[0];
+        if (!selected) {popover.hide();return;}
+        const location = selected.element.getCenterPoint();
+        if (Math.hypot(location.x - event.x, location.y - event.y) > 28) {
+          popover.hide();return;
+        }
+        const player = model.players[selected.datasetIndex];
+        const game = selected.index;
+        if (!player || !Number.isInteger(game)) return;
+        const point = chartInstance.data.datasets[selected.datasetIndex].data[game];
+        if (!point) return;
+        const bounds = canvas.getBoundingClientRect();
+        const x = bounds.left + location.x * (bounds.width / chartInstance.width);
+        const y = bounds.top + location.y * (bounds.height / chartInstance.height);
+        popover.show({getBoundingClientRect:()=>({left:x,top:y,width:0,height:0})},
+          `${player.name} · Spil ${game}`,
+          [`${format(point.y)} point`, `Akkumuleret efter spil ${game}`],
+          `${player.id}:${game}`);
+      },
       layout:{padding:{top:9,right:10,bottom:1,left:0}},
       plugins:{
         legend:{display:false},
-        tooltip:{
-          backgroundColor:'rgba(11,22,34,.95)',
-          borderWidth:1,borderColor:'#476078',
-          titleColor:'#f3f8fd',bodyColor:'#ecf2f8',
-          padding:11,
-          callbacks:{
-            title:items=>items.length?`Spil ${items[0].parsed.x}`:'',
-            label:item=>`${item.dataset.label}: ${format(item.parsed.y)} point`
-          }
-        }
+        tooltip:{enabled:false}
       },
       scales:{
         x:{type:'linear',min:0,max:Math.max(1,model.gameCount),
@@ -108,5 +121,8 @@ export function drawScoreHistory({canvas,legend,model,avatar}) {
     playerButton.addEventListener('click', updateAllState);
   }
   updateAllState();
+  const chartDestroy = chart.destroy.bind(chart);
+  chart.destroy = () => { popover.destroy();chartDestroy(); };
+  chart.hideDetail = () => popover.hide();
   return chart;
 }

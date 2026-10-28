@@ -4,7 +4,7 @@ export const POINT_SOURCE_ROLES = [
   {key:'caller', label:'Melder', color:'#e7ba61'},
   {key:'partner', label:'Makker', color:'#71cdb0'},
   {key:'opponent', label:'Modstander', color:'#84b4f5'},
-  {key:'solo', label:'Solospil', color:'#ea9291'}
+  {key:'solo', label:'Sol', color:'#ea9291'}
 ];
 
 const roleKeys = new Set(POINT_SOURCE_ROLES.map(role => role.key));

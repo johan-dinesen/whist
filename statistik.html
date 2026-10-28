@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
   <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.5">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.6">
 </head>
 <body>
   <header class="topbar">
@@ -40,13 +40,19 @@
     <section class="panel rank-panel" aria-labelledby="rank-title">
       <div class="ranking-head">
         <div><h2 id="rank-title">Stilling</h2><p class="rank-subtitle" id="standings-count" aria-live="polite"></p></div>
+        <div id="stats-view-toggle" class="view-switch hidden" role="group" aria-label="Visning af stilling">
+          <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
+          <button type="button" data-stats-view="chart" aria-pressed="false">Diagram</button>
+          <button type="button" data-stats-view="history" aria-pressed="false">Historik</button>
+          <button type="button" data-stats-view="sources" aria-pressed="false">Fordeling</button>
+        </div>
       </div>
       <p id="standings-empty" class="ranking-empty">Indlæser stilling …</p>
       <div id="podium-view" class="hidden" aria-label="Stilling med top tre og øvrige spillere">
         <div id="stats-podium" class="stats-podium"></div>
         <div id="stats-lower" class="stats-lower"></div>
       </div>
-      <div id="chart-view" class="hidden" aria-label="Pointdiagram med positive og negative nettopoint">
+      <div id="chart-view" class="hidden" aria-label="Diagram med positive og negative nettopoint">
         <div class="rank-bar-scroll" tabindex="0" role="region" aria-label="Søjlediagram, rul vandret for flere spillere">
           <div id="rank-bar-chart" class="rank-bar-chart"></div>
         </div>
@@ -70,7 +76,7 @@
           </div>
         </div>
       </div>
-      <div id="score-history-view" class="hidden" aria-label="Stillingshistorik med nettopoint efter hvert spil">
+      <div id="score-history-view" class="hidden" aria-label="Historik med nettopoint efter hvert spil">
         <p id="score-history-state" class="ranking-empty" role="status">Indlæser stillingshistorik …</p>
         <div id="score-history-content" class="hidden">
           <div class="score-history-chart-wrap">
@@ -79,24 +85,21 @@
           <div id="score-history-legend" class="score-history-legend" role="group" aria-label="Vælg synlige spillere i diagrammet"></div>
         </div>
       </div>
-      <div id="point-sources-view" class="hidden" aria-label="Pointkilder fordelt på spillerroller">
-        <p id="point-sources-state" class="ranking-empty" role="status">Indlæser pointkilder …</p>
+      <div id="point-sources-view" class="hidden" aria-label="Fordeling af point på spillerroller">
+        <p id="point-sources-state" class="ranking-empty" role="status">Indlæser fordeling …</p>
         <div id="point-sources-content" class="hidden">
-          <div class="point-sources-legend" role="list" aria-label="Pointkilder efter rolle">
+          <div class="point-sources-chart-wrap">
+            <div class="rank-bar-scroll point-sources-chart-scroll" id="point-sources-bars" tabindex="0" role="region" aria-label="Fordeling med spillernes billeder ved nul og nettopoint op og ned"></div>
+          </div>
+          <p class="rank-chart-scroll-tip" id="point-sources-scroll-tip">Rul vandret for at se alle spillere.</p>
+          <div class="point-sources-legend" role="list" aria-label="Fordeling af point efter rolle">
             <span role="listitem"><i class="point-source-key" style="--source-color:#e7ba61"></i>Melder</span>
             <span role="listitem"><i class="point-source-key" style="--source-color:#71cdb0"></i>Makker</span>
             <span role="listitem"><i class="point-source-key" style="--source-color:#84b4f5"></i>Modstander</span>
-            <span role="listitem"><i class="point-source-key" style="--source-color:#ea9291"></i>Solospil</span>
+            <span role="listitem"><i class="point-source-key" style="--source-color:#ea9291"></i>Sol</span>
           </div>
-          <div class="point-sources-chart-wrap" id="point-sources-bars" aria-label="Pointkilder med spillernes billeder i midten og nettopoint ud til begge sider"></div>
         </div>
       </div>
-      <div id="stats-view-toggle" class="view-switch hidden" role="group" aria-label="Visning af stilling">
-          <button type="button" data-stats-view="podium" aria-pressed="true">Podie</button>
-          <button type="button" data-stats-view="chart" aria-pressed="false">Pointdiagram</button>
-          <button type="button" data-stats-view="history" aria-pressed="false">Stillingshistorik</button>
-          <button type="button" data-stats-view="sources" aria-pressed="false">Pointkilder</button>
-        </div>
     </section>
     <section class="panel metrics-panel" aria-labelledby="metrics-title">
       <div class="ranking-head">
@@ -159,6 +162,6 @@
   <footer class="shell footer">Whist · Statistik</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <script type="module" src="assets/js/stats.js?v=1.0.5"></script>
+  <script type="module" src="assets/js/stats.js?v=1.0.6"></script>
 </body>
 </html>

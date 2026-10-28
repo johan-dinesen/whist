@@ -751,13 +751,22 @@
 }
 .note-reset-chip[aria-pressed=true]{padding:4px 11px}
 
-/* v1.0.5: Stilling view controls below the visualization. */
-.rank-panel > #stats-view-toggle{
-  margin:16px auto 0;
-  width:max-content;
-  max-width:100%;
-  justify-content:center;
+/* v1.0.6: keep all four Stilling tabs beside its heading, even on phones. */
+.rank-panel > .ranking-head{flex-wrap:nowrap;gap:6px;align-items:center}
+.rank-panel > .ranking-head > div:first-child{min-width:0;flex:0 0 auto}
+.rank-panel .view-switch{flex:0 1 auto;min-width:0;max-width:100%;gap:2px;padding:3px;margin:0}
+.rank-panel .view-switch button{flex:0 1 auto;min-width:0;padding:6px 8px;font-size:11px;white-space:nowrap;min-height:34px}
+@media(max-width:620px){
+  .rank-panel > .ranking-head{gap:5px}
+  .rank-panel > .ranking-head h2{font-size:clamp(16px,4.7vw,20px)}
+  .rank-panel .view-switch{display:flex;flex:0 1 auto;width:auto;gap:1px;padding:2px;margin:0}
+  .rank-panel .view-switch button{flex:0 1 auto;min-height:32px;padding:5px clamp(3px,1vw,6px);font-size:clamp(9px,2.7vw,11px)}
 }
+@media(max-width:350px){
+  .rank-panel > .ranking-head h2{font-size:16px}
+  .rank-panel .view-switch button{padding:5px 3px;font-size:9px}
+}
+
 .score-history-select-all{
   display:inline-flex;
   align-items:center;
@@ -778,103 +787,75 @@
 .score-history-select-all[aria-pressed=true]{border-color:#70a6c4;background:#234b61}
 .score-history-select-all:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 
-/* Pointkilder: profile at zero, stacked role contributions on both sides.
-   All players use the same length scale, including the signed exceptions. */
-.point-sources-chart-wrap{
-  width:100%;
-  height:auto;
-  min-height:0;
-  padding:12px 10px 11px;
+
+/* Fordeling shares Diagram's scrolling grid, exact height, 49% zero line,
+   columns, images and footer. Only the bars themselves are segmented. */
+#point-sources-view{margin-top:12px}
+.point-sources-legend{
+  display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;
+  gap:clamp(3px,1.9vw,16px);margin:4px 0 10px;
+  color:#d2e0eb;font-size:clamp(9px,2.5vw,12px);font-weight:650;
+  white-space:nowrap;min-width:0
 }
-.point-sources-bars{display:flex;flex-direction:column;gap:1px}
-.point-source-row{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);
-  align-items:center;
-  position:relative;
-  min-height:56px;
-  padding:4px 0;
-  border-radius:5px;
+.point-sources-legend>span{display:inline-flex;align-items:center;gap:clamp(3px,1vw,6px);white-space:nowrap;min-width:0}
+.point-source-key{background:var(--source-color);display:inline-block;width:clamp(7px,1.4vw,13px);height:9px;border-radius:3px;flex:none}
+.point-sources-chart-wrap{position:relative;min-width:0}
+.point-sources-chart-scroll{width:100%}
+.point-sources-bars{isolation:isolate}
+.point-source-column{z-index:2}
+.point-source-vertical-stack{
+  position:absolute;left:19%;width:62%;display:flex;z-index:0;
+  min-height:0;align-items:stretch
 }
-.point-source-row:nth-child(even){background:rgba(255,255,255,.018)}
-.point-source-row::before{
-  content:'';
-  display:block;
-  position:absolute;
-  top:0;bottom:0;left:50%;
-  width:1px;
-  background:rgba(151,174,192,.18);
-  pointer-events:none;
+.point-source-stack-positive{bottom:51%;flex-direction:column-reverse}
+.point-source-stack-negative{top:49%;flex-direction:column}
+.point-source-vertical-segment{
+  width:100%;display:block;border:0;margin:0;padding:0;
+  flex-basis:0;flex-shrink:1;min-height:4px;
+  border-radius:0;cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13)
 }
-.point-source-track{
-  display:flex;
-  align-items:center;
-  width:100%;
-  height:28px;
-  min-width:0;
-  position:relative;
-  background:rgba(88,117,143,.045);
+.point-source-vertical-segment:hover,.point-source-vertical-segment:focus-visible{
+  outline:2px solid #f0f8ff;outline-offset:0;filter:brightness(1.12);z-index:2
 }
-.point-source-track-negative{justify-content:flex-end}
-.point-source-track-positive{justify-content:flex-start}
-.point-source-stack{
-  display:flex;
-  flex-direction:row;
-  height:24px;
-  min-width:0;
-  align-items:stretch;
-}
-.point-source-track-negative .point-source-stack{flex-direction:row-reverse}
-.point-source-segment{
-  display:block;
-  min-width:3px;
-  min-height:24px;
-  padding:0;
-  margin:0;
-  cursor:pointer;
-  border:0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
-  border-radius:0;
-}
-.point-source-track-negative .point-source-segment:last-child{border-radius:3px 0 0 3px}
-.point-source-track-positive .point-source-segment:last-child{border-radius:0 3px 3px 0}
-.point-source-segment:hover,.point-source-segment:focus-visible{
-  outline:2px solid #e1f1fa;
-  outline-offset:0;
-  filter:brightness(1.18);
-  z-index:2;
-}
-.point-source-avatar{
-  position:relative;
-  z-index:3;
-  width:42px;
-  height:42px;
-  border-color:#668198;
-  justify-self:center;
-  box-shadow:0 2px 9px rgba(0,0,0,.42);
-}
-.point-source-detail{
-  margin:10px 3px 0;
-  padding:8px 10px;
-  border:1px solid #405a71;
-  border-radius:7px;
-  background:#1d3447;
-  color:#e6f2fa;
-  font-size:12px;
-  line-height:1.5;
-  font-variant-numeric:tabular-nums;
-}
+.point-source-total{pointer-events:none}
+.point-source-total-positive{top:calc(49% - max(var(--source-height),var(--score-photo-clearance)) - 9px - 1.2em);bottom:auto}
+.point-source-total-negative{top:calc(49% + max(var(--source-height),var(--score-photo-clearance)) + 9px);bottom:auto}
 @media(max-width:620px){
-  .rank-panel > #stats-view-toggle{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    width:100%;
-    margin-top:13px;
-  }
-  .score-history-select-all{font-size:11px;min-height:32px;padding:6px 11px}
-  .point-sources-chart-wrap{padding:9px 5px 10px}
-  .point-source-row{grid-template-columns:minmax(0,1fr) 39px minmax(0,1fr);min-height:49px}
-  .point-source-avatar{width:35px;height:35px}
-  .point-source-track{height:25px}
-  .point-source-stack,.point-source-segment{height:20px;min-height:20px}
+  .point-source-vertical-stack{left:23%;width:54%}
+  .point-source-vertical-segment{min-height:3px}
+  .point-sources-legend{gap:clamp(3px,1.5vw,8px);font-size:clamp(9px,2.5vw,11px)}
 }
+
+/* Both chart tooltips float above their respective graphs, never below. */
+.chart-detail-popover{
+  position:absolute;z-index:20;box-sizing:border-box;max-width:calc(100% - 12px);
+  min-width:min(190px,calc(100% - 12px));width:max-content;
+  padding:12px 33px 11px 12px;border:1px solid #7291a6;border-radius:9px;
+  background:#0d1f30;box-shadow:0 6px 24px rgba(0,0,0,.52);
+  font-size:12px;line-height:1.45;color:#eff7fc;font-variant-numeric:tabular-nums;
+}
+.chart-detail-title{display:block;margin-bottom:5px;font-size:12px;line-height:1.3;padding-right:2px}
+.chart-detail-lines{display:flex;flex-direction:column;gap:2px;color:#c9dbe9}
+.chart-detail-close{
+  position:absolute;top:3px;right:4px;background:transparent;border:0;
+  color:#d7eaf6;font-size:22px;font-weight:400;line-height:1;width:27px;height:27px;
+  display:grid;place-items:center;border-radius:5px
+}
+.chart-detail-close:hover{background:#2e5067;color:white}
+/* Override the old two-by-two mobile Stilling tab grid. */
+@media(max-width:620px){
+  .rank-panel > .ranking-head #stats-view-toggle{
+    display:flex;grid-template-columns:none;width:auto;flex:0 1 auto;
+    justify-content:flex-end;gap:1px;padding:2px;
+  }
+  .rank-panel > .ranking-head #stats-view-toggle button{
+    min-width:0;flex:0 1 auto;padding:5px clamp(2px,.7vw,5px);
+    font-size:clamp(8.5px,2.7vw,11px);white-space:nowrap
+  }
+}
+
+/* The chart itself starts and measures exactly like Diagram; legend below it. */
+#point-sources-view{margin-top:0}
+.point-sources-chart-wrap{height:auto;min-height:0;padding:0;border:0;background:transparent;border-radius:0}
+.point-sources-legend{margin:11px 0 0}
