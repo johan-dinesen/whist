@@ -68,6 +68,25 @@ export function moveAvatarCrop(image, crop, deltaX, deltaY, viewportSize) {
   });
 }
 
+// Transform the crop about the touch midpoint. The source pixel under the old
+// midpoint remains under the new midpoint as fingers move and change distance.
+// Using successive gestures also handles a pinch that pans at the same time.
+export function pinchAvatarCrop(image, crop, previous, next, viewportSize) {
+  const current = avatarCrop(image, crop);
+  if (!(viewportSize > 0) || !(previous?.distance > 0) ||
+      !(next?.distance > 0)) return current;
+  const zoom = current.zoom * next.distance / previous.distance;
+  const resized = avatarCrop(image, {...current, zoom});
+  const oldPixels = current.size / viewportSize;
+  const newPixels = resized.size / viewportSize;
+  const cx = viewportSize / 2;
+  return avatarCrop(image, {
+    zoom: resized.zoom,
+    x: current.x + (previous.x - cx) * oldPixels - (next.x - cx) * newPixels,
+    y: current.y + (previous.y - cx) * oldPixels - (next.y - cx) * newPixels
+  });
+}
+
 export function drawAvatarCrop(canvas, image, crop = {}) {
   const area = avatarCrop(image, crop);
   const ctx = canvas.getContext('2d');

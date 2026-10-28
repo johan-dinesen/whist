@@ -1,4 +1,4 @@
-import { PROFILE_BUCKET, profileUrl, loadAvatarImage, avatarCrop, moveAvatarCrop, drawAvatarCrop, prepareAvatar } from './profiles.js';
+import { PROFILE_BUCKET, profileUrl, loadAvatarImage, moveAvatarCrop, pinchAvatarCrop, drawAvatarCrop, prepareAvatar } from './profiles.js?v=1.0.3';
 
 const $ = id => document.getElementById(id);
 const isPreview = new URLSearchParams(location.search).has('preview');
@@ -12,7 +12,8 @@ let selectedFile = null;
 let selectedImage = null;
 let crop = {zoom: 1, x: 0, y: 0};
 let cropGeneration = 0;
-let activeDrag = null;
+let cropPointers = new Map();
+let pinchGesture = null;
 let uploadBusy = false;
 let recentGames = [];
 let deletingGameId = null;
@@ -112,11 +113,10 @@ function clearPendingFile({keepInput = false} = {}) {
   ++cropGeneration; // Ignore any image load which finishes after switching players/files.
   selectedFile = null;
   selectedImage = null;
-  activeDrag = null;
+  cropPointers.clear();
+  pinchGesture = null;
   crop = {zoom: 1, x: 0, y: 0};
   if (!keepInput) $('profile-file').value = '';
-  $('profile-zoom').value = '1';
-  $('profile-zoom-value').textContent = '1,00×';
   show('profile-crop-canvas', false);
   show('profile-crop-controls', false);
   $('profile-avatar').classList.remove('is-editing');
@@ -127,8 +127,6 @@ function clearPendingFile({keepInput = false} = {}) {
 function renderCropPreview() {
   if (!selectedImage) return;
   crop = drawAvatarCrop($('profile-crop-canvas'), selectedImage, crop);
-  $('profile-zoom').value = String(crop.zoom);
-  $('profile-zoom-value').textContent = `${crop.zoom.toLocaleString('da-DK', {minimumFractionDigits:2,maximumFractionDigits:2})}×`;
 }
 function setImage(src) {
   const img = $('profile-image');
@@ -329,7 +327,7 @@ $('profile-file').addEventListener('change', async () => {
     show('profile-crop-controls', true);
     $('profile-avatar').classList.add('is-editing');
     $('profile-avatar').setAttribute('aria-label', 'Beskær profilbillede');
-    $('profile-crop-help').textContent = 'Træk billedet i cirklen for at flytte motivet, og brug Zoom til at forstørre. Du kan også bruge piletasterne.';
+    $('profile-crop-help').textContent = 'Træk med én finger for at flytte billedet. Knib med to fingre for at zoome (1–4×). På computer: træk og brug musehjulet.';
     renderCropPreview();
     $('profile-upload-btn').disabled = false;
     message('profile-message', 'Udsnittet i cirklen er det, der gemmes.');
@@ -340,40 +338,82 @@ $('profile-file').addEventListener('change', async () => {
   }
 });
 
-$('profile-zoom').addEventListener('input', () => {
-  if (!selectedImage || uploadBusy) return;
-  crop = avatarCrop(selectedImage, {...crop, zoom: Number($('profile-zoom').value)});
-  renderCropPreview();
-});
 $('profile-crop-reset').addEventListener('click', () => {
   if (!selectedImage || uploadBusy) return;
   crop = {zoom: 1, x: 0, y: 0};
   renderCropPreview();
 });
 const cropCanvas = $('profile-crop-canvas');
+function pointerGesture() {
+  const [a, b] = [...cropPointers.values()];
+  if (!a || !b) return null;
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+    distance: Math.hypot(a.x - b.x, a.y - b.y)
+  };
+}
 cropCanvas.addEventListener('pointerdown', event => {
-  if (!selectedImage || uploadBusy || (event.button !== undefined && event.button !== 0)) return;
+  if (!selectedImage || uploadBusy || cropPointers.size >= 2 ||
+      (event.pointerType === 'mouse' && event.button !== 0)) return;
   event.preventDefault();
-  activeDrag = {id: event.pointerId, x: event.clientX, y: event.clientY};
+  const rect = cropCanvas.getBoundingClientRect();
+  cropPointers.set(event.pointerId, {x: event.clientX - rect.left, y: event.clientY - rect.top});
   cropCanvas.setPointerCapture(event.pointerId);
+  // Initialising when the second finger arrives prevents an unwanted zoom jump.
+  pinchGesture = cropPointers.size === 2 ? pointerGesture() : null;
 });
 cropCanvas.addEventListener('pointermove', event => {
-  if (!selectedImage || !activeDrag || event.pointerId !== activeDrag.id || uploadBusy) return;
-  const dx = event.clientX - activeDrag.x;
-  const dy = event.clientY - activeDrag.y;
-  activeDrag.x = event.clientX;
-  activeDrag.y = event.clientY;
-  crop = moveAvatarCrop(selectedImage, crop, dx, dy, cropCanvas.getBoundingClientRect().width);
-  renderCropPreview();
+  if (!selectedImage || uploadBusy || !cropPointers.has(event.pointerId)) return;
+  event.preventDefault();
+  const rect = cropCanvas.getBoundingClientRect();
+  const nextPoint = {x: event.clientX - rect.left, y: event.clientY - rect.top};
+  const previousPoint = cropPointers.get(event.pointerId);
+  cropPointers.set(event.pointerId, nextPoint);
+  if (cropPointers.size === 2) {
+    const nextGesture = pointerGesture();
+    if (pinchGesture) {
+      crop = pinchAvatarCrop(selectedImage, crop, pinchGesture, nextGesture, rect.width);
+      renderCropPreview();
+    }
+    pinchGesture = nextGesture;
+  } else {
+    crop = moveAvatarCrop(selectedImage, crop,
+      nextPoint.x - previousPoint.x, nextPoint.y - previousPoint.y, rect.width);
+    renderCropPreview();
+  }
 });
-function endCropDrag(event) {
-  if (activeDrag?.id === event.pointerId) activeDrag = null;
+function endCropPointer(event) {
+  if (!cropPointers.delete(event.pointerId)) return;
+  pinchGesture = cropPointers.size === 2 ? pointerGesture() : null;
+  // With one finger left, the next movement resumes dragging at its last point.
 }
-cropCanvas.addEventListener('pointerup', endCropDrag);
-cropCanvas.addEventListener('pointercancel', endCropDrag);
-cropCanvas.addEventListener('lostpointercapture', endCropDrag);
+cropCanvas.addEventListener('pointerup', endCropPointer);
+cropCanvas.addEventListener('pointercancel', endCropPointer);
+cropCanvas.addEventListener('lostpointercapture', endCropPointer);
+// Desktop mouse and trackpad users can also zoom without a visible slider.
+cropCanvas.addEventListener('wheel', event => {
+  if (!selectedImage || uploadBusy) return;
+  event.preventDefault();
+  const rect = cropCanvas.getBoundingClientRect();
+  const point = {x: event.clientX - rect.left, y: event.clientY - rect.top, distance: 1};
+  const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rect.width : 1);
+  const factor = Math.exp(-Math.max(-200, Math.min(200, delta)) * 0.002);
+  crop = pinchAvatarCrop(selectedImage, crop, point, {...point, distance: factor}, rect.width);
+  renderCropPreview();
+}, {passive: false});
 cropCanvas.addEventListener('keydown', event => {
-  if (!selectedImage || uploadBusy || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;
+  if (!selectedImage || uploadBusy) return;
+  if (['+','=','-','_'].includes(event.key)) {
+    event.preventDefault();
+    const factor = ['+','='].includes(event.key) ? 1.2 : 1/1.2;
+    const center = cropCanvas.getBoundingClientRect().width / 2;
+    const point = {x: center, y: center, distance: 1};
+    crop = pinchAvatarCrop(selectedImage, crop, point, {...point, distance: factor}, center * 2);
+    renderCropPreview();
+    return;
+  }
+  if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;
   event.preventDefault();
   const step = event.shiftKey ? 20 : 6;
   const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
@@ -393,7 +433,6 @@ $('profile-form').addEventListener('submit', async event => {
   button.disabled = true;
   $('profile-player').disabled = true;
   $('profile-file').disabled = true;
-  $('profile-zoom').disabled = true;
   $('profile-crop-reset').disabled = true;
   message('profile-message', 'Behandler og gemmer billedet ...');
   try {
@@ -413,7 +452,6 @@ $('profile-form').addEventListener('submit', async event => {
     uploadBusy = false;
     $('profile-player').disabled = false;
     $('profile-file').disabled = false;
-    $('profile-zoom').disabled = false;
     $('profile-crop-reset').disabled = false;
   }
 });
