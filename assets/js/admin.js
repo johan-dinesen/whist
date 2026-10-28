@@ -11,6 +11,17 @@ let selectedId = null;
 let selectedFile = null;
 let previewBlobUrl = null;
 let uploadBusy = false;
+let recentGames = [];
+let deletingGameId = null;
+let recentGeneration = 0;
+const RECENT_CALLS = {
+  almindelig:'Almindelig', gode:'Gode', halve:'Halve', vip:'Vip',
+  sol:'Sol', ren_sol:'Ren sol', bordlaegger:'Bordlægger', ren_bordlaegger:'Ren bordlægger'
+};
+const RECENT_TRUMPS = {hearts:'♥',clubs:'♣',diamonds:'♦',spades:'♠',no_trump:'UT'};
+const RECENT_SOLO = new Set(['sol','ren_sol','bordlaegger','ren_bordlaegger']);
+const recentPoints = new Intl.NumberFormat('da-DK', {minimumFractionDigits:2,maximumFractionDigits:2});
+
 
 function show(id, yes) { $(id).classList.toggle('hidden', !yes); }
 function message(id, text, error = false) {
@@ -29,6 +40,12 @@ function setAccess(level) {
   accessLevel = level;
   show('admin-content', level !== 'none');
   show('admin-tournament-content', level === 'admin');
+  if (level !== 'admin') {
+    ++recentGeneration; // Discard any pending privileged read after locking.
+    recentGames = [];
+    $('admin-recent-games').replaceChildren();
+    message('admin-recent-message', '');
+  }
   show('admin-switch-code-btn', level === 'profiles');
   show('admin-lock-btn', level === 'admin');
   $('admin-access').textContent = level === 'admin'
@@ -130,12 +147,117 @@ async function fetchPlayers() {
   if (players.some(p => p.id === oldValue)) sel.value = oldValue;
   renderSelectedPlayer();
 }
+function recentDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Ukendt tidspunkt'
+    : date.toLocaleString('da-DK', {dateStyle:'short',timeStyle:'short'});
+}
+function recentCall(game) {
+  const label = RECENT_CALLS[game.call_type] ?? game.call_type;
+  if (RECENT_SOLO.has(game.call_type)) return label;
+  return `${game.tricks} ${label} ${RECENT_TRUMPS[game.trump] ?? ''}`
+    + (game.call_type === 'vip' ? ` ×${game.vip_depth}` : '')
+    + ` · Resultat ${Number(game.score) > 0 ? '+' : ''}${game.score}`;
+}
+function recentPlayerSummary(game) {
+  return (game.participants ?? []).map(p => {
+    const role = p.is_caller ? 'melder' : p.is_partner ? 'makker' : '';
+    const description = [role, p.solo_result?.toLowerCase()].filter(Boolean).join(', ');
+    const amount = Number(p.payout);
+    const points = Number.isFinite(amount)
+      ? `, ${amount > 0 ? '+' : amount < 0 ? '−' : ''}${recentPoints.format(Math.abs(amount))}` : '';
+    return `${p.name}${description ? ` (${description})` : ''}${points}`;
+  }).join(' · ');
+}
+function recentGameTitle(game) {
+  return `${recentCall(game)} · ${tournaments.find(t => t.id === game.tournament_id)?.name ?? 'Kredsspil'}`;
+}
+function drawRecentGames() {
+  const root = $('admin-recent-games');
+  root.replaceChildren();
+  if (!recentGames.length) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent = 'Ingen registrerede spil endnu.';
+    root.append(empty);
+    return;
+  }
+  for (const game of recentGames) {
+    const item = document.createElement('article');
+    item.className = 'admin-recent-game';
+    const details = document.createElement('div');
+    details.className = 'admin-recent-details';
+    const title = document.createElement('h3');
+    title.className = 'admin-recent-title';
+    title.textContent = recentGameTitle(game);
+    const time = document.createElement('p');
+    time.className = 'admin-recent-meta';
+    time.textContent = `Registreret ${recentDate(game.created_at)} · Spillet ${recentDate(game.played_at)}`;
+    const players = document.createElement('p');
+    players.className = 'admin-recent-players';
+    players.textContent = recentPlayerSummary(game);
+    details.append(title,time,players);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'button danger';
+    button.textContent = 'Slet spil';
+    button.setAttribute('aria-label', `Slet spil: ${recentGameTitle(game)} registreret ${recentDate(game.created_at)}`);
+    button.disabled = deletingGameId !== null;
+    button.addEventListener('click', () => deleteRecentGame(game));
+    item.append(details,button);
+    root.append(item);
+  }
+}
+async function fetchRecentGames({preserveMessage = false} = {}) {
+  if (!supabase || accessLevel !== 'admin') return;
+  const generation = ++recentGeneration;
+  const button = $('admin-recent-refresh-btn');
+  button.disabled = true;
+  if (!preserveMessage) message('admin-recent-message', '');
+  try {
+    const {data,error} = await supabase.rpc('admin_recent_games');
+    if (error) throw error;
+    if (generation !== recentGeneration || accessLevel !== 'admin') return;
+    recentGames = data ?? [];
+    drawRecentGames();
+  } finally {
+    button.disabled = false;
+  }
+}
+async function deleteRecentGame(game) {
+  if (!supabase || accessLevel !== 'admin' || deletingGameId ||
+      !recentGames.some(g => g.id === game.id)) return;
+  const summary = `${recentGameTitle(game)}\nRegistreret ${recentDate(game.created_at)}\n${recentPlayerSummary(game)}`;
+  if (!window.confirm(`Vil du slette dette spil?\n\n${summary}\n\nSpillet forsvinder fra Historik og Statistik. Handlingen kan ikke fortrydes på hjemmesiden.`)) return;
+  deletingGameId = game.id;
+  drawRecentGames();
+  $('admin-recent-refresh-btn').disabled = true;
+  message('admin-recent-message', 'Sletter spil ...');
+  try {
+    const {data,error} = await supabase.rpc('admin_delete_recent_game', {p_game_id:game.id});
+    if (error) throw error;
+    if (data !== game.id) throw new Error('Databasen bekræftede ikke sletningen');
+    if (accessLevel !== 'admin') return;
+    message('admin-recent-message', 'Spillet er slettet fra Historik og Statistik.');
+    await fetchRecentGames({preserveMessage:true});
+  } catch (err) {
+    handleError(err,'admin-recent-message');
+  } finally {
+    deletingGameId = null;
+    $('admin-recent-refresh-btn').disabled = false;
+    if (accessLevel === 'admin') drawRecentGames();
+  }
+}
 async function refreshModules() {
   const level = await getAccess();
   setAccess(level);
   if (level === 'none') return;
   await fetchPlayers();
-  if (level === 'admin') await fetchTournaments();
+  if (level === 'admin') {
+    await fetchTournaments();
+    try { await fetchRecentGames(); }
+    catch (err) { handleError(err, 'admin-recent-message'); }
+  }
 }
 function handleError(error, target) {
   const text = error?.message || String(error);
@@ -260,6 +382,11 @@ $('admin-create-form').addEventListener('submit', async event => {
     message('admin-create-message', `“${name}” er oprettet.`);
   } catch(err) { handleError(err,'admin-create-message'); }
   finally { btn.disabled = false; }
+});
+
+$('admin-recent-refresh-btn').addEventListener('click', async () => {
+  try { await fetchRecentGames(); }
+  catch (err) { handleError(err, 'admin-recent-message'); }
 });
 
 $('admin-lock-btn').addEventListener('click', async () => {

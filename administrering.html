@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Profilbilleder og spilsamlinger i Whist.">
   <title>Whist | Administrering</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.0">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.1">
 </head>
 <body>
   <header class="topbar">
@@ -84,11 +84,21 @@
         </form>
         <p id="admin-create-message" class="feedback" role="status" aria-live="polite"></p>
       </section>
+
+      <section class="panel" id="admin-recent-panel" aria-labelledby="admin-recent-title">
+        <h2 id="admin-recent-title">Seneste 10 registrerede spil</h2>
+        <p class="muted">Viser de senest indtastede spil, også hvis spilletidspunktet blev angivet forkert. Sletning fjerner spillet fra Historik og Statistik. Kun fuld administration kan slette spil.</p>
+        <div class="admin-recent-toolbar">
+          <button id="admin-recent-refresh-btn" class="button secondary" type="button">Opdater listen</button>
+        </div>
+        <div id="admin-recent-games" class="admin-recent-list" aria-label="Seneste spil"></div>
+        <p id="admin-recent-message" class="feedback" role="status" aria-live="polite"></p>
+      </section>
       </div>
     </section>
   </main>
   <footer class="shell footer">Whist · Administrering</footer>
   <noscript><div class="shell notice notice-warning">JavaScript er nødvendigt for at bruge Administrering.</div></noscript>
-  <script type="module" src="assets/js/admin.js?v=1.0.0"></script>
+  <script type="module" src="assets/js/admin.js?v=1.0.1"></script>
 </body>
 </html>
