@@ -28,7 +28,7 @@
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
     <section class="panel" aria-labelledby="stats-note-title">
       <h2 id="stats-note-title">Spilsamlinger</h2>
-      <p class="muted note-hint">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
+      <p class="muted">Tryk på én samling for kun at se den. Tryk på flere for at kombinere dem. “Alle” nulstiller filteret.</p>
       <div id="stats-note-options" class="note-options" role="group" aria-label="Vælg spilsamlinger"></div>
       <div class="history-controls">
         <label class="toggle"><input type="checkbox" id="stats-include-guests"><span>Medtag gæstespil</span></label>
@@ -95,7 +95,6 @@
           <div class="point-sources-chart-wrap">
             <canvas id="point-sources-canvas" role="img" aria-label="Netto pointfordeling per spiller som melder, makker, modstander og i solospil"></canvas>
           </div>
-          <p class="point-sources-caption">Farverne viser nettoresultatet i hver rolle. Til venstre for nul er tab; til højre er gevinst. Solospil omfatter solo-meldere, mens øvrige spillere tæller som modstandere. Tryk på en søjle for at se point og antal spil.</p>
         </div>
       </div>
     </section>
@@ -111,7 +110,6 @@
             <tbody id="metric-body"></tbody>
           </table>
         </div>
-        <p class="metric-footnote">Meldinger omfatter alle meldingstyper. Under, Over og Præcis omfatter kun almindelige meldinger (Almindelig, Gode, Halve og Vip) med kendt resultat og summerer til 100 %. Spillere uden sådanne meldinger vises med —. Gennemsnit vægter hver spiller ens. Stikafvigelser omfatter også kun almindelige meldinger.</p>
         <details class="metric-help">
           <summary>Sådan beregnes statistikken</summary>
           <dl id="metric-definitions"></dl>
