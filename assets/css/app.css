@@ -933,7 +933,7 @@
    Keep payouts at the top of any taller multi-caller row. */
 .history-table .history-callers{white-space:nowrap}
 .history-table .history-caller-name{display:block}
-.history-table tbody td{vertical-align:top}
+.history-table tbody td{vertical-align:middle}
 /* Popovers close when tapped anywhere, and show all Historik players neatly. */
 .chart-detail-popover{cursor:pointer;user-select:none;max-height:calc(100% - 12px);overflow-y:auto}
 .chart-detail-lines .chart-detail-row{display:flex;align-items:center;justify-content:space-between;gap:22px;min-width:190px}
