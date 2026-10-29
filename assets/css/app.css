@@ -1170,3 +1170,24 @@
 .point-source-zero-negative{top:calc(49% + var(--source-avatar-radius))}
 @media(max-width:620px){.point-sources-bars{--source-avatar-radius:15px}}
 @media(max-width:350px){.point-sources-bars{--source-avatar-radius:13.5px}}
+
+
+/* Shared typography for the information and administration pages.
+   Registration controls keep their existing font sizes and spacing. */
+.data-page{
+  --module-heading-size:20px;
+  --module-caption-size:12px;
+}
+.data-page .panel h2{
+  font-size:var(--module-heading-size);
+  line-height:1.3;
+}
+.data-page .note-hint,
+.data-page .rank-subtitle,
+.data-page .history-count{
+  font-size:var(--module-caption-size);
+}
+@media(max-width:620px){
+  /* Match the compact Stilling heading even when tabs sit alongside it. */
+  .data-page{--module-heading-size:clamp(16px,4.7vw,20px)}
+}

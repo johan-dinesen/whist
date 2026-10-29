@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: aktuel stilling for valgte spilsamlinger.">
-  <title>Whist | Statistik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.15">
+  <title>Whist | Stilling</title>
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.16">
 </head>
-<body>
+<body class="data-page">
   <header class="topbar">
     <div class="shell topbar-inner">
       <a href="./" class="brand">WHIST<span class="brand-mark">.</span></a>
       <nav class="site-nav" aria-label="Hovednavigation">
         <a href="./">Registrering</a>
+        <a href="statistik.html" aria-current="page">Stilling</a>
         <a href="historik.html">Historik</a>
-        <a href="statistik.html" aria-current="page">Statistik</a>
         <a href="administrering.html">Administrering</a>
       </nav>
     </div>
   </header>
   <main class="shell">
     <div class="heading">
-      <div><p class="eyebrow">Kompagniet · Whist</p><h1>Statistik</h1></div>
+      <div><p class="eyebrow">Kompagniet · Whist</p><h1>Stilling</h1></div>
       <span class="version">v1.0.0</span>
     </div>
     <p id="stats-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
@@ -165,7 +165,7 @@
       </div>
     </section>
   </main>
-  <footer class="shell footer">Whist · Statistik</footer>
+  <footer class="shell footer">Whist · Stilling</footer>
   <noscript><div class="shell notice">JavaScript skal være slået til for at se stillingen.</div></noscript>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
   <script type="module" src="assets/js/stats.js?v=1.0.16"></script>
