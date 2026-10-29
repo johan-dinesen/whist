@@ -68,19 +68,28 @@ function drawTable(games) {
     const tr = document.createElement('tr');
     const participants = game.participants ?? [];
     const byName = new Map(participants.map(p => [p.name,p]));
-    const result = cell(gameResult(game));
+    // Match the result symbols to the exact caller order shown in Melder.
+    // Both names and solo results use one line per caller, even when several
+    // players announce a solo in the same hand.
+    const callerNames = String(game.callers ?? '').split(', ').filter(Boolean);
+    const result = cell(SOLO.has(game.call_type) ? '' : gameResult(game));
     if (SOLO.has(game.call_type)) {
       result.classList.add('solo-result');
-      result.setAttribute('aria-label', (game.participants ?? [])
-        .filter(p => p.is_caller)
-        .map(p => `${p.name}: ${String(p.solo_result || '').startsWith('Vundet') ? 'vundet' : 'tabt'}`)
+      const callerByName = new Map(participants.filter(p => p.is_caller).map(p => [p.name,p]));
+      result.setAttribute('aria-label', callerNames
+        .map(name => `${name}: ${String(callerByName.get(name)?.solo_result || '').startsWith('Vundet') ? 'vundet' : 'tabt'}`)
         .join(', '));
+      for (const name of callerNames) {
+        const line = document.createElement('span');
+        line.className = 'history-solo-outcome';
+        line.textContent = String(callerByName.get(name)?.solo_result || '').startsWith('Vundet') ? '✓' : '×';
+        result.append(line);
+      }
     }
-    // PostgreSQL joins callers with ', '. Render each on a separate line so
-    // rare multi-caller solo games do not stretch the entire Melder column.
+    // PostgreSQL joins callers by seat; this same order drives the result.
     const callersCell = cell('');
     callersCell.classList.add('history-callers');
-    for (const name of String(game.callers ?? '').split(', ').filter(Boolean)) {
+    for (const name of callerNames) {
       const line = document.createElement('span');
       line.className = 'history-caller-name';
       line.textContent = name;

@@ -1191,3 +1191,41 @@
   /* Match the compact Stilling heading even when tabs sit alongside it. */
   .data-page{--module-heading-size:clamp(16px,4.7vw,20px)}
 }
+
+/* Stilling Fordeling: legend immediately below the chart. The mode switch
+   sits halfway through the remaining height of the shared Stilling stage. */
+#point-sources-content:not(.hidden){
+  display:flex;
+  flex-direction:column;
+  min-height:var(--rank-view-height, 0px);
+}
+#point-sources-content .point-sources-legend{
+  margin:7px 0 0;
+  flex:0 0 auto;
+}
+#point-sources-content .point-source-mode-switch{
+  flex:0 0 auto;
+  align-self:center;
+  margin:auto auto;
+}
+/* Results in multi-caller solo games line up with individual caller names.
+   Each item is block-level, sharing the same text line-height as Melder. */
+.history-table .history-solo-outcome{
+  display:block;
+  line-height:inherit;
+}
+.history-table .history-callers,
+.history-table td.solo-result{
+  padding-left:5px;
+  padding-right:5px;
+}
+.history-table th:nth-child(1),.history-table td:nth-child(1),
+.history-table th:nth-child(2),.history-table td:nth-child(2),
+.history-table th:nth-child(3),.history-table td:nth-child(3){
+  padding-left:5px;
+  padding-right:5px;
+}
+.history-table th:nth-child(1),.history-table td:nth-child(1),
+.history-table th:nth-child(2),.history-table td:nth-child(2){
+  white-space:nowrap;
+}
