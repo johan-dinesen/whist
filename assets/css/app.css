@@ -324,8 +324,7 @@
 .synergy-table tbody th{position:sticky;left:0;z-index:3;background:#202f41;color:#e2ebf5;font-size:12px;font-weight:750;min-width:94px;max-width:130px;text-align:left;padding:10px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .synergy-table .synergy-corner{left:0;z-index:5;min-width:94px;text-align:left;padding-left:13px;color:#a2bccf;font-size:17px}
 .synergy-table tbody tr:nth-child(even) th{background:#1b2a3b}
-.synergy-table td.synergy-data{min-width:89px;height:66px;text-align:center;padding:8px 5px;background:#142331;transition:box-shadow .12s ease;color:#f5f9fc}
-.synergy-table td.synergy-data:hover{box-shadow:inset 0 0 0 2px #b3d8ee}
+.synergy-table td.synergy-data{min-width:89px;height:66px;text-align:center;padding:8px 5px;background:#142331;color:#f5f9fc}
 .synergy-data .synergy-average{display:block;font-size:13px;font-weight:780;letter-spacing:.005em;line-height:1.35;white-space:nowrap}
 .synergy-data .synergy-sample{display:block;font-size:10px;line-height:1.6;color:#d0dde9;opacity:.85;white-space:nowrap}
 .synergy-table td.synergy-empty{background:#12202d;color:#7890a4}
@@ -374,7 +373,7 @@
 .synergy-scroll{width:100%;max-width:740px;margin-inline:auto}
 .synergy-table{width:100%;min-width:0;table-layout:fixed}
 .synergy-table.is-compact{width:100%;min-width:0}
-.synergy-table.is-wide{min-width:calc(var(--synergy-columns) * 65px)}
+.synergy-table.is-wide{width:var(--synergy-table-width);min-width:0}
 .synergy-table thead th,.synergy-table tbody th,.synergy-table .synergy-corner{
   min-width:0;max-width:none;padding:7px 2px;overflow:hidden;text-overflow:ellipsis;
 }
@@ -1058,3 +1057,35 @@
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
   overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:420px){.admin-people-input-row{flex-wrap:wrap}.admin-people-input-row .button{width:100%}}
+
+/* Synergi viewport: six players plus row headings are the baseline.
+   A complete matrix has no nested scrolling; extra rows/columns scroll inside
+   the very same six-player footprint. No tap/hover cell highlighting. */
+.synergy-scroll{
+  --synergy-row-height:53px;
+  --synergy-head-height:32px;
+  overflow:hidden;
+  max-height:none;
+  overscroll-behavior:auto;
+  touch-action:pan-y;
+}
+.synergy-scroll.is-scrollable{
+  height:calc(6 * var(--synergy-row-height) + var(--synergy-head-height) + 2px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  touch-action:auto;
+}
+.synergy-table thead tr{height:var(--synergy-head-height)}
+.synergy-table tbody tr{height:var(--synergy-row-height)}
+.synergy-table thead th{height:var(--synergy-head-height)}
+.synergy-table tbody th,.synergy-table td.synergy-data{height:var(--synergy-row-height)}
+@media(max-width:620px){
+  .synergy-scroll{--synergy-row-height:45px;--synergy-head-height:28px}
+}
+/* Each name-to-points row in the Stilling Historik popup gets a faint rule. */
+.score-history-chart-wrap .chart-detail-row{
+  border-bottom:1px solid rgba(171,198,219,.22);
+  padding:3px 0 5px;
+}
+/* Keep the corner symbol from stretching the header beyond the six-row frame. */
+.synergy-table .synergy-corner{line-height:1}

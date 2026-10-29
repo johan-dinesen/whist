@@ -414,9 +414,24 @@ function renderSynergy(raw) {
   count.textContent = players.length
     ? `${players.length} spillere · ${partnershipGames} makkerspil`
     : '';
+  const overflow = players.length > 6;
+  const scroll = table.parentElement;
+  // Always show the row heading plus six player columns. Extra players scroll
+  // inside the same-sized viewport, rather than increasing the matrix footprint.
   table.style.setProperty('--synergy-columns',String(players.length + 1));
-  table.classList.toggle('is-compact',players.length <= 6);
-  table.classList.toggle('is-wide',players.length > 6);
+  table.style.setProperty('--synergy-table-width',`${(players.length + 1) * 100 / 7}%`);
+  table.classList.toggle('is-compact',!overflow);
+  table.classList.toggle('is-wide',overflow);
+  scroll.classList.toggle('is-scrollable',overflow);
+  if (overflow) {
+    scroll.tabIndex=0;
+    scroll.setAttribute('aria-label','Synergimatrix, rul vandret og lodret for at se flere spillere');
+  } else {
+    scroll.removeAttribute('tabindex');
+    scroll.setAttribute('aria-label','Synergimatrix');
+    scroll.scrollTop=0;
+    scroll.scrollLeft=0;
+  }
   head.replaceChildren();
   body.replaceChildren();
   if (!players.length) {
