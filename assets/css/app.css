@@ -794,8 +794,8 @@
 .score-history-select-all:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 
 
-/* Fordeling shares Diagram's scrolling grid, exact height, 49% zero line,
-   columns, images and footer. Only the bars themselves are segmented. */
+/* Fordeling shares Diagram's grid, photo positions, and footer.
+   Its positive and negative bars have separate zero lines at the photo rim. */
 #point-sources-view{margin-top:12px}
 .point-sources-legend{
   display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;
@@ -1134,10 +1134,16 @@
 .point-source-vertical-segment{
   min-height:0;transition:flex-grow 300ms ease-in-out,min-height 300ms ease-in-out;
 }
-/* Stacks start at the avatar rim; minimum lengths keep tiny roles visible.
-   Normal bar endpoints still follow the linear axis scale. */
-.point-source-vertical-segment.is-active{min-height:var(--source-other-min,8px)}
-.point-source-vertical-segment.is-active.is-nearest{min-height:var(--source-first-min,20px)}
+/* The visible stack is linear. Never inflate small segments, which would
+   imply inaccurate ratios between role totals. */
+.point-sources-bars .point-source-vertical-segment{min-height:0}
+/* Enlarge only the invisible tap area at the avatar rim, not the color bar.
+   Photos stay on top of touch targets, so taps on a face aren't intercepted. */
+.point-sources-bars .point-source-vertical-segment.is-first-role{position:relative;z-index:2}
+.point-sources-bars .point-source-vertical-segment.is-first-role::after{
+  content:"";position:absolute;left:0;right:0;top:50%;height:max(100%,24px);
+  transform:translateY(-50%);background:transparent
+}
 /* Match the name-to-value separators in the Stilling history popup. */
 #point-sources-view .chart-detail-row{
   border-bottom:1px solid rgba(171,198,219,.22);
@@ -1150,10 +1156,17 @@
   .point-source-mode-switch button{min-height:32px;padding:6px 13px;font-size:12px}
 }
 
-/* Keep each role stack outside the centered avatar, avoiding hidden click
-   targets without changing the location of normal-sized bar endpoints. */
-.point-sources-bars{--source-avatar-radius:21px}
+/* Two dashed zero lines are tangent to the fixed photo. The top line
+   marks the start of positive totals; the lower line marks losses. */
+.point-sources-bars{--source-avatar-radius:19px}
 .point-sources-bars .point-source-stack-positive{bottom:calc(51% + var(--source-avatar-radius))}
 .point-sources-bars .point-source-stack-negative{top:calc(49% + var(--source-avatar-radius))}
-@media(max-width:620px){.point-sources-bars{--source-avatar-radius:17px}}
-@media(max-width:350px){.point-sources-bars{--source-avatar-radius:15.5px}}
+.point-source-zero-line{
+  position:absolute;left:0;right:0;height:0;
+  border-top:1px dashed rgba(145,170,189,.7);
+  z-index:1;pointer-events:none
+}
+.point-source-zero-positive{top:calc(49% - var(--source-avatar-radius))}
+.point-source-zero-negative{top:calc(49% + var(--source-avatar-radius))}
+@media(max-width:620px){.point-sources-bars{--source-avatar-radius:15px}}
+@media(max-width:350px){.point-sources-bars{--source-avatar-radius:13.5px}}
