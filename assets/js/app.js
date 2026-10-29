@@ -16,7 +16,11 @@ const TRUMPS = [
 ];
 const SOLO = new Set(['sol', 'ren_sol', 'bordlaegger', 'ren_bordlaegger']);
 const SHORT_SOLO = new Set(['sol', 'bordlaegger']);
-const SCORES = [4,3,2,1,0,-1,-2,-3,-4,-5,-6,-7];
+// No more than 13 tricks exist; negative choices stay capped at -7.
+const scoresForTricks = tricks => [
+  ...Array.from({length: 14 - tricks}, (_,i) => 13 - tricks - i),
+  ...Array.from({length: 7}, (_,i) => -(i + 1))
+];
 const previewMode = new URLSearchParams(location.search).has('preview');
 let supabase = null;
 let accessUntil = null;
@@ -138,8 +142,8 @@ function render() {
 function renderResult() {
   if (!isSolo()) {
     $('result-options').style.display='grid';
-    $('result-help').textContent='Vælg resultat fra +4 til −7.';
-    buttons('result-options', SCORES.map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;submissionTime=null;renderAndAdvance('review-panel');});
+    $('result-help').textContent=`Vælg resultat fra +${13 - s.tricks} til −7.`;
+    buttons('result-options', scoresForTricks(s.tricks).map(n=>[n,n>0?`+${n}`:String(n)]), v=>s.score===v,v=>{s.score=v;requestId=null;submissionTime=null;renderAndAdvance('review-panel');});
     return;
   }
   $('result-help').textContent='Vælg udfald for hver melder.';

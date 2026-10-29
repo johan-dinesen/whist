@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Profilbilleder og spilsamlinger i Whist.">
   <title>Whist | Administrering</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.5">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.6">
 </head>
 <body>
   <header class="topbar">
@@ -124,12 +124,44 @@
         </div>
         <div id="admin-recent-games" class="admin-recent-list" aria-label="Seneste spil"></div>
         <p id="admin-recent-message" class="feedback" role="status" aria-live="polite"></p>
+        <section id="admin-edit-panel" class="admin-edit-panel hidden" aria-labelledby="admin-edit-title">
+          <h3 id="admin-edit-title">Rediger registreret spil</h3>
+          <p id="admin-edit-game-title" class="muted"></p>
+          <form id="admin-edit-form">
+            <div class="admin-edit-fields">
+              <label class="field" for="admin-edit-tournament"><span class="field-label">Spilsamling</span><select id="admin-edit-tournament"></select></label>
+              <label class="field" for="admin-edit-played"><span class="field-label">Spilletidspunkt</span><input id="admin-edit-played" type="datetime-local" required></label>
+              <label class="field" for="admin-edit-call-type"><span class="field-label">Melding</span><select id="admin-edit-call-type" required></select></label>
+            </div>
+            <h4>Spillere</h4>
+            <div id="admin-edit-players" class="admin-edit-fields"></div>
+            <div id="admin-edit-ordinary">
+              <div class="admin-edit-fields">
+                <label class="field" for="admin-edit-tricks"><span class="field-label">Stik</span><select id="admin-edit-tricks"></select></label>
+                <label class="field" for="admin-edit-trump"><span class="field-label">Trumf</span><select id="admin-edit-trump"></select></label>
+                <label class="field" id="admin-edit-vip-field" for="admin-edit-vip-depth"><span class="field-label">Vip-dybde</span><select id="admin-edit-vip-depth"></select></label>
+                <label class="field" for="admin-edit-caller"><span class="field-label">Melder</span><select id="admin-edit-caller"></select></label>
+                <label class="field" for="admin-edit-partner"><span class="field-label">Makker</span><select id="admin-edit-partner"></select></label>
+                <label class="field" for="admin-edit-score"><span class="field-label">Resultat (+/−)</span><input id="admin-edit-score" type="number" min="-13" max="4" step="1" required></label>
+              </div>
+            </div>
+            <div id="admin-edit-solo" class="hidden">
+              <h4>Solomeldere og udfald</h4>
+              <div id="admin-edit-solo-callers" class="admin-edit-solo-callers"></div>
+            </div>
+            <div class="admin-edit-actions">
+              <button id="admin-edit-save" class="button primary" type="submit">Gem ændringer</button>
+              <button id="admin-edit-cancel" class="button secondary" type="button">Annuller</button>
+            </div>
+          </form>
+          <p id="admin-edit-message" class="feedback" role="status" aria-live="polite"></p>
+        </section>
       </section>
       </div>
     </section>
   </main>
   <footer class="shell footer">Whist · Administrering</footer>
   <noscript><div class="shell notice notice-warning">JavaScript er nødvendigt for at bruge Administrering.</div></noscript>
-  <script type="module" src="assets/js/admin.js?v=1.0.12"></script>
+  <script type="module" src="assets/js/admin.js?v=1.0.13"></script>
 </body>
 </html>

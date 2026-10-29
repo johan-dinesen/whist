@@ -1089,3 +1089,30 @@
 }
 /* Keep the corner symbol from stretching the header beyond the six-row frame. */
 .synergy-table .synergy-corner{line-height:1}
+
+/* Full-admin editor for a recent registration. */
+.admin-recent-actions{display:flex;gap:8px;flex:none;align-items:center}
+.admin-recent-actions .button{min-height:39px;padding:7px 12px;font-size:13px}
+.admin-edit-panel{margin-top:16px;padding:16px;border:1px solid #4b7591;border-radius:11px;background:var(--surface2)}
+.admin-edit-panel h3{margin:0 0 4px;font-size:17px}
+.admin-edit-panel h4{margin:15px 0 10px;font-size:14px}
+.admin-edit-panel .muted{margin-bottom:15px}
+.admin-edit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.admin-edit-fields .field{min-width:0;gap:5px}
+.admin-edit-fields select,.admin-edit-fields input{width:100%;min-width:0;background:#0d1622;color:var(--text);border:1px solid #4b5c6d;border-radius:8px;min-height:43px;padding:8px 10px}
+.admin-edit-solo-callers{display:grid;gap:9px}
+.admin-edit-solo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
+.admin-edit-solo-row label{display:flex;gap:7px;align-items:center;min-width:0}
+.admin-edit-solo-row select{min-width:0;width:100%;background:#0d1622;color:var(--text);border:1px solid #4b5c6d;border-radius:8px;min-height:39px;padding:7px}
+.admin-edit-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
+.admin-edit-actions .button{min-height:42px;padding:9px 14px}
+@media(max-width:620px){
+  .admin-recent-game{align-items:stretch}
+  .admin-recent-actions{justify-content:flex-end;width:100%}
+  .admin-recent-actions .button{flex:1;min-height:41px}
+  .admin-edit-panel{padding:12px}
+  .admin-edit-fields{grid-template-columns:1fr}
+  .admin-edit-solo-row{grid-template-columns:1fr}
+}
+
+@media(max-width:620px){.admin-recent-actions .button.danger{width:auto}}

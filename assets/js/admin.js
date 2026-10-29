@@ -59,6 +59,8 @@ function setAccess(level) {
   if (level !== 'admin') {
     ++recentGeneration; // Discard any pending privileged read after locking.
     recentGames = [];
+    editingGameId = null;
+    show('admin-edit-panel',false);
     $('admin-recent-games').replaceChildren();
     message('admin-recent-message', '');
   }
@@ -224,14 +226,22 @@ function drawRecentGames() {
     players.className = 'admin-recent-players';
     players.textContent = recentPlayerSummary(game);
     details.append(title,time,players);
+    const actions = document.createElement('div');
+    actions.className = 'admin-recent-actions';
+    const edit = document.createElement('button');
+    edit.type='button';edit.className='button secondary';edit.textContent='Rediger';
+    edit.disabled = deletingGameId !== null || editBusy;
+    edit.setAttribute('aria-label',`Rediger: ${recentGameTitle(game)}`);
+    edit.addEventListener('click',()=>openEditRecentGame(game));
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'button danger';
-    button.textContent = 'Slet spil';
+    button.textContent = 'Slet';
     button.setAttribute('aria-label', `Slet spil: ${recentGameTitle(game)} registreret ${recentDate(game.created_at)}`);
-    button.disabled = deletingGameId !== null;
+    button.disabled = deletingGameId !== null || editBusy;
     button.addEventListener('click', () => deleteRecentGame(game));
-    item.append(details,button);
+    actions.append(edit,button);
+    item.append(details,actions);
     root.append(item);
   }
 }
@@ -246,17 +256,19 @@ async function fetchRecentGames({preserveMessage = false} = {}) {
     if (error) throw error;
     if (generation !== recentGeneration || accessLevel !== 'admin') return;
     recentGames = data ?? [];
+    if (editingGameId && !recentGames.some(g=>g.id===editingGameId)) closeEditRecentGame();
     drawRecentGames();
   } finally {
     button.disabled = false;
   }
 }
 async function deleteRecentGame(game) {
-  if (!supabase || accessLevel !== 'admin' || deletingGameId ||
+  if (!supabase || accessLevel !== 'admin' || deletingGameId || editBusy ||
       !recentGames.some(g => g.id === game.id)) return;
   const summary = `${recentGameTitle(game)}\nRegistreret ${recentDate(game.created_at)}\n${recentPlayerSummary(game)}`;
   if (!window.confirm(`Vil du slette dette spil?\n\n${summary}\n\nSpillet forsvinder fra Historik og Statistik. Handlingen kan ikke fortrydes på hjemmesiden.`)) return;
   deletingGameId = game.id;
+  if (editingGameId === game.id) closeEditRecentGame();
   drawRecentGames();
   $('admin-recent-refresh-btn').disabled = true;
   message('admin-recent-message', 'Sletter spil ...');
@@ -275,6 +287,220 @@ async function deleteRecentGame(game) {
     if (accessLevel === 'admin') drawRecentGames();
   }
 }
+
+// Correct a recent registration using the original game ID. The database
+// rechecks full-admin access and recent-game eligibility at save time.
+let editingGameId = null;
+let editBusy = false;
+let editCallers = new Set();
+let editPartnerId = null;
+let editSoloResults = {};
+const EDIT_TRUMPS = [
+  ['hearts','Hjerter'],['clubs','Klør'],['diamonds','Ruder'],
+  ['spades','Spar'],['no_trump','Uden trumf']
+];
+function fillSelect(select, options, selected) {
+  select.replaceChildren();
+  for (const [value, name] of options) {
+    select.add(new Option(name,String(value)));
+  }
+  select.value = selected == null ? '' : String(selected);
+}
+function datetimeLocal(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.valueOf())) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function editSelectedPlayers() {
+  return [...$('admin-edit-players').querySelectorAll('select')].map(x => x.value).filter(Boolean);
+}
+function editPeopleOptions() {
+  return managedPlayers.map(p => [p.id, `${p.display_name}${p.is_guest ? ' (gæst)' : ''}${p.active ? '' : ' (tidligere)'}`]);
+}
+function refreshEditRoles() {
+  if (!editingGameId) return;
+  const solo = RECENT_SOLO.has($('admin-edit-call-type').value);
+  const ids = editSelectedPlayers();
+  const options = ids.map(id => [id, managedPlayers.find(p => p.id === id)?.display_name ?? 'Ukendt']);
+  editCallers = new Set([...editCallers].filter(id => ids.includes(id)));
+  show('admin-edit-ordinary', !solo);
+  show('admin-edit-solo', solo);
+  if (solo) {
+    const root = $('admin-edit-solo-callers');
+    root.replaceChildren();
+    const shortSolo = ['sol','bordlaegger'].includes($('admin-edit-call-type').value);
+    const allowed = shortSolo ? ['Vundet (0 stik)','Vundet (1 stik)','Tabt'] : ['Vundet','Tabt'];
+    for (const [id, name] of options) {
+      const row = document.createElement('div');
+      row.className = 'admin-edit-solo-row';
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = editCallers.has(id);
+      const text = document.createElement('span');text.textContent = name;
+      label.append(checkbox,text);
+      const result = document.createElement('select');
+      result.setAttribute('aria-label',`Udfald for ${name}`);
+      fillSelect(result, allowed.map(x => [x,x]),
+        allowed.includes(editSoloResults[id]) ? editSoloResults[id] : allowed[0]);
+      editSoloResults[id] = result.value;
+      result.disabled = !checkbox.checked;
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) editCallers.add(id);
+        else editCallers.delete(id);
+        result.disabled = !checkbox.checked;
+      });
+      result.addEventListener('change', () => {editSoloResults[id] = result.value;});
+      row.append(label,result);root.append(row);
+    }
+  } else {
+    const caller = [...editCallers][0] && ids.includes([...editCallers][0])
+      ? [...editCallers][0] : ids[0] ?? '';
+    editCallers = new Set(caller ? [caller] : []);
+    fillSelect($('admin-edit-caller'),options,caller);
+    const partner = editPartnerId && ids.includes(editPartnerId) && editPartnerId !== caller
+      ? editPartnerId : ids.find(id => id !== caller) ?? '';
+    editPartnerId = partner;
+    fillSelect($('admin-edit-partner'), options.filter(([id]) => id !== caller), partner);
+  }
+}
+function refreshEditOrdinary() {
+  if (!editingGameId) return;
+  const type = $('admin-edit-call-type').value;
+  const solo = RECENT_SOLO.has(type);
+  $('admin-edit-score').disabled = solo;
+  if (!solo) {
+    show('admin-edit-vip-field',type === 'vip');
+    const prevTrump = $('admin-edit-trump').value;
+    const trumps = type === 'gode'
+      ? EDIT_TRUMPS.filter(([key]) => ['clubs','no_trump'].includes(key)) : EDIT_TRUMPS;
+    fillSelect($('admin-edit-trump'), trumps,
+      trumps.some(([key]) => key === prevTrump) ? prevTrump : trumps[0][0]);
+    const max = 13 - Number($('admin-edit-tricks').value);
+    $('admin-edit-score').max = String(max);
+    $('admin-edit-score').min = String(-Number($('admin-edit-tricks').value));
+    // Do not silently change existing historical scores, even when they exceed
+    // the newly allowed ceiling. The admin must correct them on save.
+  }
+  refreshEditRoles();
+}
+function closeEditRecentGame() {
+  editingGameId = null;
+  editCallers.clear();
+  editSoloResults = {};
+  show('admin-edit-panel',false);
+  message('admin-edit-message','');
+  if (accessLevel === 'admin') drawRecentGames();
+}
+function openEditRecentGame(game) {
+  if (accessLevel !== 'admin' || deletingGameId || editBusy ||
+      !recentGames.some(item => item.id === game.id)) return;
+  editingGameId = game.id;
+  $('admin-edit-game-title').textContent = recentGameTitle(game);
+  fillSelect($('admin-edit-tournament'),
+    [['','Kredsspil'], ...tournaments.map(t=>[t.id,t.name])], game.tournament_id ?? '');
+  $('admin-edit-played').value = datetimeLocal(game.played_at);
+  fillSelect($('admin-edit-call-type'),Object.entries(RECENT_CALLS),game.call_type);
+  fillSelect($('admin-edit-tricks'),[9,10,11,12,13].map(n=>[n,String(n)]),game.tricks ?? 9);
+  fillSelect($('admin-edit-vip-depth'),[1,2,3].map(n=>[n,String(n)]),game.vip_depth ?? 1);
+  fillSelect($('admin-edit-trump'),EDIT_TRUMPS,game.trump ?? 'hearts');
+  $('admin-edit-score').value = game.score == null ? '0' : String(game.score);
+  const playerRoot = $('admin-edit-players');playerRoot.replaceChildren();
+  for (let seat=1;seat<=4;seat++) {
+    const original = game.participants.find(p => Number(p.seat) === seat);
+    const label = document.createElement('label');label.className = 'field';
+    const text = document.createElement('span');text.className='field-label';text.textContent=`Spiller ${seat}`;
+    const select = document.createElement('select');select.required=true;
+    select.setAttribute('aria-label',`Spiller ${seat}`);
+    fillSelect(select,editPeopleOptions(),original?.player_id);
+    select.addEventListener('change',refreshEditRoles);
+    label.append(text,select);playerRoot.append(label);
+  }
+  editCallers = new Set((game.participants ?? []).filter(p=>p.is_caller).map(p=>p.player_id));
+  editPartnerId = (game.participants ?? []).find(p=>p.is_partner)?.player_id ?? null;
+  editSoloResults = Object.fromEntries((game.participants ?? []).filter(p=>p.solo_result)
+    .map(p=>[p.player_id,p.solo_result]));
+  refreshEditOrdinary();
+  message('admin-edit-message','');
+  show('admin-edit-panel',true);
+  drawRecentGames();
+  $('admin-edit-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+async function saveEditRecentGame(event) {
+  event.preventDefault();
+  if (!supabase || accessLevel !== 'admin' || editBusy || deletingGameId || !editingGameId) return;
+  const id = editingGameId;
+  if (!recentGames.some(g => g.id === id)) {
+    message('admin-edit-message','Spillet er ikke længere på listen. Opdater listen.',true);
+    return;
+  }
+  const ids = editSelectedPlayers();
+  if (ids.length !== 4 || new Set(ids).size !== 4) {
+    message('admin-edit-message','Vælg fire forskellige spillere.',true);
+    return;
+  }
+  const type = $('admin-edit-call-type').value;
+  const solo = RECENT_SOLO.has(type);
+  const tricks = solo ? null : Number($('admin-edit-tricks').value);
+  const score = solo ? null : Number($('admin-edit-score').value);
+  if (solo ? editCallers.size < 1 :
+    (editCallers.size !== 1 || !editPartnerId || editCallers.has(editPartnerId) ||
+     !Number.isInteger(score) || score < -tricks || score > 13 - tricks)) {
+    message('admin-edit-message',solo ? 'Vælg mindst én solomelder.' : 'Kontroller melder, makker og resultat.',true);
+    return;
+  }
+  const played = new Date($('admin-edit-played').value);
+  if (!Number.isFinite(played.getTime())) {
+    message('admin-edit-message','Vælg et gyldigt spilletidspunkt.',true);return;
+  }
+  const participants = ids.map((player_id,i)=>({
+    player_id,seat:i+1,is_caller:editCallers.has(player_id),
+    is_partner:!solo && player_id===editPartnerId,
+    solo_result:solo && editCallers.has(player_id) ? editSoloResults[player_id] : null
+  }));
+  const args = {
+    p_game_id:id,
+    p_tournament_id:$('admin-edit-tournament').value || null,
+    // A score-only correction must not truncate the original timestamp.
+    p_played_at:$('admin-edit-played').value === datetimeLocal(recentGames.find(g=>g.id===id)?.played_at)
+      ? recentGames.find(g=>g.id===id).played_at : played.toISOString(),
+    p_call_type:type,
+    p_tricks:tricks,p_vip_depth:!solo && type==='vip' ? Number($('admin-edit-vip-depth').value) : null,
+    p_trump:solo ? null : $('admin-edit-trump').value,
+    p_score:score,p_participants:participants
+  };
+  if (!window.confirm('Gem ændringerne til det registrerede spil? Point og statistik bliver genberegnet.')) return;
+  editBusy=true;
+  $('admin-edit-save').disabled=true;
+  $('admin-edit-cancel').disabled=true;
+  message('admin-edit-message','Gemmer ændringer ...');
+  try {
+    const {data,error} = await supabase.rpc('admin_edit_recent_game',args);
+    if (error) throw error;
+    if (data !== id) throw new Error('Databasen bekræftede ikke ændringen');
+    if (accessLevel !== 'admin') return;
+    closeEditRecentGame();
+    message('admin-recent-message','Spillet er opdateret. Historik og Statistik bruger de nye oplysninger.');
+    await fetchRecentGames({preserveMessage:true});
+  } catch (err) {
+    handleError(err,'admin-edit-message');
+  } finally {
+    editBusy=false;
+    $('admin-edit-save').disabled=false;
+    $('admin-edit-cancel').disabled=false;
+  }
+}
+$('admin-edit-form').addEventListener('submit',saveEditRecentGame);
+$('admin-edit-cancel').addEventListener('click',closeEditRecentGame);
+$('admin-edit-call-type').addEventListener('change',refreshEditOrdinary);
+$('admin-edit-tricks').addEventListener('change',refreshEditOrdinary);
+$('admin-edit-caller').addEventListener('change',() => {
+  editCallers = new Set([$('admin-edit-caller').value]);
+  if (editPartnerId === $('admin-edit-caller').value) editPartnerId=null;
+  refreshEditRoles();
+});
+$('admin-edit-partner').addEventListener('change',() => {editPartnerId=$('admin-edit-partner').value;});
 
 // Full administration: player names are mutable, but removing a guest only
 // archives the player. Historical games, payouts and avatar IDs stay intact.
