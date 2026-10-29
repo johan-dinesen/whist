@@ -5,7 +5,7 @@ const $ = id => document.getElementById(id);
 const REGULAR = ['David','Gustav','Johan','Samuel','Sofus','William'];
 const LABELS = {
   almindelig:'Alm',gode:'Gode',halve:'Halve',vip:'Vip',
-  sol:'Sol',ren_sol:'Ren Sol',bordlaegger:'Bordlægger',ren_bordlaegger:'Ren Bordlægger'
+  sol:'Sol',ren_sol:'Ren Sol',bordlaegger:'Bord',ren_bordlaegger:'Ren Bord'
 };
 const TRUMPS = {hearts:'♥',clubs:'♣',diamonds:'♦',spades:'♠',no_trump:'NT'};
 const SOLO = new Set(['sol','ren_sol','bordlaegger','ren_bordlaegger']);
