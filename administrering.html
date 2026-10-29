@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Profilbilleder og spilsamlinger i Whist.">
   <title>Whist | Administrering</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.4">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.5">
 </head>
 <body>
   <header class="topbar">
@@ -65,9 +65,39 @@
         <p id="profile-message" class="feedback" role="status" aria-live="polite"></p>
       </section>
       <div id="admin-tournament-content" class="hidden">
+      <section class="panel" id="admin-players-panel" aria-labelledby="admin-players-title">
+        <h2 id="admin-players-title">Spillere og gæster</h2>
+        <form id="admin-player-rename-form" class="admin-people-form">
+          <label for="admin-player-select" class="field-label">Skift navn på spiller eller gæst</label>
+          <select id="admin-player-select" required><option value="">Vælg spiller eller gæst</option></select>
+          <label for="admin-player-new-name" class="field-label">Navn</label>
+          <div class="admin-people-input-row">
+            <input id="admin-player-new-name" type="text" maxlength="100" autocomplete="off" required placeholder="Nyt navn">
+            <button id="admin-player-rename-btn" class="button primary" type="submit">Gem navn</button>
+          </div>
+        </form>
+        <p id="admin-player-rename-message" class="feedback" role="status" aria-live="polite"></p>
+
+        <div class="admin-people-divider"></div>
+        <h3>Tilføj gæst</h3>
+        <form id="admin-guest-add-form" class="admin-people-input-row">
+          <label for="admin-guest-new-name" class="sr-only">Gæstens navn</label>
+          <input id="admin-guest-new-name" type="text" maxlength="100" autocomplete="off" required placeholder="Gæstens navn">
+          <button id="admin-guest-add-btn" class="button primary" type="submit">Tilføj gæst</button>
+        </form>
+        <p id="admin-guest-add-message" class="feedback" role="status" aria-live="polite"></p>
+
+        <h3>Gæster</h3>
+        <div id="admin-active-guests" class="admin-guest-list"></div>
+        <div id="admin-archived-guests-section" class="hidden">
+          <h3>Tidligere gæster</h3>
+          <div id="admin-archived-guests" class="admin-guest-list"></div>
+        </div>
+        <p id="admin-guest-manage-message" class="feedback" role="status" aria-live="polite"></p>
+      </section>
+
       <section class="panel" aria-labelledby="active-title">
         <h2 id="active-title">Aktiv spilsamling</h2>
-        <p class="muted">Denne samling vælges som standard, når et nyt spil registreres. Vælg Kredsspil, hvis ingen turnering er i gang. Gamle spil ændres ikke.</p>
         <form id="admin-active-form">
           <div id="admin-tournament-options" class="admin-radio-list" role="radiogroup" aria-label="Aktiv spilsamling"></div>
           <button id="admin-save-active-btn" class="button primary" type="submit">Gem aktiv spilsamling</button>
@@ -77,11 +107,10 @@
 
       <section class="panel" aria-labelledby="create-title">
         <h2 id="create-title">Opret ny spilsamling</h2>
-        <p class="muted">For eksempel <strong>Hals 2027</strong>. Den nye samling bliver tilgængelig i Historik med det samme, men den bliver ikke aktiv, før du vælger den ovenfor.</p>
         <form id="admin-create-form" class="admin-create-form">
           <label for="admin-new-name" class="field-label">Navn på ny spilsamling</label>
           <div class="admin-create-row">
-            <input id="admin-new-name" name="name" type="text" maxlength="120" placeholder="Hals 2027" autocomplete="off" required>
+            <input id="admin-new-name" name="name" type="text" maxlength="120" placeholder="Fx. Hals 2027" autocomplete="off" required>
             <button id="admin-create-btn" class="button primary" type="submit">Opret</button>
           </div>
         </form>
@@ -90,7 +119,6 @@
 
       <section class="panel" id="admin-recent-panel" aria-labelledby="admin-recent-title">
         <h2 id="admin-recent-title">Seneste 10 registrerede spil</h2>
-        <p class="muted">Viser de senest indtastede spil, også hvis spilletidspunktet blev angivet forkert. Sletning fjerner spillet fra Historik og Statistik. Kun fuld administration kan slette spil.</p>
         <div class="admin-recent-toolbar">
           <button id="admin-recent-refresh-btn" class="button secondary" type="button">Opdater listen</button>
         </div>
@@ -102,6 +130,6 @@
   </main>
   <footer class="shell footer">Whist · Administrering</footer>
   <noscript><div class="shell notice notice-warning">JavaScript er nødvendigt for at bruge Administrering.</div></noscript>
-  <script type="module" src="assets/js/admin.js?v=1.0.4"></script>
+  <script type="module" src="assets/js/admin.js?v=1.0.5"></script>
 </body>
 </html>

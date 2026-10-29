@@ -18,6 +18,9 @@ let uploadBusy = false;
 let recentGames = [];
 let deletingGameId = null;
 let recentGeneration = 0;
+let managedPlayers = [];
+let managedPlayersGeneration = 0;
+let peopleBusy = false;
 const RECENT_CALLS = {
   almindelig:'Almindelig', gode:'Gode', halve:'Halve', vip:'Vip',
   sol:'Sol', ren_sol:'Ren sol', bordlaegger:'Bordlægger', ren_bordlaegger:'Ren bordlægger'
@@ -45,6 +48,15 @@ function setAccess(level) {
   show('admin-content', level !== 'none');
   show('admin-tournament-content', level === 'admin');
   if (level !== 'admin') {
+    ++managedPlayersGeneration;
+    managedPlayers = [];
+    $('admin-player-select').replaceChildren(new Option('Vælg spiller eller gæst', ''));
+    $('admin-active-guests').replaceChildren();
+    $('admin-archived-guests').replaceChildren();
+    show('admin-archived-guests-section', false);
+    for (const id of ['admin-player-rename-message','admin-guest-add-message','admin-guest-manage-message']) message(id, '');
+  }
+  if (level !== 'admin') {
     ++recentGeneration; // Discard any pending privileged read after locking.
     recentGames = [];
     $('admin-recent-games').replaceChildren();
@@ -71,7 +83,7 @@ function drawTournaments() {
   const root = $('admin-tournament-options');
   root.replaceChildren();
   for (const {id, name} of [
-    {id:null, name:'Kredsspil (ingen aktiv turnering)'}, ...tournaments
+    {id:null, name:'Kredsspil'}, ...tournaments
   ]) {
     const label = document.createElement('label');
     label.className = 'admin-radio-choice';
@@ -263,6 +275,99 @@ async function deleteRecentGame(game) {
     if (accessLevel === 'admin') drawRecentGames();
   }
 }
+
+// Full administration: player names are mutable, but removing a guest only
+// archives the player. Historical games, payouts and avatar IDs stay intact.
+function populatePlayerRename() {
+  const selected = managedPlayers.find(p => p.id === $('admin-player-select').value && p.active);
+  $('admin-player-new-name').value = selected?.display_name ?? '';
+  $('admin-player-new-name').disabled = !selected || peopleBusy;
+  $('admin-player-rename-btn').disabled = !selected || peopleBusy;
+}
+function renderManagedPlayers() {
+  const select = $('admin-player-select');
+  const previouslySelected = select.value;
+  select.replaceChildren(new Option('Vælg spiller eller gæst', ''));
+  for (const person of managedPlayers.filter(p => p.active)) {
+    select.add(new Option(`${person.display_name}${person.is_guest ? ' (gæst)' : ''}`, person.id));
+  }
+  if (managedPlayers.some(p => p.active && p.id === previouslySelected)) select.value = previouslySelected;
+  populatePlayerRename();
+
+  for (const [archived, containerId] of [[false,'admin-active-guests'], [true,'admin-archived-guests']]) {
+    const root = $(containerId);
+    root.replaceChildren();
+    const guests = managedPlayers.filter(p => p.is_guest && p.active === !archived);
+    if (!archived && guests.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent = 'Ingen gæster endnu.';
+      root.append(empty);
+    }
+    for (const guest of guests) {
+      const row = document.createElement('div');
+      row.className = 'admin-guest-row';
+      const label = document.createElement('span');
+      label.textContent = guest.display_name;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `button ${archived ? 'secondary' : 'danger'}`;
+      button.textContent = archived ? 'Gendan' : 'Fjern';
+      button.disabled = peopleBusy;
+      button.setAttribute('aria-label', `${archived ? 'Gendan' : 'Fjern'} gæsten ${guest.display_name}`);
+      button.addEventListener('click', () => changeGuestStatus(guest, archived));
+      row.append(label, button);
+      root.append(row);
+    }
+    if (archived) show('admin-archived-guests-section', guests.length > 0);
+  }
+}
+async function fetchManagedPlayers() {
+  if (!supabase || accessLevel !== 'admin') return;
+  const generation = ++managedPlayersGeneration;
+  const {data, error} = await supabase.rpc('admin_list_players');
+  if (error) throw error;
+  if (generation !== managedPlayersGeneration || accessLevel !== 'admin') return;
+  managedPlayers = (data ?? []).sort((a,b) =>
+    Number(a.is_guest) - Number(b.is_guest) || a.display_name.localeCompare(b.display_name, 'da'));
+  renderManagedPlayers();
+}
+async function runPeopleMutation(rpc, args, target, success) {
+  if (!supabase || accessLevel !== 'admin' || peopleBusy) return;
+  peopleBusy = true;
+  const panel = $('admin-players-panel');
+  const controls = [...panel.querySelectorAll('button, input, select')];
+  controls.forEach(control => { control.disabled = true; });
+  message(target, 'Gemmer ...');
+  let succeeded = false;
+  try {
+    const {error} = await supabase.rpc(rpc, args);
+    if (error) throw error;
+    if (accessLevel !== 'admin') return;
+    await Promise.all([fetchManagedPlayers(), fetchPlayers()]);
+    succeeded = true;
+    message(target, success);
+  } catch (err) {
+    handleError(err, target);
+  } finally {
+    peopleBusy = false;
+    controls.forEach(control => {control.disabled = false;});
+    if (accessLevel === 'admin' && succeeded) renderManagedPlayers();
+    if (accessLevel === 'admin' && !succeeded) {
+      // Leave the edited name in place if the database rejected it.
+      $('admin-player-rename-btn').disabled = !$('admin-player-select').value;
+      $('admin-player-new-name').disabled = !$('admin-player-select').value;
+    }
+  }
+}
+async function changeGuestStatus(guest, restore) {
+  if (accessLevel !== 'admin' || peopleBusy) return;
+  if (!restore && !window.confirm(`Fjern gæsten ${guest.display_name} fra nye spil?\n\nTidligere spil og resultater bevares. Gæsten kan gendannes senere.`)) return;
+  await runPeopleMutation(restore ? 'admin_restore_guest' : 'admin_archive_guest',
+    {p_player_id:guest.id}, 'admin-guest-manage-message',
+    restore ? `${guest.display_name} er gendannet.` : `${guest.display_name} er fjernet fra nye spil.`);
+}
+
 async function refreshModules() {
   const level = await getAccess();
   setAccess(level);
@@ -270,6 +375,8 @@ async function refreshModules() {
   await fetchPlayers();
   if (level === 'admin') {
     await fetchTournaments();
+    try { await fetchManagedPlayers(); }
+    catch (err) { handleError(err, 'admin-player-rename-message'); }
     try { await fetchRecentGames(); }
     catch (err) { handleError(err, 'admin-recent-message'); }
   }
@@ -480,6 +587,34 @@ $('admin-create-form').addEventListener('submit', async event => {
     message('admin-create-message', `“${name}” er oprettet.`);
   } catch(err) { handleError(err,'admin-create-message'); }
   finally { btn.disabled = false; }
+});
+
+
+$('admin-player-select').addEventListener('change', () => {
+  populatePlayerRename();
+  message('admin-player-rename-message', '');
+});
+$('admin-player-rename-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const player = managedPlayers.find(p => p.id === $('admin-player-select').value && p.active);
+  if (!player || accessLevel !== 'admin') return;
+  const name = $('admin-player-new-name').value.trim();
+  if (!name) return;
+  if (name === player.display_name) {
+    message('admin-player-rename-message', 'Navnet er uændret.');
+    return;
+  }
+  await runPeopleMutation('admin_rename_player', {p_player_id:player.id, p_name:name},
+    'admin-player-rename-message', `Navnet er ændret til ${name}.`);
+});
+$('admin-guest-add-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (accessLevel !== 'admin') return;
+  const name = $('admin-guest-new-name').value.trim();
+  if (!name) return;
+  await runPeopleMutation('admin_add_guest', {p_name:name},
+    'admin-guest-add-message', `${name} er tilføjet som gæst.`);
+  if (!$('admin-guest-add-message').classList.contains('admin-error')) $('admin-guest-new-name').value = '';
 });
 
 $('admin-recent-refresh-btn').addEventListener('click', async () => {

@@ -1036,3 +1036,25 @@
   font-weight:650;
   margin:12px auto 0;
 }
+
+
+/* Full-administrator player and guest management. */
+.admin-people-form{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+#admin-player-select,.admin-people-input-row input{
+  width:100%;min-width:0;min-height:44px;padding:10px 12px;
+  border:1px solid #4b5c6d;border-radius:8px;background:#0d1622;color:var(--text)
+}
+.admin-people-input-row{display:flex;align-items:stretch;gap:10px;margin-top:7px}
+.admin-people-input-row input{flex:1}
+.admin-people-input-row .button{flex:none;min-height:44px;padding:9px 15px}
+.admin-people-divider{border-top:1px solid var(--edge);margin:20px 0}
+#admin-players-panel h3{font-size:15px;margin:17px 0 10px}
+.admin-guest-list{display:grid;gap:8px}
+.admin-guest-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:48px;border:1px solid #405166;border-radius:9px;padding:7px 10px;background:var(--surface2)}
+.admin-guest-row span{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.admin-guest-row .button{min-height:33px;padding:5px 11px;font-size:12px}
+#admin-archived-guests-section{margin-top:17px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:420px){.admin-people-input-row{flex-wrap:wrap}.admin-people-input-row .button{width:100%}}
