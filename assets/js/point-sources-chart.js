@@ -1,6 +1,5 @@
-// Fordeling: the exact same vertical columns, 49%-height zero line, player
-// positions and photo sizing as Diagram. Per-role signed totals are stacked
-// outwards from the photo; role colours never change when the sign does.
+// Bruttopointfordeling: each role contributes to both stacks independently.
+// The zero line, player positions and photos follow Diagram; colors are stable.
 import {POINT_SOURCE_ROLES} from './point-sources-model.js';
 import {createChartPopover} from './chart-popover.js?v=1.0.7';
 
@@ -17,23 +16,29 @@ export function pointSourceLayout(players) {
   const rows = players.map(player => {
     const side = (order, sign) => order.flatMap(key => {
       const entry = player.roles[key];
-      if (!entry || !(entry.points * sign > 0)) return [];
+      const gross = sign < 0 ? entry?.negative : entry?.positive;
+      if (!entry || !(gross * sign > 0)) return [];
       const role = rolesByKey.get(key);
-      return [{key, label:role.label, color:role.color, points:entry.points, games:entry.games}];
+      return [{
+        key, label:role.label, color:role.color,
+        gross, net:entry.points, positive:entry.positive,
+        negative:entry.negative, games:entry.games
+      }];
     });
     const negative = side(NEGATIVE_ROLE_ORDER, -1);
     const positive = side(POSITIVE_ROLE_ORDER, 1);
     return {
       player,
       negative, positive,
-      negativeTotal: negative.reduce((sum, segment) => sum + Math.abs(segment.points), 0),
-      positiveTotal: positive.reduce((sum, segment) => sum + segment.points, 0)
+      negativeTotal: negative.reduce((sum, segment) => sum + Math.abs(segment.gross), 0),
+      positiveTotal: positive.reduce((sum, segment) => sum + segment.gross, 0)
     };
   });
   const maxSide = Math.max(0, ...rows.flatMap(row => [row.negativeTotal, row.positiveTotal]));
-  // The signed axis is symmetric, and both ends round upwards to a multiple of 5.
-  // Always keep a usable scale even when all players have zero points.
-  const scaleMax = Math.max(5, Math.ceil((maxSide - 1e-9) / 5) * 5);
+  // The symmetric scale uses steps of 5 through 50, then steps of 10.
+  // Keep a usable scale for selections with no points.
+  const step = maxSide > 50 ? 10 : 5;
+  const scaleMax = Math.max(5, Math.ceil((maxSide - 1e-9) / step) * step);
   return {rows, maxSide, scaleMax};
 }
 
@@ -48,7 +53,7 @@ export function drawPointSources({container, players, avatar}) {
   chart.style.setProperty('--rank-count', String(rows.length));
   chart.style.width = rows.length > 6 ? `${(rows.length / 6 * 100).toFixed(4)}%` : '100%';
   chart.setAttribute('role', 'group');
-  chart.setAttribute('aria-label', `Fordeling: søjler med point fordelt efter rolle. Skala fra minus ${scaleMax} til plus ${scaleMax} med hjælpelinjer ved fjerdedele.`);
+  chart.setAttribute('aria-label', `Bruttopointfordeling: optjente point over nul og tabte point under nul, fordelt efter rolle. Skala fra minus ${scaleMax} til plus ${scaleMax} med hjælpelinjer ved fjerdedele.`);
   const zero = document.createElement('div');
   zero.className = 'rank-zero-line';
   zero.setAttribute('aria-hidden', 'true');
@@ -87,14 +92,17 @@ export function drawPointSources({container, players, avatar}) {
         button.className = 'point-source-vertical-segment';
         button.dataset.pointDetail = 'true';
         button.style.backgroundColor = segment.color;
-        button.style.flexGrow = String(Math.abs(segment.points));
-        const label = `${row.player.name} · ${segment.label}: ${signed(segment.points)} nettopoint, ${segment.games} spil`;
+        button.style.flexGrow = String(Math.abs(segment.gross));
+        const label = `${row.player.name} · ${segment.label}: ${signed(segment.gross)} bruttopoint, ${signed(segment.net)} nettopoint`;
         button.setAttribute('aria-label', label);
         button.title = label;
         button.addEventListener('click', () => {
-          popover.show(button, `${row.player.name} · ${segment.label}`,
-            [`${signed(segment.points)} nettopoint`, `${segment.games} spil`],
-            `${row.player.id}:${segment.key}`);
+          popover.show(button, `${row.player.name} · ${segment.label}`, [
+            {name:'Nettopoint', value:signed(segment.net)},
+            {name:'Optjente bruttopoint', value:signed(segment.positive)},
+            {name:'Tabte bruttopoint', value:signed(segment.negative)},
+            {name:'Spil', value:String(segment.games)}
+          ], `${row.player.id}:${segment.key}:${side}`);
         });
         stack.append(button);
       }

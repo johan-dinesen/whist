@@ -1,4 +1,4 @@
-// Pointkilder: group already-settled per-game net payouts by each player's role.
+// Pointkilder: group per-game gross wins and losses by each player's role.
 // Every qualifying game contributes to exactly one role per participant.
 export const POINT_SOURCE_ROLES = [
   {key:'caller', label:'Melder', color:'#e7ba61'},
@@ -17,16 +17,22 @@ export function normalizePointSources(raw) {
     const name = String(row.player_name ?? '').trim();
     const role = String(row.source_role ?? '');
     const points = Number(row.net_points);
+    const positive = Number(row.positive_points);
+    const negative = Number(row.negative_points);
     const games = Number(row.games_played);
-    if (!id || !name || !roleKeys.has(role) || !Number.isFinite(points) ||
-        !Number.isSafeInteger(games) || games < 1 ||
-        Math.abs(points * 100 - Math.round(points * 100)) > .001) {
+    const validCents = value => Number.isFinite(value) &&
+      Math.abs(value * 100 - Math.round(value * 100)) < .001;
+    if (!id || !name || !roleKeys.has(role) ||
+        !validCents(points) || !validCents(positive) || !validCents(negative) ||
+        positive < 0 || negative > 0 ||
+        Math.abs(positive + negative - points) > .005 ||
+        !Number.isSafeInteger(games) || games < 1) {
       throw new Error('Supabase returnerede ugyldige Pointkilder-data.');
     }
     if (!byPlayer.has(id)) {
       byPlayer.set(id, {
         id, name, guest: Boolean(row.is_guest),
-        roles: Object.fromEntries(POINT_SOURCE_ROLES.map(item => [item.key, {points:0,games:0}])),
+        roles: Object.fromEntries(POINT_SOURCE_ROLES.map(item => [item.key, {points:0, positive:0, negative:0, games:0}])),
         netPoints:0, totalGames:0
       });
     }
@@ -34,7 +40,12 @@ export function normalizePointSources(raw) {
     if (player.name !== name || player.roles[role].games > 0) {
       throw new Error('Dubleret eller uens Pointkilder-data.');
     }
-    player.roles[role] = {points: Math.round(points * 100) / 100, games};
+    player.roles[role] = {
+      points: Math.round(points * 100) / 100,
+      positive: Math.round(positive * 100) / 100,
+      negative: Math.round(negative * 100) / 100,
+      games
+    };
   }
   return [...byPlayer.values()].map(player => {
     const totalCents = POINT_SOURCE_ROLES.reduce((sum, role) =>

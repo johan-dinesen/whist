@@ -7,8 +7,8 @@ import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.
 import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js?v=1.0.8';
-import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.6';
-import {drawPointSources} from './point-sources-chart.js?v=1.0.10';
+import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.11';
+import {drawPointSources} from './point-sources-chart.js?v=1.0.11';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
@@ -715,7 +715,7 @@ async function refresh() {
     supabase.rpc('get_synergy_for_notes',params),
     supabase.rpc('get_standings_history_for_notes',params),
     supabase.rpc('get_hands_statistics_for_notes',params),
-    supabase.rpc('get_point_sources_for_notes',params)
+    supabase.rpc('get_gross_point_sources_for_notes',params)
   ]);
   if(request!==activeRequest)return;
   const errors=[];
