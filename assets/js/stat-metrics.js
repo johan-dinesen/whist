@@ -3,32 +3,32 @@
 export const METRICS = [
   {
     key:'calls', label:'Meldinger', short:'Meldinger',
-    help:'Andel af spillerens spillede hænder, hvor spilleren selv meldte (flere solmeldere tælles hver for sig).',
+    help:'Andel af spillede hænder, hvor spilleren selv meldte.',
     valueKey:'callsPct', type:'percentage', fraction:'hands'
   },
   {
     key:'under', label:'Undermelding', short:'Under',
-    help:'Andel af klassificerede almindelige meldinger (Almindelig, Gode, Halve og Vip), hvor spilleren fik flere stik end meldt.',
+    help:'Andel af (Almindelig, Gode, Halve og Vip), hvor spilleren fik flere stik end meldt.',
     valueKey:'underPct', countKey:'under', type:'percentage'
   },
   {
     key:'over', label:'Overmelding', short:'Over',
-    help:'Andel af klassificerede almindelige meldinger (Almindelig, Gode, Halve og Vip), hvor spilleren fik færre stik end meldt.',
+    help:'Andel af (Almindelig, Gode, Halve og Vip), hvor spilleren fik færre stik end meldt.',
     valueKey:'overPct', countKey:'over', type:'percentage'
   },
   {
     key:'exact', label:'Præcis melding', short:'Præcis',
-    help:'Andel af klassificerede almindelige meldinger (Almindelig, Gode, Halve og Vip), hvor spilleren fik præcis det meldte antal stik.',
+    help:'Andel af (Almindelig, Gode, Halve og Vip), hvor spilleren fik præcis det meldte antal stik.',
     valueKey:'exactPct', countKey:'exact', type:'percentage'
   },
   {
     key:'deviation', label:'Stikafvigelse', short:'Stikafv.',
-    help:'Gennemsnitligt resultat (med fortegn) på egne meldinger af typen Almindelig, Gode, Halve eller Vip.',
+    help:'Gennemsnitligt resultat (med fortegn) på egne meldinger af (Almindelig, Gode, Halve og Vip).',
     valueKey:'avgDeviation', type:'deviation'
   },
   {
     key:'absoluteDeviation', label:'Absolut stikafvigelse', short:'|Stikafv.|',
-    help:'Gennemsnittet af den absolutte resultatværdi på egne meldinger af typen Almindelig, Gode, Halve eller Vip.',
+    help:'Gennemsnittet af den absolutte resultatværdi på egne meldinger af (Almindelig, Gode, Halve og Vip).',
     valueKey:'avgAbsoluteDeviation', type:'deviation'
   },
   {
