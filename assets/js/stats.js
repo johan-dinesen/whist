@@ -8,7 +8,7 @@ import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js?v=1.0.8';
 import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.11';
-import {drawPointSources} from './point-sources-chart.js?v=1.0.11';
+import {drawPointSources} from './point-sources-chart.js?v=1.0.12';
 import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
 
 const $ = id => document.getElementById(id);
@@ -45,6 +45,7 @@ let view = 'podium';
 let historyChart = null;
 let sourcesRendered = false;
 let sourcesPopover = null;
+let pointSourcesMode = 'gross';
 let sourcesPeople = [];
 let historyModel = null;
 let timeMachineIndex = 0;
@@ -635,7 +636,8 @@ function mountPointSourcesChart() {
       sourcesPopover = drawPointSources({
         container:$('point-sources-bars'),
         players:sourcesPeople,
-        avatar
+        avatar,
+        mode:pointSourcesMode
       });
       $('point-sources-scroll-tip').classList.toggle('has-overflow', sourcesPeople.length > 6);
       sourcesRendered = true;
@@ -848,5 +850,17 @@ $('stats-include-guests').addEventListener('change',()=>{
 });
 for(const button of document.querySelectorAll('[data-stats-view]')){
   button.addEventListener('click',()=>changeView(button.dataset.statsView));
+}
+for (const button of document.querySelectorAll('[data-source-mode]')) {
+  button.addEventListener('click', () => {
+    const next = button.dataset.sourceMode;
+    if (next === pointSourcesMode || !['gross', 'net'].includes(next)) return;
+    pointSourcesMode = next;
+    for (const option of document.querySelectorAll('[data-source-mode]')) {
+      option.setAttribute('aria-pressed', String(option.dataset.sourceMode === next));
+    }
+    // Retain the existing columns and avatars so only the coloured bars move.
+    sourcesPopover?.setMode(next);
+  });
 }
 init();

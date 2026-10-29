@@ -1115,4 +1115,28 @@
   .admin-edit-solo-row{grid-template-columns:1fr}
 }
 
-@media(max-width:620px){.admin-recent-actions .button.danger{width:auto}}
+/* Fordeling: gross/net selector; animate bar values without moving photos. */
+.point-source-mode-switch{
+  display:flex;align-items:stretch;justify-content:center;gap:3px;
+  width:max-content;max-width:100%;margin:10px auto 0;padding:3px;
+  border:1px solid #34485a;border-radius:10px;background:#0d1722
+}
+.point-source-mode-switch button{
+  border:0;border-radius:7px;background:transparent;color:var(--muted);
+  padding:7px 15px;min-height:34px;font-size:13px;font-weight:700;cursor:pointer
+}
+.point-source-mode-switch button[aria-pressed="true"]{
+  color:#f0f7fc;background:#28435a;box-shadow:inset 0 0 0 1px #4f7290
+}
+.point-source-mode-switch button:hover{color:var(--text)}
+.point-source-mode-switch button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.point-source-vertical-stack{transition:height 300ms ease-in-out}
+.point-source-vertical-segment{
+  min-height:0;transition:flex-grow 300ms ease-in-out;
+}
+@media(prefers-reduced-motion:reduce){
+  .point-source-vertical-stack,.point-source-vertical-segment{transition:none}
+}
+@media(max-width:620px){
+  .point-source-mode-switch button{min-height:32px;padding:6px 13px;font-size:12px}
+}

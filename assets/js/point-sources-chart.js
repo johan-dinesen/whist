@@ -1,130 +1,185 @@
-// Bruttopointfordeling: each role contributes to both stacks independently.
-// The zero line, player positions and photos follow Diagram; colors are stable.
+// Role-based point distribution. Gross shows earned/lost totals separately;
+// net shows each role's signed balance. Columns and photos remain fixed while
+// the coloured stacks transition between the two representations.
 import {POINT_SOURCE_ROLES} from './point-sources-model.js';
 import {createChartPopover} from './chart-popover.js?v=1.0.7';
 
 const rolesByKey = new Map(POINT_SOURCE_ROLES.map(role => [role.key, role]));
 export const NEGATIVE_ROLE_ORDER = ['opponent', 'partner', 'caller', 'solo'];
 export const POSITIVE_ROLE_ORDER = ['partner', 'caller', 'solo', 'opponent'];
+const VALID_MODES = new Set(['gross', 'net']);
 
 const format = value => Number(value).toLocaleString('da-DK', {
   minimumFractionDigits:2, maximumFractionDigits:2
 });
 const signed = value => `${value > 0 ? '+' : ''}${format(value)}`;
 
-export function pointSourceLayout(players) {
+export function pointSourceLayout(players, mode = 'gross') {
+  if (!VALID_MODES.has(mode)) throw new Error('Ukendt fordelingsvisning.');
   const rows = players.map(player => {
     const side = (order, sign) => order.flatMap(key => {
       const entry = player.roles[key];
-      const gross = sign < 0 ? entry?.negative : entry?.positive;
-      if (!entry || !(gross * sign > 0)) return [];
+      if (!entry) return [];
+      const amount = mode === 'net'
+        ? (entry.points * sign > 0 ? entry.points : 0)
+        : (sign < 0 ? entry.negative : entry.positive);
+      if (!(amount * sign > 0)) return [];
       const role = rolesByKey.get(key);
       return [{
         key, label:role.label, color:role.color,
-        gross, net:entry.points, positive:entry.positive,
+        gross:amount, net:entry.points, positive:entry.positive,
         negative:entry.negative, games:entry.games
       }];
     });
     const negative = side(NEGATIVE_ROLE_ORDER, -1);
     const positive = side(POSITIVE_ROLE_ORDER, 1);
     return {
-      player,
-      negative, positive,
+      player, negative, positive,
       negativeTotal: negative.reduce((sum, segment) => sum + Math.abs(segment.gross), 0),
       positiveTotal: positive.reduce((sum, segment) => sum + segment.gross, 0)
     };
   });
   const maxSide = Math.max(0, ...rows.flatMap(row => [row.negativeTotal, row.positiveTotal]));
-  // The symmetric scale uses steps of 5 through 50, then steps of 10.
-  // Keep a usable scale for selections with no points.
-  const step = maxSide > 50 ? 10 : 5;
-  const scaleMax = Math.max(5, Math.ceil((maxSide - 1e-9) / step) * step);
+  // Give bar tops at least ~9% headroom to the end reference lines. A bar at
+  // 169 must not reach the label at -170, including on the 365px mobile chart.
+  // Use a step of 5 up to 50, and steps of 10 above that threshold.
+  const paddedMax = maxSide * 1.1;
+  const step = paddedMax > 50 ? 10 : 5;
+  const scaleMax = Math.max(5, Math.ceil((paddedMax - 1e-9) / step) * step);
   return {rows, maxSide, scaleMax};
 }
 
-export function drawPointSources({container, players, avatar}) {
-  const {rows, scaleMax} = pointSourceLayout(players);
+export function drawPointSources({container, players, avatar, mode = 'gross'}) {
+  if (!VALID_MODES.has(mode)) throw new Error('Ukendt fordelingsvisning.');
   container.replaceChildren();
-  // Popover is outside the horizontally scrolling chart, so it never causes
-  // the other statistics panels to move and is never clipped when scrolling.
+  // The popover is outside the scrolling area and does not move other panels.
   const popover = createChartPopover(container.parentElement.parentElement);
   const chart = document.createElement('div');
   chart.className = 'rank-bar-chart point-sources-bars';
-  chart.style.setProperty('--rank-count', String(rows.length));
-  chart.style.width = rows.length > 6 ? `${(rows.length / 6 * 100).toFixed(4)}%` : '100%';
+  chart.style.setProperty('--rank-count', String(players.length));
+  chart.style.width = players.length > 6 ? `${(players.length / 6 * 100).toFixed(4)}%` : '100%';
   chart.setAttribute('role', 'group');
-  chart.setAttribute('aria-label', `Bruttopointfordeling: optjente point over nul og tabte point under nul, fordelt efter rolle. Skala fra minus ${scaleMax} til plus ${scaleMax} med hjælpelinjer ved fjerdedele.`);
   const zero = document.createElement('div');
   zero.className = 'rank-zero-line';
   zero.setAttribute('aria-hidden', 'true');
   chart.append(zero);
-  // Dashed quarter steps provide a reference without obscuring mobile bars
-  // with intermediate numbers. Only the upper and lower limits are labelled.
+
+  const limitLabels = [];
+  // Keep reference lines in fixed positions; only their endpoint text changes.
   for (const fraction of [-1, -0.75, -0.5, -0.25, 0.25, 0.5, 0.75, 1]) {
-    // A negative value lies below the centre; positive above it.
-    const top = 49 - fraction * 35;
-    const isLimit = Math.abs(fraction) === 1;
     const tick = document.createElement('div');
+    const isLimit = Math.abs(fraction) === 1;
     tick.className = `point-source-axis-tick${isLimit ? ' is-limit' : ' is-quarter'}`;
-    tick.style.top = `${top}%`;
+    tick.style.top = `${49 - fraction * 35}%`;
     if (isLimit) {
       const label = document.createElement('span');
-      label.textContent = `${fraction > 0 ? '' : '−'}${scaleMax.toLocaleString('da-DK')}`;
       tick.append(label);
+      limitLabels.push({fraction, label});
     }
     chart.append(tick);
   }
 
-  for (const row of rows) {
+  // Build both role stacks once. Switching mode changes only their heights,
+  // leaving the rank columns, footers and avatar DOM elements untouched.
+  const columns = players.map(player => {
     const column = document.createElement('div');
     column.className = 'rank-bar-column point-source-column';
-    column.dataset.playerId = row.player.id;
-    column.setAttribute('aria-label', `${row.player.name}: ${signed(row.player.netPoints)} point`);
-
-    const buildStack = (segments, side, total) => {
+    column.dataset.playerId = player.id;
+    column.setAttribute('aria-label', `${player.name}: ${signed(player.netPoints)} point`);
+    const stacks = {};
+    for (const [side, order] of [
+      ['positive', POSITIVE_ROLE_ORDER], ['negative', NEGATIVE_ROLE_ORDER]
+    ]) {
       const stack = document.createElement('div');
       stack.className = `point-source-vertical-stack point-source-stack-${side}`;
-      const height = 35 * total / scaleMax;
-      stack.style.height = `${height.toFixed(5)}%`;
-      for (const segment of segments) {
+      const segments = new Map();
+      for (const key of order) {
+        const role = rolesByKey.get(key);
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'point-source-vertical-segment';
         button.dataset.pointDetail = 'true';
-        button.style.backgroundColor = segment.color;
-        button.style.flexGrow = String(Math.abs(segment.gross));
-        const label = `${row.player.name} · ${segment.label}: ${signed(segment.gross)} bruttopoint, ${signed(segment.net)} nettopoint`;
-        button.setAttribute('aria-label', label);
-        button.title = label;
+        button.style.backgroundColor = role.color;
         button.addEventListener('click', () => {
-          popover.show(button, `${row.player.name} · ${segment.label}`, [
-            {name:'Nettopoint', value:signed(segment.net)},
-            {name:'Optjente bruttopoint', value:signed(segment.positive)},
-            {name:'Tabte bruttopoint', value:signed(segment.negative)},
-            {name:'Spil', value:String(segment.games)}
-          ], `${row.player.id}:${segment.key}:${side}`);
+          const entry = player.roles[key];
+          const heading = `${player.name} · ${role.label}`;
+          popover.show(button, heading, [
+            {name:'Nettopoint', value:signed(entry.points)},
+            {name:'Optjente bruttopoint', value:signed(entry.positive)},
+            {name:'Tabte bruttopoint', value:signed(entry.negative)},
+            {name:'Spil', value:String(entry.games)}
+          ], `${player.id}:${key}:${side}`);
         });
+        segments.set(key, button);
         stack.append(button);
       }
-      return stack;
-    };
-    column.append(buildStack(row.positive, 'positive', row.positiveTotal));
-    column.append(buildStack(row.negative, 'negative', row.negativeTotal));
-
-    const photo = avatar(row.player, 'rank-avatar-chart');
+      column.append(stack);
+      stacks[side] = {stack, segments};
+    }
+    const photo = avatar(player, 'rank-avatar-chart');
     photo.classList.add('rank-bar-avatar');
-    photo.title = `${row.player.name}: ${signed(row.player.netPoints)} point`;
+    photo.title = `${player.name}: ${signed(player.netPoints)} point`;
     const foot = document.createElement('div');
     foot.className = 'rank-bar-footer';
     const name = document.createElement('strong');
-    name.textContent = row.player.name;
-    name.title = row.player.name;
+    name.textContent = player.name;
+    name.title = player.name;
     const games = document.createElement('small');
-    games.textContent = `${row.player.totalGames} spil`;
+    games.textContent = `${player.totalGames} spil`;
     foot.append(name, games);
     column.append(photo, foot);
     chart.append(column);
+    return stacks;
+  });
+
+  function setMode(nextMode) {
+    if (!VALID_MODES.has(nextMode)) throw new Error('Ukendt fordelingsvisning.');
+    popover.hide();
+    const {rows, scaleMax} = pointSourceLayout(players, nextMode);
+    const label = nextMode === 'gross' ? 'Bruttopointfordeling' : 'Nettopointfordeling';
+    const description = nextMode === 'gross'
+      ? 'optjente point over nul og tabte point under nul'
+      : 'positive og negative nettopoint efter rolle';
+    chart.setAttribute('aria-label', `${label}: ${description}, fordelt efter rolle. Skala fra minus ${scaleMax} til plus ${scaleMax} med hjælpelinjer ved fjerdedele.`);
+    container.setAttribute('aria-label', `${label}, fordelt efter rolle`);
+    for (const {fraction, label:limit} of limitLabels) {
+      limit.textContent = `${fraction > 0 ? '' : '−'}${scaleMax.toLocaleString('da-DK')}`;
+    }
+    rows.forEach((row, index) => {
+      for (const side of ['positive', 'negative']) {
+        const {stack, segments} = columns[index][side];
+        const values = row[side];
+        const byKey = new Map(values.map(segment => [segment.key, segment]));
+        const total = side === 'positive' ? row.positiveTotal : row.negativeTotal;
+        stack.style.height = `${(35 * total / scaleMax).toFixed(5)}%`;
+        for (const [key, button] of segments) {
+          const entry = byKey.get(key);
+          const value = entry ? Math.abs(entry.gross) : 0;
+          button.style.flexGrow = String(value);
+          button.style.pointerEvents = value ? '' : 'none';
+          button.tabIndex = value ? 0 : -1;
+          if (value) {
+            button.removeAttribute('aria-hidden');
+            const role = rolesByKey.get(key);
+            const detail = nextMode === 'gross' ? 'bruttopoint' : 'nettopoint';
+            button.setAttribute('aria-label', `${row.player.name} · ${role.label}: ${signed(entry.gross)} ${detail}`);
+            button.title = button.getAttribute('aria-label');
+          } else {
+            button.setAttribute('aria-hidden', 'true');
+            button.removeAttribute('title');
+          }
+        }
+      }
+    });
   }
+
+  // Initial dimensions are applied before attachment. Subsequent calls
+  // animate in place via the CSS height/flex-grow transitions.
+  setMode(mode);
   container.append(chart);
-  return popover;
+  return {
+    setMode,
+    hide: popover.hide,
+    destroy: popover.destroy
+  };
 }
