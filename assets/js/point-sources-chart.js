@@ -8,6 +8,11 @@ const rolesByKey = new Map(POINT_SOURCE_ROLES.map(role => [role.key, role]));
 export const NEGATIVE_ROLE_ORDER = ['opponent', 'partner', 'caller', 'solo'];
 export const POSITIVE_ROLE_ORDER = ['partner', 'caller', 'solo', 'opponent'];
 const VALID_MODES = new Set(['gross', 'net']);
+// Place stacks just outside the centered avatar, so tiny point values can
+// remain visible and tappable. These are minimum *visible* segment lengths;
+// larger bar endpoints keep their proportional distance from the zero line.
+const FIRST_ROLE_MIN_PX = 20;
+const OTHER_ROLE_MIN_PX = 8;
 
 const format = value => Number(value).toLocaleString('da-DK', {
   minimumFractionDigits:2, maximumFractionDigits:2
@@ -57,6 +62,8 @@ export function drawPointSources({container, players, avatar, mode = 'gross'}) {
   const chart = document.createElement('div');
   chart.className = 'rank-bar-chart point-sources-bars';
   chart.style.setProperty('--rank-count', String(players.length));
+  chart.style.setProperty('--source-first-min', `${FIRST_ROLE_MIN_PX}px`);
+  chart.style.setProperty('--source-other-min', `${OTHER_ROLE_MIN_PX}px`);
   chart.style.width = players.length > 6 ? `${(players.length / 6 * 100).toFixed(4)}%` : '100%';
   chart.setAttribute('role', 'group');
   const zero = document.createElement('div');
@@ -151,10 +158,22 @@ export function drawPointSources({container, players, avatar, mode = 'gross'}) {
         const values = row[side];
         const byKey = new Map(values.map(segment => [segment.key, segment]));
         const total = side === 'positive' ? row.positiveTotal : row.negativeTotal;
-        stack.style.height = `${(35 * total / scaleMax).toFixed(5)}%`;
+        // An avatar hides the start of the original linear bars. Move stacks
+        // to its rim and subtract the same radius from proportional heights;
+        // this leaves the endpoint of ordinary bars exactly where it was.
+        // Only exceptionally short bars are raised to a tappable minimum.
+        // Flex distributes any remaining space according to real values.
+        const activeCount = values.length;
+        const minimumHeight = FIRST_ROLE_MIN_PX + Math.max(0, activeCount - 1) * OTHER_ROLE_MIN_PX;
+        stack.style.height = activeCount
+          ? `max(calc(${(35 * total / scaleMax).toFixed(5)}% - var(--source-avatar-radius)), ${minimumHeight}px)`
+          : '0px';
+        const nearestRoleKey = values[0]?.key;
         for (const [key, button] of segments) {
           const entry = byKey.get(key);
           const value = entry ? Math.abs(entry.gross) : 0;
+          button.classList.toggle('is-active', value > 0);
+          button.classList.toggle('is-nearest', value > 0 && key === nearestRoleKey);
           button.style.flexGrow = String(value);
           button.style.pointerEvents = value ? '' : 'none';
           button.tabIndex = value ? 0 : -1;

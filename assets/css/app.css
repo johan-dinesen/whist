@@ -1132,7 +1132,16 @@
 .point-source-mode-switch button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .point-source-vertical-stack{transition:height 300ms ease-in-out}
 .point-source-vertical-segment{
-  min-height:0;transition:flex-grow 300ms ease-in-out;
+  min-height:0;transition:flex-grow 300ms ease-in-out,min-height 300ms ease-in-out;
+}
+/* Stacks start at the avatar rim; minimum lengths keep tiny roles visible.
+   Normal bar endpoints still follow the linear axis scale. */
+.point-source-vertical-segment.is-active{min-height:var(--source-other-min,8px)}
+.point-source-vertical-segment.is-active.is-nearest{min-height:var(--source-first-min,20px)}
+/* Match the name-to-value separators in the Stilling history popup. */
+#point-sources-view .chart-detail-row{
+  border-bottom:1px solid rgba(171,198,219,.22);
+  padding:3px 0 5px;
 }
 @media(prefers-reduced-motion:reduce){
   .point-source-vertical-stack,.point-source-vertical-segment{transition:none}
@@ -1140,3 +1149,11 @@
 @media(max-width:620px){
   .point-source-mode-switch button{min-height:32px;padding:6px 13px;font-size:12px}
 }
+
+/* Keep each role stack outside the centered avatar, avoiding hidden click
+   targets without changing the location of normal-sized bar endpoints. */
+.point-sources-bars{--source-avatar-radius:21px}
+.point-sources-bars .point-source-stack-positive{bottom:calc(51% + var(--source-avatar-radius))}
+.point-sources-bars .point-source-stack-negative{top:calc(49% + var(--source-avatar-radius))}
+@media(max-width:620px){.point-sources-bars{--source-avatar-radius:17px}}
+@media(max-width:350px){.point-sources-bars{--source-avatar-radius:15.5px}}
