@@ -4,7 +4,7 @@ import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionPa
 import {normalizeStandings} from './ranking-model.js';
 import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, metricValue} from './stat-metrics.js?v=1.0.2';
 import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
-import {buildScoreHistory} from './score-history-model.js?v=1.0.0';
+import {buildScoreHistory} from './score-history-model.js?v=1.0.1';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js?v=1.0.8';
 import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.11';

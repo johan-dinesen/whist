@@ -89,6 +89,7 @@ function drawTournaments() {
   ]) {
     const label = document.createElement('label');
     label.className = 'admin-radio-choice';
+    label.classList.toggle('is-selected', id === selectedId);
     const input = document.createElement('input');
     input.type = 'radio';
     input.name = 'active-tournament';
@@ -96,6 +97,11 @@ function drawTournaments() {
     input.checked = id === selectedId;
     input.addEventListener('change', () => {
       selectedId = id;
+      // Older iPhone Safari does not support CSS :has(). Keep the selected
+      // tournament visibly highlighted without relying on that selector.
+      root.querySelectorAll('.admin-radio-choice').forEach(choice => {
+        choice.classList.toggle('is-selected', choice.contains(input));
+      });
       $('admin-save-active-btn').disabled = selectedId === currentId;
       message('admin-active-message', '');
     });

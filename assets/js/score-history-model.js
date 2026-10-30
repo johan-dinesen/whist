@@ -46,6 +46,6 @@ export function buildScoreHistory(data) {
   }
   return {
     gameCount,
-    players:players.map(({id,name,series,gamesPlayed})=>({id,name,series,gamesPlayed,final:series.at(-1)}))
+    players:players.map(({id,name,series,gamesPlayed})=>({id,name,series,gamesPlayed,final:series[series.length - 1]}))
   };
 }
