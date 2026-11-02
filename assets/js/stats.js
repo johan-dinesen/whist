@@ -145,6 +145,7 @@ function podiumLaurel(position) {
     }
     stems += `<path d="M${points.join(' L')}"/>`;
     const pairCount = 8;
+    const lastPairDirections = [];
     for (let pairIndex = 0; pairIndex < pairCount; pairIndex++) {
       const angle = 117 + pairIndex * 15.2;
       const [x, y] = point(angle, mirrored);
@@ -176,24 +177,34 @@ function podiumLaurel(position) {
         const midY = (y + tipY) / 2;
         const leafDX = tipX - x, leafDY = tipY - y;
         const leafLength = Math.hypot(leafDX, leafDY);
+        if (pairIndex === pairCount - 1) {
+          lastPairDirections.push([leafDX / leafLength, leafDY / leafLength]);
+        }
         const perpX = -leafDY / leafLength, perpY = leafDX / leafLength;
         leaves += `<path d="M${fmt(x)} ${fmt(y)} ` +
           `Q${fmt(midX + perpX * width)} ${fmt(midY + perpY * width)} ${fmt(tipX)} ${fmt(tipY)} ` +
           `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
       }
     }
-    // One terminal leaf after all eight unchanged inner/outer pairs.
-    // Its centerline follows the continuation of the elliptical stem.
-    const [baseX, baseY] = point(233, mirrored);
-    const [midX, midY] = point(242, mirrored);
-    const [tipX, tipY] = point(251, mirrored);
-    const midAngle = 242 * rad;
-    let tangentX = -47 * Math.sin(midAngle);
-    const tangentY = 54 * Math.cos(midAngle);
-    if (mirrored) tangentX *= -1;
-    const tangentSize = Math.hypot(tangentX, tangentY);
-    const normalX = -tangentY / tangentSize;
-    const normalY = tangentX / tangentSize;
+    // A single terminal leaf sits just above the last pair, with its root on
+    // the stem rather than beyond its end. Aim it halfway between the actual
+    // directions of the final inner and outer leaves. The eight pairs above
+    // remain unchanged.
+    const lastPairAngle = 117 + (pairCount - 1) * 15.2;
+    const [baseX, baseY] = point(lastPairAngle + 1.5, mirrored);
+    const [innerDirection, outerDirection] = lastPairDirections;
+    let directionX = innerDirection[0] + outerDirection[0];
+    let directionY = innerDirection[1] + outerDirection[1];
+    const directionSize = Math.hypot(directionX, directionY);
+    directionX /= directionSize;
+    directionY /= directionSize;
+    const terminalLength = 17;
+    const tipX = baseX + directionX * terminalLength;
+    const tipY = baseY + directionY * terminalLength;
+    const midX = (baseX + tipX) / 2;
+    const midY = (baseY + tipY) / 2;
+    const normalX = -directionY;
+    const normalY = directionX;
     const terminalWidth = 3.7;
     leaves += `<path d="M${fmt(baseX)} ${fmt(baseY)} ` +
       `Q${fmt(midX + normalX * terminalWidth)} ${fmt(midY + normalY * terminalWidth)} ${fmt(tipX)} ${fmt(tipY)} ` +
