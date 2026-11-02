@@ -195,7 +195,7 @@ function podiumLaurel(position) {
     // Its base starts slightly earlier on the stem and its direction bisects
     // the last pair's directions, while matching the paired leaf proportions.
     const lastPairAngle = 117 + (pairCount - 1) * 15.2;
-    const [baseX, baseY] = point(lastPairAngle - 2.4, mirrored);
+    const [baseX, baseY] = point(lastPairAngle +0.5, mirrored);
     const [innerDirection, outerDirection] = lastPairDirections;
     let directionX = innerDirection[0] + outerDirection[0];
     let directionY = innerDirection[1] + outerDirection[1];
