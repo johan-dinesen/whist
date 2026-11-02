@@ -167,28 +167,15 @@
 .position-1 .rank-avatar-podium{width:66px;height:66px;border-color:#d5b45f}
 .position-2 .rank-avatar-podium{border-color:#b7c6d5}
 .position-3 .rank-avatar-podium{border-color:#b88262}
-.podium-emblem{position:relative;display:grid;place-items:center;flex:0 0 auto;width:min(100%,122px);height:122px;aspect-ratio:1;margin-bottom:-18px;z-index:2}
+.podium-emblem{position:relative;display:grid;place-items:center;flex:0 0 auto;width:min(100%,122px);height:122px;aspect-ratio:1;margin-bottom:-18px;z-index:1;transform:translateY(17px)}
 @supports (aspect-ratio:1){.podium-emblem{height:auto}}
-/* A single geometric laurel mask, drawn from the bottom of the photo
-   and following its circular outline before opening out near the top.
-   The older JavaScript SVG is hidden; no JavaScript change is needed. */
-.podium-wreath{display:none}
-.podium-emblem::before{
-  --laurel-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20140%20140%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222.3%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M70%2C112%20L68.6%2C112%20L67.3%2C111.9%20L65.9%2C111.8%20L64.5%2C111.7%20L63.1%2C111.5%20L61.8%2C111.3%20L60.4%2C111%20L59.1%2C110.7%20L57.8%2C110.3%20L56.4%2C109.9%20L55.1%2C109.5%20L53.8%2C109%20L52.5%2C108.5%20L51.3%2C108%20L50%2C107.4%20L48.8%2C106.7%20L47.6%2C106.1%20L46.4%2C105.4%20L45.2%2C104.6%20L44.1%2C103.8%20L42.9%2C103%20L41.8%2C102.1%20L40.7%2C101.2%20L39.7%2C100.3%20L38.7%2C99.4%20L37.7%2C98.4%20L36.7%2C97.3%20L35.8%2C96.3%20L34.9%2C95.2%20L34%2C94.1%20L33.1%2C92.9%20L32.3%2C91.7%20L31.6%2C90.5%20L30.8%2C89.3%20L30.1%2C88.1%20L29.5%2C86.8%20L28.9%2C85.5%20L28.3%2C84.2%20L27.8%2C82.8%20L27.3%2C81.5%20L26.8%2C80.1%20L26.4%2C78.7%20L26%2C77.3%20L25.7%2C75.8%20L25.4%2C74.4%20L25.2%2C72.9%20L25%2C71.5%20L24.8%2C70%20L24.7%2C68.5%20L24.7%2C67%20L24.6%2C65.5%20L24.7%2C64%20L24.8%2C62.5%20L24.9%2C61%20L25.1%2C59.5%20L25.3%2C58%20L25.6%2C56.5%20L25.9%2C55%20L26.3%2C53.5%20L26.7%2C52.1%20L27.2%2C50.6%20L27.7%2C49.1%20L28.2%2C47.7%20L28.8%2C46.2%20L29.5%2C44.8%20L30.2%2C43.4%20L31%2C42%20L31.8%2C40.7%20L32.6%2C39.3%20L33.5%2C38%20L34.4%2C36.7%20L35.4%2C35.4%20L36.4%2C34.2%20L37.5%2C32.9%20L38.6%2C31.7%20L39.7%2C30.6%20L40.9%2C29.4%20L42.2%2C28.3%20L43.4%2C27.3%20L44.7%2C26.3%22%2F%3E%3Cpath%20d%3D%22M70%2C112%20L71.4%2C112%20L72.7%2C111.9%20L74.1%2C111.8%20L75.5%2C111.7%20L76.9%2C111.5%20L78.2%2C111.3%20L79.6%2C111%20L80.9%2C110.7%20L82.2%2C110.3%20L83.6%2C109.9%20L84.9%2C109.5%20L86.2%2C109%20L87.5%2C108.5%20L88.7%2C108%20L90%2C107.4%20L91.2%2C106.7%20L92.4%2C106.1%20L93.6%2C105.4%20L94.8%2C104.6%20L95.9%2C103.8%20L97.1%2C103%20L98.2%2C102.1%20L99.3%2C101.2%20L100.3%2C100.3%20L101.3%2C99.4%20L102.3%2C98.4%20L103.3%2C97.3%20L104.2%2C96.3%20L105.1%2C95.2%20L106%2C94.1%20L106.9%2C92.9%20L107.7%2C91.7%20L108.4%2C90.5%20L109.2%2C89.3%20L109.9%2C88.1%20L110.5%2C86.8%20L111.1%2C85.5%20L111.7%2C84.2%20L112.2%2C82.8%20L112.7%2C81.5%20L113.2%2C80.1%20L113.6%2C78.7%20L114%2C77.3%20L114.3%2C75.8%20L114.6%2C74.4%20L114.8%2C72.9%20L115%2C71.5%20L115.2%2C70%20L115.3%2C68.5%20L115.3%2C67%20L115.4%2C65.5%20L115.3%2C64%20L115.2%2C62.5%20L115.1%2C61%20L114.9%2C59.5%20L114.7%2C58%20L114.4%2C56.5%20L114.1%2C55%20L113.7%2C53.5%20L113.3%2C52.1%20L112.8%2C50.6%20L112.3%2C49.1%20L111.8%2C47.7%20L111.2%2C46.2%20L110.5%2C44.8%20L109.8%2C43.4%20L109%2C42%20L108.2%2C40.7%20L107.4%2C39.3%20L106.5%2C38%20L105.6%2C36.7%20L104.6%2C35.4%20L103.6%2C34.2%20L102.5%2C32.9%20L101.4%2C31.7%20L100.3%2C30.6%20L99.1%2C29.4%20L97.8%2C28.3%20L96.6%2C27.3%20L95.3%2C26.3%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M60.2%2C110.9%20Q55%2C110.2%2053.2%2C115.1%20Q58.4%2C115.9%2060.2%2C110.9Z%22%2F%3E%3Cpath%20d%3D%22M52%2C108.3%20Q46.8%2C106.6%2043.9%2C111.2%20Q49%2C112.8%2052%2C108.3Z%22%2F%3E%3Cpath%20d%3D%22M44.4%2C104.1%20Q39.5%2C101.4%2035.5%2C105.3%20Q40.4%2C108%2044.4%2C104.1Z%22%2F%3E%3Cpath%20d%3D%22M37.7%2C98.4%20Q33.3%2C94.9%2028.4%2C97.9%20Q32.9%2C101.5%2037.7%2C98.4Z%22%2F%3E%3Cpath%20d%3D%22M32.2%2C91.5%20Q28.4%2C87.1%2022.9%2C89.1%20Q26.7%2C93.5%2032.2%2C91.5Z%22%2F%3E%3Cpath%20d%3D%22M28.1%2C83.6%20Q25.2%2C78.5%2019.4%2C79.4%20Q22.3%2C84.5%2028.1%2C83.6Z%22%2F%3E%3Cpath%20d%3D%22M25.5%2C74.9%20Q23.7%2C69.4%2017.8%2C69%20Q19.7%2C74.6%2025.5%2C74.9Z%22%2F%3E%3Cpath%20d%3D%22M24.6%2C65.7%20Q24%2C60%2018.4%2C58.5%20Q19%2C64.3%2024.6%2C65.7Z%22%2F%3E%3Cpath%20d%3D%22M25.6%2C56.3%20Q26.2%2C50.7%2021.1%2C48.3%20Q20.5%2C54%2025.6%2C56.3Z%22%2F%3E%3Cpath%20d%3D%22M28.5%2C47.2%20Q30.2%2C41.9%2025.7%2C38.8%20Q23.9%2C44%2028.5%2C47.2Z%22%2F%3E%3Cpath%20d%3D%22M33.1%2C38.5%20Q35.9%2C34%2032.2%2C30.2%20Q29.4%2C34.7%2033.1%2C38.5Z%22%2F%3E%3Cpath%20d%3D%22M39.6%2C30.8%20Q43.2%2C27.1%2040.2%2C22.9%20Q36.6%2C26.6%2039.6%2C30.8Z%22%2F%3E%3Cpath%20d%3D%22M79.8%2C110.9%20Q81.6%2C115.9%2086.8%2C115.1%20Q85%2C110.2%2079.8%2C110.9Z%22%2F%3E%3Cpath%20d%3D%22M88%2C108.3%20Q91%2C112.8%2096.1%2C111.2%20Q93.2%2C106.6%2088%2C108.3Z%22%2F%3E%3Cpath%20d%3D%22M95.6%2C104.1%20Q99.6%2C108%20104.5%2C105.3%20Q100.5%2C101.4%2095.6%2C104.1Z%22%2F%3E%3Cpath%20d%3D%22M102.3%2C98.4%20Q107.1%2C101.5%20111.6%2C97.9%20Q106.7%2C94.9%20102.3%2C98.4Z%22%2F%3E%3Cpath%20d%3D%22M107.8%2C91.5%20Q113.3%2C93.5%20117.1%2C89.1%20Q111.6%2C87.1%20107.8%2C91.5Z%22%2F%3E%3Cpath%20d%3D%22M111.9%2C83.6%20Q117.7%2C84.5%20120.6%2C79.4%20Q114.8%2C78.5%20111.9%2C83.6Z%22%2F%3E%3Cpath%20d%3D%22M114.5%2C74.9%20Q120.3%2C74.6%20122.2%2C69%20Q116.3%2C69.4%20114.5%2C74.9Z%22%2F%3E%3Cpath%20d%3D%22M115.4%2C65.7%20Q121%2C64.3%20121.6%2C58.5%20Q116%2C60%20115.4%2C65.7Z%22%2F%3E%3Cpath%20d%3D%22M114.4%2C56.3%20Q119.5%2C54%20118.9%2C48.3%20Q113.8%2C50.7%20114.4%2C56.3Z%22%2F%3E%3Cpath%20d%3D%22M111.5%2C47.2%20Q116.1%2C44%20114.3%2C38.8%20Q109.8%2C41.9%20111.5%2C47.2Z%22%2F%3E%3Cpath%20d%3D%22M106.9%2C38.5%20Q110.6%2C34.7%20107.8%2C30.2%20Q104.1%2C34%20106.9%2C38.5Z%22%2F%3E%3Cpath%20d%3D%22M100.4%2C30.8%20Q103.4%2C26.6%2099.8%2C22.9%20Q96.8%2C27.1%20100.4%2C30.8Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(145deg,var(--laurel-light),var(--laurel-mid) 45%,var(--laurel-dark));
-  -webkit-mask-image:var(--laurel-mask);mask-image:var(--laurel-mask);
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:center;mask-position:center;
-  -webkit-mask-size:contain;mask-size:contain;
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.2));
-}
-.position-1 .podium-emblem{--laurel-light:#fff0a4;--laurel-mid:#eec340;--laurel-dark:#bb821c}
-.position-2 .podium-emblem{--laurel-light:#f5f8fb;--laurel-mid:#c9d4de;--laurel-dark:#8fa4b5}
-.position-3 .podium-emblem{--laurel-light:#f8d3ac;--laurel-mid:#d99b5d;--laurel-dark:#a86b3e}
+/* Original mathematically generated laurel: keep its leaves and shading unchanged.
+   The emblem is drawn behind the opaque podium so the bottom of the
+   portrait and wreath naturally disappear beneath the stand. */
+.podium-wreath{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.22))}
 .podium-emblem .rank-avatar{position:relative;z-index:2}
 .position-1 .rank-initials{font-size:22px}
-.podium-stand{width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:0;padding:12px 7px 10px;border:1px solid #40566a;border-radius:12px 12px 7px 7px;background:linear-gradient(155deg,#263c51,#182837);height:auto;box-shadow:0 10px 20px rgba(0,0,0,.14)}
+.podium-stand{position:relative;z-index:2;width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:0;padding:12px 7px 10px;border:1px solid #40566a;border-radius:12px 12px 7px 7px;background:linear-gradient(155deg,#263c51,#182837);height:auto;box-shadow:0 10px 20px rgba(0,0,0,.14)}
 .position-1 .podium-stand{min-height:122px;background:linear-gradient(160deg,#32414b,#273c48 60%,#1b2d3b);border-color:#806b43}
 .position-2 .podium-stand{min-height:100px;border-color:#74818e}
 .position-3 .podium-stand{border-color:#735944}
@@ -227,7 +214,7 @@
   .stats-podium{gap:7px;margin:5px auto 8px}
   .podium-stand{padding:10px 4px 8px}
   .rank-avatar-podium{width:55px;height:55px}
-  .podium-emblem{width:min(100%,98px);height:min(98px,calc((100vw - 72px)/3));margin-bottom:-13px}
+  .podium-emblem{width:min(100%,98px);height:min(98px,calc((100vw - 72px)/3));margin-bottom:-13px;transform:translateY(14px)}
   @supports (aspect-ratio:1){.podium-emblem{height:auto}}
   .position-1 .rank-avatar-podium{width:55px;height:55px}
   .rank-chart-grid{grid-template-columns:1fr}
@@ -240,7 +227,7 @@
 @media(max-width:350px){
   .podium-score{font-size:12px}
   .rank-avatar-podium,.position-1 .rank-avatar-podium{width:49px;height:49px}
-  .podium-emblem{margin-bottom:-11px}
+  .podium-emblem{margin-bottom:-11px;transform:translateY(11px)}
 }
 
 /* v0.2.1: clean podium and a signed vertical-bar standings visualization. */
