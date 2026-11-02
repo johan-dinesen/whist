@@ -184,7 +184,13 @@
 .ranking-person-text{display:flex;flex-direction:column;gap:0;min-width:0}
 .ranking-person-text strong{font-size:14px;font-weight:700;overflow-wrap:anywhere}
 .ranking-person-text small{font-size:11px;color:var(--muted)}
-.rank-score{white-space:nowrap;font-size:14px;font-variant-numeric:tabular-nums;font-weight:750}
+.rank-score{
+  white-space:nowrap;
+  font-size:14px;
+  font-variant-numeric:tabular-nums;
+  font-weight:750;
+  color:#fff;
+}
 .chart-explanation{font-size:12px;color:var(--muted);margin:2px 0 19px!important;max-width:560px}
 .rank-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .rank-chart-card{border:1px solid #34485a;border-radius:12px;background:#172331;padding:18px 18px 20px;min-width:0}
