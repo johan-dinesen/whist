@@ -25,6 +25,47 @@ const previewMode = new URLSearchParams(location.search).has('preview');
 let supabase = null;
 let accessUntil = null;
 let players = [];
+// Reuse decoded profile photos across selections and redraws. Failed images
+// retain an initials fallback, including players without uploaded pictures.
+const choicePhotoCache = new Map();
+const choicePhotoVersion = String(Date.now());
+function showChoicePhoto(figure, source) {
+  if (figure.classList.contains('has-photo')) return;
+  const image = source.cloneNode(false);
+  image.alt = '';
+  image.decoding = 'async';
+  figure.append(image);
+  figure.classList.add('has-photo');
+}
+function choiceAvatar(playerId, displayName) {
+  const figure = document.createElement('span');
+  figure.className = 'choice-avatar';
+  figure.setAttribute('aria-hidden', 'true');
+  const initials = document.createElement('span');
+  initials.textContent = String(displayName).trim().split(/\s+/).slice(0, 2).map(part=>part[0]).join('').toUpperCase();
+  figure.append(initials);
+  if (!supabase || String(playerId).startsWith('demo-')) return figure;
+  const {data} = supabase.storage.from('whist-profiles').getPublicUrl(`${playerId}.webp`);
+  const url = `${data.publicUrl}?v=${encodeURIComponent(choicePhotoVersion)}`;
+  let entry = choicePhotoCache.get(url);
+  if (!entry) {
+    const source = new Image();
+    entry = {source, status:'loading', waiting:new Set()};
+    choicePhotoCache.set(url, entry);
+    source.onload = () => {
+      entry.status = source.naturalWidth ? 'ready' : 'missing';
+      if (entry.status === 'ready') {
+        for (const waiting of entry.waiting) showChoicePhoto(waiting, source);
+      }
+      entry.waiting.clear();
+    };
+    source.onerror = () => {entry.status = 'missing'; entry.waiting.clear();};
+    source.src = url;
+  }
+  if (entry.status === 'ready') showChoicePhoto(figure, entry.source);
+  else if (entry.status === 'loading') entry.waiting.add(figure);
+  return figure;
+}
 // Snapshotted at the first actual save attempt; NULL means Kredsspil.
 let submissionTournamentId = null;
 
@@ -80,6 +121,14 @@ function buttons(id, opts, selected, onClick, options = {}) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'choice' + (options.guest?.(value) ? ' guest' : '');
     b.textContent = text;
+    if (options.player) {
+      b.classList.add('player-choice');
+      b.setAttribute('aria-label', text);
+      const label = document.createElement('span');
+      label.className = 'player-choice-name';
+      label.textContent = text;
+      b.replaceChildren(label, choiceAvatar(value, text));
+    }
     b.setAttribute('aria-pressed', String(selected(value)));
     b.disabled = Boolean(options.disabled?.(value));
     b.addEventListener('click', () => onClick(value));
@@ -99,7 +148,7 @@ function renderPlayers() {
       if (s.playerIds.includes(id)) s.playerIds = s.playerIds.filter(x=>x!==id);
       else if (s.playerIds.length < 4) s.playerIds.push(id);
       resetFrom(1); renderAndAdvance('call-step');
-    }, { guest: id=>players.find(p=>p.id===id)?.is_guest,
+    }, { player:true, guest: id=>players.find(p=>p.id===id)?.is_guest,
       disabled: id=>s.playerIds.length===4 && !s.playerIds.includes(id) });
   $('player-count').textContent = `${s.playerIds.length} / 4`;
 }
@@ -116,7 +165,7 @@ function render() {
     if (isSolo()) s.callerIds = s.callerIds.includes(id) ? s.callerIds.filter(x=>x!==id) : [...s.callerIds,id];
     else s.callerIds=[id];
     resetFrom(3);renderAndAdvance(isSolo() ? 'result-step' : 'tricks-step');
-  });
+  }, {player:true});
   const hasCaller = s.callerIds.length > 0;
   show('tricks-step', hasCaller && !isSolo());
   show('vip-step', hasCaller && s.tricks!==null && s.callType==='vip');
@@ -128,7 +177,7 @@ function render() {
     buttons('vip-options', [1,2,3].map(x=>[x,String(x)]),v=>s.vipDepth===v,v=>{s.vipDepth=v;resetFrom(5);renderAndAdvance('trump-step');});
     const options = s.callType==='gode' ? TRUMPS.filter(a=>['clubs','no_trump'].includes(a[0])) : TRUMPS;
     buttons('trump-options',options,v=>s.trump===v,v=>{s.trump=v;resetFrom(6);renderAndAdvance('partner-step');});
-    buttons('partner-options',sortedChosen().map(p=>[p.id,p.display_name]),v=>s.partnerId===v,v=>{s.partnerId=v;resetFrom(7);renderAndAdvance('result-step');});
+    buttons('partner-options',sortedChosen().map(p=>[p.id,p.display_name]),v=>s.partnerId===v,v=>{s.partnerId=v;resetFrom(7);renderAndAdvance('result-step');}, {player:true});
   }
   const canResult = isSolo() ? hasCaller : Boolean(s.partnerId);
   show('result-step', canResult);

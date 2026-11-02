@@ -1252,3 +1252,63 @@
 .history-table th:nth-child(2),.history-table td:nth-child(2){
   white-space:nowrap;
 }
+
+/* Header links occupy the navigation bar without a separate site brand. */
+.topbar-inner{height:auto;min-height:52px;padding:10px 0}
+.topbar-inner .site-nav{width:100%;justify-content:space-between;gap:8px}
+@media(max-width:530px){.topbar-inner{min-height:48px;padding:9px 0}}
+
+/* Registration player choices: match the original 50/52px button footprint.
+   Photo diameter is the available height minus a small, consistent inset. */
+.choice.player-choice{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  height:50px;
+  min-height:50px;
+  padding:3px 5px;
+  text-align:left;
+}
+.player-choice-name{
+  flex:1 1 auto;
+  min-width:0;
+  font-size:14px;
+  line-height:1.12;
+  overflow-wrap:anywhere;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+}
+.choice-avatar{
+  position:relative;
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 40px;
+  width:40px;
+  height:40px;
+  border:1px solid #536b82;
+  border-radius:50%;
+  background:#223547;
+  color:#d6e7f4;
+  overflow:hidden;
+  font-size:13px;
+  font-weight:700;
+  line-height:1;
+}
+.choice-avatar img{
+  display:none;
+  position:absolute;
+  inset:0;
+  height:100%;
+  width:100%;
+  object-fit:cover;
+}
+.choice-avatar.has-photo img{display:block}
+@media(max-width:620px){
+  .choice.player-choice{height:52px;min-height:52px}
+  .choice-avatar{width:42px;height:42px;flex-basis:42px}
+  .player-choice-name{font-size:13px}
+}
+@media(max-width:350px){.player-choice-name{font-size:12px}}
