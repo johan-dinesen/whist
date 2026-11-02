@@ -146,6 +146,8 @@ function podiumLaurel(position) {
     stems += `<path d="M${points.join(' L')}"/>`;
     const pairCount = 8;
     const lastPairDirections = [];
+    let branchLeaves = '';
+    let lastPairLeaves = '';
     for (let pairIndex = 0; pairIndex < pairCount; pairIndex++) {
       const angle = 117 + pairIndex * 15.2;
       const [x, y] = point(angle, mirrored);
@@ -166,11 +168,12 @@ function podiumLaurel(position) {
         { side: 'inner', outward: -4.8 * scale, length: baseLength * 0.98 },
         { side: 'outer', outward: 6.1 * scale, length: baseLength * 1.02 }
       ];
+      let pairMarkup = '';
       for (let j = 0; j < pairLeaves.length; j++) {
         const leaf = pairLeaves[j];
-        let outward = leaf.outward;
-        let length = leaf.length;
-        let width = baseWidth;
+        const outward = leaf.outward;
+        const length = leaf.length;
+        const width = baseWidth;
         const tipX = x + dx * length + outwardX * outward;
         const tipY = y + dy * length + outwardY * outward;
         const midX = (x + tipX) / 2;
@@ -181,34 +184,36 @@ function podiumLaurel(position) {
           lastPairDirections.push([leafDX / leafLength, leafDY / leafLength]);
         }
         const perpX = -leafDY / leafLength, perpY = leafDX / leafLength;
-        leaves += `<path d="M${fmt(x)} ${fmt(y)} ` +
+        pairMarkup += `<path d="M${fmt(x)} ${fmt(y)} ` +
           `Q${fmt(midX + perpX * width)} ${fmt(midY + perpY * width)} ${fmt(tipX)} ${fmt(tipY)} ` +
           `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
       }
+      if (pairIndex === pairCount - 1) lastPairLeaves = pairMarkup;
+      else branchLeaves += pairMarkup;
     }
-    // A single terminal leaf sits just above the last pair, with its root on
-    // the stem rather than beyond its end. Aim it halfway between the actual
-    // directions of the final inner and outer leaves. The eight pairs above
-    // remain unchanged.
+    // A single terminal leaf sits above the stem but behind the final pair.
+    // Its base starts slightly earlier on the stem and its direction bisects
+    // the last pair's directions, while matching the paired leaf proportions.
     const lastPairAngle = 117 + (pairCount - 1) * 15.2;
-    const [baseX, baseY] = point(lastPairAngle + 1.5, mirrored);
+    const [baseX, baseY] = point(lastPairAngle - 2.4, mirrored);
     const [innerDirection, outerDirection] = lastPairDirections;
     let directionX = innerDirection[0] + outerDirection[0];
     let directionY = innerDirection[1] + outerDirection[1];
     const directionSize = Math.hypot(directionX, directionY);
     directionX /= directionSize;
     directionY /= directionSize;
-    const terminalLength = 17;
+    const terminalLength = 11.6;
+    const terminalWidth = 4.15;
     const tipX = baseX + directionX * terminalLength;
     const tipY = baseY + directionY * terminalLength;
     const midX = (baseX + tipX) / 2;
     const midY = (baseY + tipY) / 2;
     const normalX = -directionY;
     const normalY = directionX;
-    const terminalWidth = 3.7;
-    leaves += `<path d="M${fmt(baseX)} ${fmt(baseY)} ` +
+    const terminalLeaf = `<path d="M${fmt(baseX)} ${fmt(baseY)} ` +
       `Q${fmt(midX + normalX * terminalWidth)} ${fmt(midY + normalY * terminalWidth)} ${fmt(tipX)} ${fmt(tipY)} ` +
       `Q${fmt(midX - normalX * terminalWidth)} ${fmt(midY - normalY * terminalWidth)} ${fmt(baseX)} ${fmt(baseY)}Z"/>`;
+    leaves += branchLeaves + terminalLeaf + lastPairLeaves;
   }
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.classList.add('podium-wreath');
