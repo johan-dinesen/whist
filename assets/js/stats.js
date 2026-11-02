@@ -170,12 +170,6 @@ function podiumLaurel(position) {
         let outward = leaf.outward;
         let length = leaf.length;
         let width = baseWidth;
-        // Make the very last/top leaf follow the stem direction more closely.
-        if (pairIndex === pairCount - 1 && j === pairLeaves.length - 1) {
-          outward = 0;
-          length *= 0.98;
-          width *= 0.9;
-        }
         const tipX = x + dx * length + outwardX * outward;
         const tipY = y + dy * length + outwardY * outward;
         const midX = (x + tipX) / 2;
@@ -188,6 +182,22 @@ function podiumLaurel(position) {
           `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
       }
     }
+    // One terminal leaf after all eight unchanged inner/outer pairs.
+    // Its centerline follows the continuation of the elliptical stem.
+    const [baseX, baseY] = point(233, mirrored);
+    const [midX, midY] = point(242, mirrored);
+    const [tipX, tipY] = point(251, mirrored);
+    const midAngle = 242 * rad;
+    let tangentX = -47 * Math.sin(midAngle);
+    const tangentY = 54 * Math.cos(midAngle);
+    if (mirrored) tangentX *= -1;
+    const tangentSize = Math.hypot(tangentX, tangentY);
+    const normalX = -tangentY / tangentSize;
+    const normalY = tangentX / tangentSize;
+    const terminalWidth = 3.7;
+    leaves += `<path d="M${fmt(baseX)} ${fmt(baseY)} ` +
+      `Q${fmt(midX + normalX * terminalWidth)} ${fmt(midY + normalY * terminalWidth)} ${fmt(tipX)} ${fmt(tipY)} ` +
+      `Q${fmt(midX - normalX * terminalWidth)} ${fmt(midY - normalY * terminalWidth)} ${fmt(baseX)} ${fmt(baseY)}Z"/>`;
   }
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.classList.add('podium-wreath');
