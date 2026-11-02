@@ -148,6 +148,8 @@
 .ranking-head h2{margin:0}
 .rank-subtitle{margin:4px 0 0!important;font-size:12px;color:var(--muted)}
 .rank-panel{padding-bottom:28px}
+/* Podie remains viewport-sized; extra players scroll within Stilling. */
+.rank-panel.podium-mode{display:flex;flex-direction:column;height:75vh;height:75dvh;overflow:hidden}
 .view-switch{display:flex;gap:3px;padding:3px;border:1px solid #34485a;background:#0d1722;border-radius:11px}
 .view-switch button{border:0;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:12px;min-height:36px;padding:7px 12px}
 .view-switch button[aria-pressed=true]{color:#f0f7fc;background:#28435a;box-shadow:inset 0 0 0 1px #4f7290}
@@ -168,8 +170,8 @@
 .position-2 .rank-avatar-podium{border-color:#b7c6d5}
 .position-3 .rank-avatar-podium{border-color:#b88262}
 .podium-stand{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:14px 7px 7px;border:1px solid #40566a;border-radius:12px 12px 7px 7px;background:linear-gradient(155deg,#263c51,#182837);height:86px;box-shadow:0 10px 20px rgba(0,0,0,.14)}
-.position-1 .podium-stand{height:134px;background:linear-gradient(160deg,#32414b,#273c48 60%,#1b2d3b);border-color:#806b43}
-.position-2 .podium-stand{height:110px;border-color:#74818e}
+.position-1 .podium-stand{height:162px;background:linear-gradient(160deg,#32414b,#273c48 60%,#1b2d3b);border-color:#806b43}
+.position-2 .podium-stand{height:124px;border-color:#74818e}
 .position-3 .podium-stand{height:86px;border-color:#735944}
 .podium-number{color:#b6c9d9;font-size:12px;font-weight:800;line-height:1}
 .position-1 .podium-number{color:#ecd08e}
@@ -184,13 +186,7 @@
 .ranking-person-text{display:flex;flex-direction:column;gap:0;min-width:0}
 .ranking-person-text strong{font-size:14px;font-weight:700;overflow-wrap:anywhere}
 .ranking-person-text small{font-size:11px;color:var(--muted)}
-.rank-score{
-  white-space:nowrap;
-  font-size:14px;
-  font-variant-numeric:tabular-nums;
-  font-weight:750;
-  color:#fff;
-}
+.rank-score{white-space:nowrap;font-size:14px;font-variant-numeric:tabular-nums;font-weight:750;color:#fff}
 .chart-explanation{font-size:12px;color:var(--muted);margin:2px 0 19px!important;max-width:560px}
 .rank-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .rank-chart-card{border:1px solid #34485a;border-radius:12px;background:#172331;padding:18px 18px 20px;min-width:0}
@@ -210,8 +206,8 @@
 @media(max-width:620px){
   .stats-podium{gap:7px;margin:10px auto 14px}
   .podium-stand{padding:12px 4px 7px;height:82px}
-  .position-1 .podium-stand{height:124px}
-  .position-2 .podium-stand{height:103px}
+  .position-1 .podium-stand{height:148px}
+  .position-2 .podium-stand{height:115px}
   .position-3 .podium-stand{height:82px}
   .rank-avatar-podium{width:60px;height:60px}
   .podium-score{font-size:12px}
@@ -936,16 +932,14 @@
   #score-history-legend .score-history-avatar{width:19px;height:19px}
   #score-history-legend .score-history-select-all{min-height:27px;padding:3px 6px;font-size:10px}
 }
-/* Equal panel height when switching views; long podium lists scroll internally. */
-.rank-view-stage{height:var(--rank-view-height,auto)}
-#podium-view:not(.hidden){height:100%;overflow-y:auto;overscroll-behavior:contain}
-
-
 /* v1.0.8: Stilling touch interaction, readable Historik legend and proper scaling. */
-/* Podie is ordinary static page content, never an inner touch-scroll area.
-   The stage normally matches Diagram, but can grow naturally for long lists. */
 .rank-view-stage{height:auto;min-height:var(--rank-view-height,0px)}
-#podium-view:not(.hidden){height:auto;min-height:var(--rank-view-height,0px);overflow:visible;overscroll-behavior:auto;touch-action:pan-y}
+#podium-view:not(.hidden){height:auto;min-height:var(--rank-view-height,0px);display:flex;flex-direction:column;justify-content:center}
+/* When Podie is selected, fit the whole module to the viewport and scroll the
+   ranking inside it, leaving the title and view buttons visible. */
+.rank-panel.podium-mode .rank-view-stage{flex:1 1 auto;min-height:0;overflow:hidden}
+.rank-panel.podium-mode #podium-view:not(.hidden){display:block;height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.rank-panel.podium-mode #podium-view:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 
 /* Larger legend keys; wrap on narrow screens instead of shrinking photos. */
 #score-history-legend{
