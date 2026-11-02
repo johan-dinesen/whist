@@ -1342,3 +1342,8 @@
     flex-basis: 34px;
   }
 }
+
+/* Hide page titles above the modules */
+main.shell > .heading {
+  display: none;
+}
