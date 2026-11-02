@@ -117,6 +117,74 @@ function playerScore(parent, p) {
   score.textContent = `${signed(p.points)} point`;
   parent.append(score);
 }
+// Mathematically constructed laurel leaves; each branch follows a smooth ellipse.
+// The SVG stays inside its column so it never creates horizontal overflow.
+function podiumLaurel(position) {
+  const schemes = [
+    ['#fff2b0', '#f4ce59', '#bd8013'],
+    ['#ffffff', '#cad5df', '#879bac'],
+    ['#ffe0b6', '#e7a36a', '#a86537']
+  ];
+  const colors = schemes[position];
+  const id = `podium-leaves-${position}`;
+  const fmt = value => Number(value.toFixed(2));
+  const rad = Math.PI / 180;
+  // 0=right, 90=bottom, 180=left, 270=top in SVG coordinates.
+  const point = (degrees, mirrored) => {
+    const t = degrees * rad;
+    const x = 70 + 47 * Math.cos(t);
+    return [mirrored ? 140 - x : x, 70 + 54 * Math.sin(t)];
+  };
+  let stems = '';
+  let leaves = '';
+  for (const mirrored of [false, true]) {
+    const points = [];
+    for (let angle = 112; angle <= 233; angle += 3) {
+      const [x, y] = point(angle, mirrored);
+      points.push(`${fmt(x)} ${fmt(y)}`);
+    }
+    stems += `<path d="M${points.join(' L')}"/>`;
+    for (let i = 0; i < 13; i++) {
+      const angle = 117 + i * 9.5;
+      const [x, y] = point(angle, mirrored);
+      const t = angle * rad;
+      let dx = -47 * Math.sin(t), dy = 54 * Math.cos(t);
+      if (mirrored) dx *= -1;
+      const magnitude = Math.hypot(dx, dy);
+      dx /= magnitude; dy /= magnitude;
+      // Perpendicular pointing to the outer side of the branch.
+      const outwardX = mirrored ? -dy : dy;
+      const outwardY = mirrored ? dx : -dx;
+      const outward = i % 2 === 0 ? 6.7 : -4.2;
+      const length = 14 - Math.abs(i - 6) * 0.2;
+      const tipX = x + dx * length + outwardX * outward;
+      const tipY = y + dy * length + outwardY * outward;
+      const midX = (x + tipX) / 2;
+      const midY = (y + tipY) / 2;
+      const leafDX = tipX - x, leafDY = tipY - y;
+      const leafLength = Math.hypot(leafDX, leafDY);
+      const perpX = -leafDY / leafLength, perpY = leafDX / leafLength;
+      const width = 5.4;
+      leaves += `<path d="M${fmt(x)} ${fmt(y)} ` +
+        `Q${fmt(midX + perpX * width)} ${fmt(midY + perpY * width)} ${fmt(tipX)} ${fmt(tipY)} ` +
+        `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
+    }
+  }
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('podium-wreath');
+  svg.setAttribute('viewBox', '0 0 140 140');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.innerHTML = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${colors[0]}"/>
+      <stop offset=".44" stop-color="${colors[1]}"/>
+      <stop offset="1" stop-color="${colors[2]}"/>
+    </linearGradient></defs>
+    <g fill="none" stroke="${colors[2]}" stroke-opacity=".92" stroke-width="2.5"
+       stroke-linejoin="round" stroke-linecap="round">${stems}</g>
+    <g fill="url(#${id})" stroke="${colors[2]}" stroke-opacity=".28" stroke-width=".5">${leaves}</g>`;
+  return svg;
+}
 function renderPodium(rows) {
   const podium = $('stats-podium');
   const lower = $('stats-lower');
@@ -128,35 +196,7 @@ function renderPodium(rows) {
     place.setAttribute('aria-label',`${index+1}. plads: ${player.name}, ${signed(player.points)} point`);
     const emblem = document.createElement('div');
     emblem.className = 'podium-emblem';
-    // Inline SVG avoids Safari inconsistencies with nested CSS data-URL SVGs.
-    const colours = [
-      ['#ffe991', '#c98b08'], ['#f1f6fa', '#9caebd'], ['#ffd3a1', '#b9682d']
-    ][index];
-    const wreath = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    wreath.setAttribute('class', 'podium-wreath');
-    wreath.setAttribute('viewBox', '0 0 126 106');
-    wreath.setAttribute('aria-hidden', 'true');
-    const gradientId = `podium-laurel-${index}`;
-    wreath.innerHTML = `<defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${colours[0]}"/><stop offset="1" stop-color="${colours[1]}"/>
-      </linearGradient></defs>
-      <g fill="none" stroke="url(#${gradientId})" stroke-width="2.4" stroke-linecap="round">
-        <path d="M28 90 C15 71 18 45 43 14"/>
-        <path d="M98 90 C111 71 108 45 83 14"/>
-      </g>
-      <g fill="url(#${gradientId})">
-        <ellipse cx="25" cy="81" rx="4.4" ry="10" transform="rotate(-34 25 81)"/>
-        <ellipse cx="21" cy="68" rx="4.4" ry="10" transform="rotate(-17 21 68)"/>
-        <ellipse cx="24" cy="55" rx="4.4" ry="10" transform="rotate(7 24 55)"/>
-        <ellipse cx="29" cy="42" rx="4.4" ry="10" transform="rotate(28 29 42)"/>
-        <ellipse cx="37" cy="29" rx="4.4" ry="10" transform="rotate(47 37 29)"/>
-        <ellipse cx="101" cy="81" rx="4.4" ry="10" transform="rotate(34 101 81)"/>
-        <ellipse cx="105" cy="68" rx="4.4" ry="10" transform="rotate(17 105 68)"/>
-        <ellipse cx="102" cy="55" rx="4.4" ry="10" transform="rotate(-7 102 55)"/>
-        <ellipse cx="97" cy="42" rx="4.4" ry="10" transform="rotate(-28 97 42)"/>
-        <ellipse cx="89" cy="29" rx="4.4" ry="10" transform="rotate(-47 89 29)"/>
-      </g>`;
-    emblem.append(wreath, avatar(player,'rank-avatar-podium'));
+    emblem.append(podiumLaurel(index), avatar(player,'rank-avatar-podium'));
     place.append(emblem);
     const stand = document.createElement('div'); stand.className = 'podium-stand';
     const name = document.createElement('strong'); name.className='podium-name'; name.textContent=player.name;
