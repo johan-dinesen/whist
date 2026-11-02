@@ -144,7 +144,8 @@ function podiumLaurel(position) {
       points.push(`${fmt(x)} ${fmt(y)}`);
     }
     stems += `<path d="M${points.join(' L')}"/>`;
-    for (let i = 0; i < 16; i++) {
+    const leafCount = 16;
+    for (let i = 0; i < leafCount; i++) {
       const angle = 117 + i * 7.6;
       const [x, y] = point(angle, mirrored);
       const t = angle * rad;
@@ -155,8 +156,12 @@ function podiumLaurel(position) {
       // Perpendicular pointing to the outer side of the branch.
       const outwardX = mirrored ? -dy : dy;
       const outwardY = mirrored ? dx : -dx;
-      const outward = i % 2 === 0 ? 8.5 : -5.5;
-      const length = 12 - Math.abs(i - 7.5) * 0.13;
+      const progress = leafCount === 1 ? 0 : i / (leafCount - 1);
+      const scale = 1 + progress * 0.2;
+      const isInner = i % 2 === 0;
+      const outwardBase = isInner ? -5.5 : 8.5;
+      const outward = outwardBase * scale;
+      const length = (12 - Math.abs(i - 7.5) * 0.13) * scale;
       const tipX = x + dx * length + outwardX * outward;
       const tipY = y + dy * length + outwardY * outward;
       const midX = (x + tipX) / 2;
@@ -164,7 +169,7 @@ function podiumLaurel(position) {
       const leafDX = tipX - x, leafDY = tipY - y;
       const leafLength = Math.hypot(leafDX, leafDY);
       const perpX = -leafDY / leafLength, perpY = leafDX / leafLength;
-      const width = 4.5;
+      const width = 4.5 * scale;
       leaves += `<path d="M${fmt(x)} ${fmt(y)} ` +
         `Q${fmt(midX + perpX * width)} ${fmt(midY + perpY * width)} ${fmt(tipX)} ${fmt(tipY)} ` +
         `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
