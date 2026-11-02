@@ -157,7 +157,9 @@ function podiumLaurel(position) {
       const outwardX = mirrored ? -dy : dy;
       const outwardY = mirrored ? dx : -dx;
       const progress = leafCount === 1 ? 0 : i / (leafCount - 1);
-      const scale = 1 + progress * 0.2;
+      // Leaves start at the bottom (i=0) and finish at the top.
+      // Bottom leaf: 120%; topmost leaf: 100%.
+      const scale = 1.2 - progress * 0.2;
       const isInner = i % 2 === 0;
       const outwardBase = isInner ? -5.5 : 8.5;
       const outward = outwardBase * scale;
