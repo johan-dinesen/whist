@@ -144,9 +144,9 @@ function podiumLaurel(position) {
       points.push(`${fmt(x)} ${fmt(y)}`);
     }
     stems += `<path d="M${points.join(' L')}"/>`;
-    const leafCount = 16;
-    for (let i = 0; i < leafCount; i++) {
-      const angle = 117 + i * 7.6;
+    const pairCount = 8;
+    for (let pairIndex = 0; pairIndex < pairCount; pairIndex++) {
+      const angle = 117 + pairIndex * 15.2;
       const [x, y] = point(angle, mirrored);
       const t = angle * rad;
       let dx = -47 * Math.sin(t), dy = 54 * Math.cos(t);
@@ -156,25 +156,37 @@ function podiumLaurel(position) {
       // Perpendicular pointing to the outer side of the branch.
       const outwardX = mirrored ? -dy : dy;
       const outwardY = mirrored ? dx : -dx;
-      const progress = leafCount === 1 ? 0 : i / (leafCount - 1);
-      // Leaves start at the bottom (i=0) and finish at the top.
-      // Bottom leaf: 120%; topmost leaf: 100%.
+      // Bottom pair is largest (120%), top pair is smallest (100%).
+      const progress = pairCount === 1 ? 0 : pairIndex / (pairCount - 1);
       const scale = 1.2 - progress * 0.2;
-      const isInner = i % 2 === 0;
-      const outwardBase = isInner ? -5.5 : 8.5;
-      const outward = outwardBase * scale;
-      const length = (12 - Math.abs(i - 7.5) * 0.13) * scale;
-      const tipX = x + dx * length + outwardX * outward;
-      const tipY = y + dy * length + outwardY * outward;
-      const midX = (x + tipX) / 2;
-      const midY = (y + tipY) / 2;
-      const leafDX = tipX - x, leafDY = tipY - y;
-      const leafLength = Math.hypot(leafDX, leafDY);
-      const perpX = -leafDY / leafLength, perpY = leafDX / leafLength;
-      const width = 4.5 * scale;
-      leaves += `<path d="M${fmt(x)} ${fmt(y)} ` +
-        `Q${fmt(midX + perpX * width)} ${fmt(midY + perpY * width)} ${fmt(tipX)} ${fmt(tipY)} ` +
-        `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
+      const baseLength = (12 - Math.abs(pairIndex - (pairCount - 1) / 2) * 0.18) * scale;
+      const baseWidth = 4.2 * scale;
+      const pairLeaves = [
+        { side: 'inner', outward: -4.8 * scale, length: baseLength * 0.98 },
+        { side: 'outer', outward: 6.1 * scale, length: baseLength * 1.02 }
+      ];
+      for (let j = 0; j < pairLeaves.length; j++) {
+        const leaf = pairLeaves[j];
+        let outward = leaf.outward;
+        let length = leaf.length;
+        let width = baseWidth;
+        // Make the very last/top leaf follow the stem direction more closely.
+        if (pairIndex === pairCount - 1 && j === pairLeaves.length - 1) {
+          outward = 0;
+          length *= 0.98;
+          width *= 0.9;
+        }
+        const tipX = x + dx * length + outwardX * outward;
+        const tipY = y + dy * length + outwardY * outward;
+        const midX = (x + tipX) / 2;
+        const midY = (y + tipY) / 2;
+        const leafDX = tipX - x, leafDY = tipY - y;
+        const leafLength = Math.hypot(leafDX, leafDY);
+        const perpX = -leafDY / leafLength, perpY = leafDX / leafLength;
+        leaves += `<path d="M${fmt(x)} ${fmt(y)} ` +
+          `Q${fmt(midX + perpX * width)} ${fmt(midY + perpY * width)} ${fmt(tipX)} ${fmt(tipY)} ` +
+          `Q${fmt(midX - perpX * width)} ${fmt(midY - perpY * width)} ${fmt(x)} ${fmt(y)}Z"/>`;
+      }
     }
   }
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
