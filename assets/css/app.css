@@ -155,8 +155,8 @@
 .ranking-empty{text-align:center;padding:35px 12px;color:var(--muted);font-size:14px}
 .stats-podium{display:flex;justify-content:space-between;align-items:flex-end;gap:clamp(4px,1.4vw,14px);width:100%;max-width:540px;min-height:0;margin:7px auto 9px;padding:0;flex:0 0 auto}
 .podium-place{flex:1 1 0;max-width:175px;min-width:0;display:flex;flex-direction:column;align-items:center;position:relative;text-align:center}
-.podium-place.position-1{order:2;--emblem-scale:1.25}
-.podium-place.position-2{order:1;--emblem-scale:1.125}
+.podium-place.position-1{order:2;--emblem-scale:1.25;--emblem-overlap-adjust:8.75px}
+.podium-place.position-2{order:1;--emblem-scale:1.125;--emblem-overlap-adjust:4.375px}
 .podium-place.position-3{order:3}
 .rank-avatar{width:42px;height:42px;border-radius:50%;display:inline-grid;place-items:center;flex:none;position:relative;overflow:hidden;background:#223547;border:2px solid #4a6074;color:#d6e7f4}
 .rank-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
@@ -167,7 +167,7 @@
 .position-1 .rank-avatar-podium{width:66px;height:66px;border-color:#d5b45f}
 .position-2 .rank-avatar-podium{border-color:#b7c6d5}
 .position-3 .rank-avatar-podium{border-color:#b88262}
-.podium-emblem{position:relative;display:grid;place-items:center;flex:0 0 auto;width:min(100%,122px);height:122px;aspect-ratio:1;margin-bottom:-18px;z-index:1;transform:translateY(17px) scale(var(--emblem-scale,1));transform-origin:center bottom}
+.podium-emblem{position:relative;display:grid;place-items:center;flex:0 0 auto;width:min(100%,122px);height:122px;aspect-ratio:1;margin-bottom:-18px;z-index:1;transform:translateY(calc(17px + var(--emblem-overlap-adjust,0px))) scale(var(--emblem-scale,1));transform-origin:center bottom}
 @supports (aspect-ratio:1){.podium-emblem{height:auto}}
 /* Original mathematically generated laurel: keep its leaves and shading unchanged.
    The emblem is drawn behind the opaque podium so the bottom of the
@@ -214,7 +214,9 @@
   .stats-podium{gap:7px;margin:5px auto 8px}
   .podium-stand{padding:10px 4px 8px}
   .rank-avatar-podium{width:55px;height:55px}
-  .podium-emblem{width:min(100%,98px);height:min(98px,calc((100vw - 72px)/3));margin-bottom:-13px;transform:translateY(18px) scale(var(--emblem-scale,1))}
+  .podium-emblem{width:min(100%,98px);height:min(98px,calc((100vw - 72px)/3));margin-bottom:-13px;transform:translateY(calc(18px + var(--emblem-overlap-adjust,0px))) scale(var(--emblem-scale,1))}
+  .podium-place.position-1{--emblem-overlap-adjust:7.75px}
+  .podium-place.position-2{--emblem-overlap-adjust:3.875px}
   @supports (aspect-ratio:1){.podium-emblem{height:auto}}
   .position-1 .rank-avatar-podium{width:55px;height:55px}
   .rank-chart-grid{grid-template-columns:1fr}
@@ -227,7 +229,9 @@
 @media(max-width:350px){
   .podium-score{font-size:12px}
   .rank-avatar-podium,.position-1 .rank-avatar-podium{width:49px;height:49px}
-  .podium-emblem{margin-bottom:-11px;transform:translateY(15px) scale(var(--emblem-scale,1))}
+  .podium-emblem{margin-bottom:-11px;transform:translateY(calc(15px + var(--emblem-overlap-adjust,0px))) scale(var(--emblem-scale,1))}
+  .podium-place.position-1{--emblem-overlap-adjust:6.5px}
+  .podium-place.position-2{--emblem-overlap-adjust:3.25px}
 }
 
 /* v0.2.1: clean podium and a signed vertical-bar standings visualization. */
