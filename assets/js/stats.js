@@ -1,15 +1,16 @@
+import {guestIdsFrom} from './player-order.js';
 import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
 import {sortGroups,readSelection,readIncludeGuests,saveIncludeGuests,selectionParams,renderNoteFilters} from './notes.js?v=1.0.4';
 import {normalizeStandings} from './ranking-model.js';
-import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, metricValue} from './stat-metrics.js?v=1.0.2';
-import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js';
-import {buildScoreHistory} from './score-history-model.js?v=1.0.1';
+import {METRICS, normalizeMeldingStatistics, displayMetric, metricDetail, playerAverages, displayAverage, metricValue} from './stat-metrics.js?v=1.0.3';
+import {normalizeSynergy,formatSynergyPoints,synergyTint} from './synergy-model.js?v=1.0.1';
+import {buildScoreHistory} from './score-history-model.js?v=1.0.2';
 import {standingsAtGame} from './time-machine-model.js?v=1.0.0';
 import {drawScoreHistory} from './score-history-chart.js?v=1.0.8';
 import {normalizePointSources,verifyPointSourcesAgainstStandings} from './point-sources-model.js?v=1.0.11';
 import {drawPointSources} from './point-sources-chart.js?v=1.0.14';
-import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.0';
+import {normalizeHandsResponse,formatHandAverage} from './hands-model.js?v=1.0.1';
 
 const $ = id => document.getElementById(id);
 
@@ -127,8 +128,34 @@ function renderPodium(rows) {
     place.setAttribute('aria-label',`${index+1}. plads: ${player.name}, ${signed(player.points)} point`);
     const emblem = document.createElement('div');
     emblem.className = 'podium-emblem';
-    const wreath = document.createElement('div');
-    wreath.className = 'podium-wreath';
+    // Inline SVG avoids Safari inconsistencies with nested CSS data-URL SVGs.
+    const colours = [
+      ['#ffe991', '#c98b08'], ['#f1f6fa', '#9caebd'], ['#ffd3a1', '#b9682d']
+    ][index];
+    const wreath = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    wreath.setAttribute('class', 'podium-wreath');
+    wreath.setAttribute('viewBox', '0 0 126 106');
+    wreath.setAttribute('aria-hidden', 'true');
+    const gradientId = `podium-laurel-${index}`;
+    wreath.innerHTML = `<defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${colours[0]}"/><stop offset="1" stop-color="${colours[1]}"/>
+      </linearGradient></defs>
+      <g fill="none" stroke="url(#${gradientId})" stroke-width="2.4" stroke-linecap="round">
+        <path d="M28 90 C15 71 18 45 43 14"/>
+        <path d="M98 90 C111 71 108 45 83 14"/>
+      </g>
+      <g fill="url(#${gradientId})">
+        <ellipse cx="25" cy="81" rx="4.4" ry="10" transform="rotate(-34 25 81)"/>
+        <ellipse cx="21" cy="68" rx="4.4" ry="10" transform="rotate(-17 21 68)"/>
+        <ellipse cx="24" cy="55" rx="4.4" ry="10" transform="rotate(7 24 55)"/>
+        <ellipse cx="29" cy="42" rx="4.4" ry="10" transform="rotate(28 29 42)"/>
+        <ellipse cx="37" cy="29" rx="4.4" ry="10" transform="rotate(47 37 29)"/>
+        <ellipse cx="101" cy="81" rx="4.4" ry="10" transform="rotate(34 101 81)"/>
+        <ellipse cx="105" cy="68" rx="4.4" ry="10" transform="rotate(17 105 68)"/>
+        <ellipse cx="102" cy="55" rx="4.4" ry="10" transform="rotate(-7 102 55)"/>
+        <ellipse cx="97" cy="42" rx="4.4" ry="10" transform="rotate(-28 97 42)"/>
+        <ellipse cx="89" cy="29" rx="4.4" ry="10" transform="rotate(-47 89 29)"/>
+      </g>`;
     emblem.append(wreath, avatar(player,'rank-avatar-podium'));
     place.append(emblem);
     const stand = document.createElement('div'); stand.className = 'podium-stand';
@@ -315,7 +342,6 @@ function renderRankings(rows) {
   else drawBarChart(standings);
   if(view==='history')requestAnimationFrame(mountHistoryChart);
   if(view==='sources')requestAnimationFrame(mountPointSourcesChart);
-  requestAnimationFrame(syncRankViewHeight);
 }
 // Independent module: table definitions live in stat-metrics.js, so more
 // statistics can be added without changing the podium or chart renderers.
@@ -408,7 +434,7 @@ function renderMeldingStatistics(raw) {
 }
 function renderSynergy(raw) {
 
-  const {players,matrix,maxAbs,partnershipGames} = normalizeSynergy(raw);
+  const {players,matrix,maxAbs,partnershipGames} = normalizeSynergy(raw, guestIdsFrom(standings, metricPeople));
   const state = $('synergy-state');
   const content = $('synergy-content');
   const head = $('synergy-head');
@@ -492,7 +518,7 @@ function renderSynergy(raw) {
 // Calls (rather than participants) are the observation unit. This matters
 // for Sol, where several people can call in the same physical game.
 function renderHands(raw) {
-  const {players, hands} = normalizeHandsResponse(raw);
+  const {players, hands} = normalizeHandsResponse(raw, guestIdsFrom(standings, metricPeople));
   const state = $('hands-state');
   const content = $('hands-content');
   const head = $('hands-head');
@@ -575,26 +601,6 @@ function renderHands(raw) {
 
 window.addEventListener('resize', syncHandsStickyOffsets);
 window.addEventListener('resize', syncMetricStickyOffsets);
-window.addEventListener('resize', () => requestAnimationFrame(syncRankViewHeight));
-
-// Size all four Stilling views by the Diagram's natural height, which includes
-// Stillingsudvikling. The DOM measurement adapts to text zoom and screen width.
-function syncRankViewHeight() {
-  const chartView = $('chart-view');
-  const stage = $('rank-view-stage');
-  if (!standings.length || !stage || !chartView) return;
-  const hidden = chartView.classList.contains('hidden');
-  if (hidden) {
-    chartView.style.visibility = 'hidden';
-    chartView.classList.remove('hidden');
-  }
-  const height = Math.ceil(chartView.getBoundingClientRect().height);
-  if (hidden) {
-    chartView.classList.add('hidden');
-    chartView.style.visibility = '';
-  }
-  if (height > 0) stage.style.setProperty('--rank-view-height', `${height}px`);
-}
 
 
 // Chart.js must be constructed only after its parent tab is visible;
@@ -621,7 +627,7 @@ function mountHistoryChart() {
   }
 }
 function renderScoreHistory(raw) {
-  historyModel=buildScoreHistory(raw);
+  historyModel=buildScoreHistory(raw, guestIdsFrom(standings, metricPeople));
   timeMachineIndex = historyModel.gameCount;
   updateTimeMachineAvailability();
   if (historyModel.gameCount) selectTimeMachineGame(timeMachineIndex);
@@ -681,7 +687,6 @@ function changeView(next) {
   if(view==='history')requestAnimationFrame(mountHistoryChart);
   if(view==='sources')requestAnimationFrame(mountPointSourcesChart);
   if(view==='chart' && historyModel?.gameCount && standings.length) selectTimeMachineGame(timeMachineIndex);
-  requestAnimationFrame(syncRankViewHeight);
 }
 async function refresh() {
   if(!supabase)return;

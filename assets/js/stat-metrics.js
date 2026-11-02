@@ -1,3 +1,4 @@
+import {compareDisplayPlayers} from './player-order.js';
 // Data model for independent Meldingsstatistik module.
 // All values use the same selected games / guest filtering as Stilling.
 export const METRICS = [
@@ -81,7 +82,7 @@ export function normalizeMeldingStatistics(data) {
     p.ordinaryCalls=p.under+p.over+p.exact;
     p.callsPct=100*p.calls/p.games;
     return p;
-  }).sort((a,b)=> a.name.localeCompare(b.name,'da',{sensitivity:'base'}) || a.id.localeCompare(b.id));
+  }).sort(compareDisplayPlayers);
 }
 
 export function metricValue(metric, player) {

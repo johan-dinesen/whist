@@ -1,9 +1,9 @@
+import {compareDisplayPlayers} from './player-order.js';
 // Pure data model for Stillingshistorik.
 // Each qualifying game has one global chronological index and four payouts.
 // Every player's line starts at (0,0) and stays flat on games they didn't play.
-const compareNames = new Intl.Collator('da', {numeric: true, sensitivity: 'base'});
 
-export function buildScoreHistory(data) {
+export function buildScoreHistory(data, guestIds = new Set()) {
   if (!data || !Array.isArray(data.players) || !Array.isArray(data.games)) {
     throw new Error('Uventet dataformat for Stillingshistorik');
   }
@@ -12,8 +12,8 @@ export function buildScoreHistory(data) {
     throw new Error('Antallet af spil stemmer ikke med historikken');
   }
   const players = [...data.players].map(p => ({
-    id: String(p.id ?? ''), name: String(p.name ?? '').trim(), cents: 0, series: [0], participations: 0, gamesPlayed: [0]
-  })).sort((a,b) => compareNames.compare(a.name,b.name) || a.id.localeCompare(b.id));
+    id: String(p.id ?? ''), name: String(p.name ?? '').trim(), guest: guestIds.has(String(p.id ?? '')), cents: 0, series: [0], participations: 0, gamesPlayed: [0]
+  })).sort(compareDisplayPlayers);
   const byId = new Map();
   for (const p of players) {
     if (!p.id || !p.name || byId.has(p.id)) throw new Error('Ugyldigt spillernavn eller ID');
@@ -46,6 +46,6 @@ export function buildScoreHistory(data) {
   }
   return {
     gameCount,
-    players:players.map(({id,name,series,gamesPlayed})=>({id,name,series,gamesPlayed,final:series[series.length - 1]}))
+    players:players.map(({id,name,guest,series,gamesPlayed})=>({id,name,guest,series,gamesPlayed,final:series[series.length - 1]}))
   };
 }

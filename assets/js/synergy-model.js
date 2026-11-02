@@ -1,8 +1,8 @@
+import {compareDisplayPlayers} from './player-order.js';
 // Pure presentation model for the Synergi RPC.
 // SQL produces every ordered player pair, so the output is an n-by-n matrix.
-const collator = new Intl.Collator('da', {sensitivity: 'base', numeric: true});
 
-export function normalizeSynergy(rows) {
+export function normalizeSynergy(rows, guestIds = new Set()) {
   if (!Array.isArray(rows)) throw new Error('Uventet format for Synergi');
   const playersById = new Map();
   const cellsByKey = new Map();
@@ -14,7 +14,7 @@ export function normalizeSynergy(rows) {
     if (!a || !b || !aname || !bname) throw new Error('Spilleroplysninger mangler i Synergi');
     for (const [id, name] of [[a,aname],[b,bname]]) {
       if (playersById.has(id) && playersById.get(id).name !== name) throw new Error('Inkonsistente spillernavne');
-      playersById.set(id, {id,name});
+      playersById.set(id, {id,name,guest:guestIds.has(id)});
     }
     const count = Number(raw.games_together);
     if (!Number.isInteger(count) || count < 0) throw new Error('Ugyldigt antal makkerspil');
@@ -26,7 +26,7 @@ export function normalizeSynergy(rows) {
     if (cellsByKey.has(key)) throw new Error('Duplikeret makkerpar');
     cellsByKey.set(key,{games:count,average:mean});
   }
-  const players = [...playersById.values()].sort((a,b) => collator.compare(a.name,b.name) || a.id.localeCompare(b.id));
+  const players = [...playersById.values()].sort(compareDisplayPlayers);
   const matrix = players.map(a => players.map(b => {
     const cell = cellsByKey.get(`${a.id}|${b.id}`);
     if (!cell) throw new Error('Synergimatricen er ikke komplet');

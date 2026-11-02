@@ -1,6 +1,6 @@
+import {compareDisplayPlayers} from './player-order.js';
 // Hænder: read-only response normalisation and display formatting.
 // Independent from rankings and other statistics modules.
-const collator = new Intl.Collator('da', {sensitivity:'base', numeric:true});
 const numberFormat = new Intl.NumberFormat('da-DK', {minimumFractionDigits:0, maximumFractionDigits:2});
 const percentFormat = new Intl.NumberFormat('da-DK', {minimumFractionDigits:0, maximumFractionDigits:1});
 
@@ -14,11 +14,11 @@ function validCount(value) {
   return n === null ? 0 : Math.max(0, Math.trunc(n));
 }
 
-export function normalizeHandsResponse(data) {
+export function normalizeHandsResponse(data, guestIds = new Set()) {
   if (!data || !Array.isArray(data.players) || !Array.isArray(data.hands))
     throw new Error('Supabase returnerede et ugyldigt Hænder-format');
-  const players = data.players.map(p => ({ id:String(p.id), name:String(p.name||'') }))
-    .sort((a,b) => collator.compare(a.name,b.name));
+  const players = data.players.map(p => ({ id:String(p.id), name:String(p.name||''), guest:guestIds.has(String(p.id)) }))
+    .sort(compareDisplayPlayers);
   const hands = data.hands.map(hand => {
     const stats = new Map((Array.isArray(hand.players) ? hand.players : [])
       .map(p => [String(p.player_id), {
