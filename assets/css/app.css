@@ -1347,3 +1347,27 @@
 main.shell > .heading {
   display: none;
 }
+
+
+/* Same profile picture size for all three podium places */
+.position-1 .rank-avatar-podium {
+  width: 66px;
+  height: 66px;
+}
+
+.position-1 .rank-initials {
+  font-size: 22px;
+}
+
+/* Move player names slightly further down */
+.podium-name {
+  margin-top: 4px;
+}
+
+/* Equal picture sizes on mobile */
+@media (max-width: 620px) {
+  .position-1 .rank-avatar-podium {
+    width: 55px;
+    height: 55px;
+  }
+}
