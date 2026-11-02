@@ -125,7 +125,12 @@ function renderPodium(rows) {
     const place = document.createElement('article');
     place.className = `podium-place position-${index+1}`;
     place.setAttribute('aria-label',`${index+1}. plads: ${player.name}, ${signed(player.points)} point`);
-    place.append(avatar(player,'rank-avatar-podium'));
+    const emblem = document.createElement('div');
+    emblem.className = 'podium-emblem';
+    const wreath = document.createElement('div');
+    wreath.className = 'podium-wreath';
+    emblem.append(wreath, avatar(player,'rank-avatar-podium'));
+    place.append(emblem);
     const stand = document.createElement('div'); stand.className = 'podium-stand';
     const name = document.createElement('strong'); name.className='podium-name'; name.textContent=player.name;
     const score = document.createElement('strong'); score.className='podium-score'; score.textContent=signed(player.points);
@@ -300,7 +305,6 @@ function renderRankings(rows) {
   $('standings-empty').classList.toggle('hidden',!empty);
   if (empty) $('standings-empty').textContent = 'Ingen spil i de valgte spilsamlinger.';
   $('stats-view-toggle').classList.toggle('hidden',empty);
-  document.querySelector('.rank-panel')?.classList.toggle('podium-mode', !empty && view === 'podium');
   $('podium-view').classList.toggle('hidden',empty||view!=='podium');
   $('chart-view').classList.toggle('hidden',empty||view!=='chart');
   $('score-history-view').classList.toggle('hidden',empty||view!=='history');
@@ -667,7 +671,6 @@ function changeView(next) {
   if (view === 'history' && next !== 'history') historyChart?.hideDetail?.();
   if (view === 'sources' && next !== 'sources') sourcesPopover?.hide();
   view=next;
-  document.querySelector('.rank-panel')?.classList.toggle('podium-mode', view === 'podium' && standings.length > 0);
   for(const button of document.querySelectorAll('[data-stats-view]')){
     button.setAttribute('aria-pressed',String(button.dataset.statsView===view));
   }
@@ -690,7 +693,6 @@ async function refresh() {
   showError('');
   // Discard old results as soon as the selection changes.
   standings=[];
-  document.querySelector('.rank-panel')?.classList.remove('podium-mode');
   $('standings-empty').textContent='Indlæser stilling …';
   $('standings-empty').classList.remove('hidden');
   $('podium-view').classList.add('hidden');
