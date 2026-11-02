@@ -1314,20 +1314,21 @@
 @media(max-width:350px){.player-choice-name{font-size:12px}}
 
 
-/* Center player names and profile pictures together */
+/* Center profile picture and name together */
 .choice.player-choice {
   justify-content: center;
   text-align: center;
 }
 
-/* Match the font size of the Melding buttons */
+/* Match the Melding button font size */
 .choice.player-choice .player-choice-name {
   flex: 0 1 auto;
   font-size: 15px;
 }
 
-/* Make profile pictures 20% smaller */
+/* Picture first, then name */
 .choice.player-choice .choice-avatar {
+  order: -1;
   width: 32px;
   height: 32px;
   flex: 0 0 32px;
