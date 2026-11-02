@@ -1312,3 +1312,32 @@
   .player-choice-name{font-size:13px}
 }
 @media(max-width:350px){.player-choice-name{font-size:12px}}
+
+
+/* Center player names and profile pictures together */
+.choice.player-choice {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Match the font size of the Melding buttons */
+.choice.player-choice .player-choice-name {
+  flex: 0 1 auto;
+  font-size: 15px;
+}
+
+/* Make profile pictures 20% smaller */
+.choice.player-choice .choice-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+}
+
+/* Slightly larger pictures on mobile */
+@media (max-width: 620px) {
+  .choice.player-choice .choice-avatar {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+}
