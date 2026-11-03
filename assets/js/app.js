@@ -79,18 +79,54 @@ const s = {
 };
 
 
-// Advance only when a user selection actually reveals the next section.
-// Matches the previous form's smooth, centered step-by-step scrolling.
+// Align newly revealed sections by their heading, not by centering the entire
+// panel (which may be much taller than an older phone's screen).
+// Schedule for the next frame so the new section has been laid out, without
+// imposing the previous 100 ms delay after each selection.
 let pendingStepScroll = null;
+function cancelStepScroll() {
+  if (pendingStepScroll === null) return;
+  if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(pendingStepScroll);
+  else clearTimeout(pendingStepScroll);
+  pendingStepScroll = null;
+}
 function scrollToStep(id) {
-  if (pendingStepScroll !== null) clearTimeout(pendingStepScroll);
-  pendingStepScroll = setTimeout(() => {
+  cancelStepScroll();
+  const align = () => {
     pendingStepScroll = null;
     const element = $(id);
     if (!element || element.classList.contains('hidden')) return;
+    const heading = element.querySelector?.('.step-title, h2') ?? element;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    element.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'center'});
-  }, 100);
+    // Keep the next heading in the same comfortable position on phones and
+    // desktop. A 52 px minimum avoids crowding the top edge on short screens.
+    const offset = Math.min(94, Math.max(52, window.innerHeight * 0.12));
+    if (typeof heading.getBoundingClientRect !== 'function') {
+      element.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'start'});
+      return;
+    }
+    // A freshly revealed step can be the last element on the page. Provide
+    // exactly the extra scroll room needed to align its heading, rather than
+    // leaving it stranded near the bottom of the screen on tall phones.
+    const panel = $('game-panel');
+    const destination = Math.max(0, heading.getBoundingClientRect().top + window.scrollY - offset);
+    const availableScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const extraSpace = Math.max(0, Math.ceil(destination - availableScroll + 12));
+    // Only grow the end spacer during a registration. Shrinking it between
+    // selections can snap the current scroll position upward on mobile Safari.
+    if (extraSpace) {
+      const currentSpace = Number.parseFloat(panel.style.paddingBottom) || 0;
+      panel.style.paddingBottom = `${currentSpace + extraSpace}px`;
+      // On short pages, the first padding increase can change where the
+      // document ends. Check the resulting scroll range once more.
+      const remaining = destination - (document.documentElement.scrollHeight - window.innerHeight);
+      if (remaining > 1) panel.style.paddingBottom = `${currentSpace + extraSpace + Math.ceil(remaining)}px`;
+    }
+    window.scrollTo({top: destination, behavior: reducedMotion ? 'auto' : 'smooth'});
+  };
+  pendingStepScroll = typeof window.requestAnimationFrame === 'function'
+    ? window.requestAnimationFrame(align)
+    : setTimeout(align, 0);
 }
 function renderAndAdvance(id) {
   const wasHidden = $(id).classList.contains('hidden');
@@ -156,7 +192,7 @@ function render() {
   renderPlayers();
   const full = s.playerIds.length === 4;
   show('call-step', full);
-  if (!full) { ['caller-step','tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
+  if (!full) { $('game-panel').style.paddingBottom = ''; ['caller-step','tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
   buttons('call-options', CALLS, v=>s.callType===v, v=>{s.callType=v;resetFrom(2);renderAndAdvance('caller-step');});
   show('caller-step', Boolean(s.callType));
   if (!s.callType) { ['tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
@@ -257,8 +293,8 @@ async function readActiveTournamentId() {
   return data?.[0]?.id ?? null; // No active tournament = Kredsspil.
 }
 function newGame() {
-  if (pendingStepScroll !== null) clearTimeout(pendingStepScroll);
-  pendingStepScroll = null;
+  cancelStepScroll();
+  $('game-panel').style.paddingBottom = '';
   s.playerIds=[];resetFrom(1);
   $('show-guests').checked=false;
   message('save-message','');

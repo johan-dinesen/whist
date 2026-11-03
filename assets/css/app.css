@@ -704,8 +704,6 @@
 .point-sources-chart-wrap canvas{width:100%!important;height:100%!important}
 .point-sources-caption{font-size:12px!important;line-height:1.55;color:var(--muted);margin:11px 3px 0!important}
 @media(max-width:620px){
-  #stats-view-toggle{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
-  #stats-view-toggle button{min-width:0}
   .point-sources-chart-wrap{padding:10px 5px 7px}
   .point-sources-legend{gap:8px 12px;font-size:11px}
   .score-history-player .score-history-avatar{width:21px;height:21px}
@@ -768,17 +766,33 @@
 /* v1.0.6: keep all four Stilling tabs beside its heading, even on phones. */
 .rank-panel > .ranking-head{flex-wrap:nowrap;gap:6px;align-items:center}
 .rank-panel > .ranking-head > div:first-child{min-width:0;flex:0 0 auto}
-.rank-panel .view-switch{flex:0 1 auto;min-width:0;max-width:100%;gap:2px;padding:3px;margin:0}
-.rank-panel .view-switch button{flex:0 1 auto;min-width:0;padding:6px 8px;font-size:11px;white-space:nowrap;min-height:34px}
+/* Four equal-width tabs, each sized for the longest label (Fordeling). */
+.rank-panel > .ranking-head #stats-view-toggle{
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(max-content,1fr);
+  flex:0 0 auto;
+  width:max-content;
+  max-width:100%;
+  gap:2px;
+  padding:3px;
+  margin:0;
+}
+.rank-panel > .ranking-head #stats-view-toggle button{
+  width:100%;min-width:0;min-height:34px;
+  padding:6px 8px;font-size:11px;white-space:nowrap;
+}
 @media(max-width:620px){
   .rank-panel > .ranking-head{gap:5px}
   .rank-panel > .ranking-head h2{font-size:clamp(16px,4.7vw,20px)}
-  .rank-panel .view-switch{display:flex;flex:0 1 auto;width:auto;gap:1px;padding:2px;margin:0}
-  .rank-panel .view-switch button{flex:0 1 auto;min-height:32px;padding:5px clamp(3px,1vw,6px);font-size:clamp(9px,2.7vw,11px)}
+  .rank-panel > .ranking-head #stats-view-toggle{gap:1px;padding:2px}
+  .rank-panel > .ranking-head #stats-view-toggle button{
+    min-height:32px;padding:5px clamp(2px,.65vw,6px);
+    font-size:clamp(8px,2.5vw,11px);
+  }
 }
 @media(max-width:350px){
   .rank-panel > .ranking-head h2{font-size:16px}
-  .rank-panel .view-switch button{padding:5px 3px;font-size:9px}
 }
 
 .score-history-select-all{
@@ -857,17 +871,6 @@
   display:grid;place-items:center;border-radius:5px
 }
 .chart-detail-close:hover{background:#2e5067;color:white}
-/* Override the old two-by-two mobile Stilling tab grid. */
-@media(max-width:620px){
-  .rank-panel > .ranking-head #stats-view-toggle{
-    display:flex;grid-template-columns:none;width:auto;flex:0 1 auto;
-    justify-content:flex-end;gap:1px;padding:2px;
-  }
-  .rank-panel > .ranking-head #stats-view-toggle button{
-    min-width:0;flex:0 1 auto;padding:5px clamp(2px,.7vw,5px);
-    font-size:clamp(8.5px,2.7vw,11px);white-space:nowrap
-  }
-}
 
 /* The chart itself starts and measures exactly like Diagram; legend below it. */
 #point-sources-view{margin-top:0}
@@ -894,14 +897,6 @@
   #score-history-legend .score-history-player{padding:2px 4px;gap:3px}
   #score-history-legend .score-history-avatar{width:21px;height:21px}
   #score-history-legend .score-history-select-all{padding:4px 7px}
-}
-/* More breathing room while retaining one-line controls on narrow phones. */
-.rank-panel > .ranking-head #stats-view-toggle button{padding-inline:11px}
-@media(max-width:620px){
-  .rank-panel > .ranking-head #stats-view-toggle button{padding-inline:clamp(5px,1.35vw,9px)}
-}
-@media(max-width:350px){
-  .rank-panel > .ranking-head #stats-view-toggle button{padding-inline:5px;font-size:9px}
 }
 /* Fordeling: reference numbers interrupt their own dashed guide line.
    The labels sit at the exact axis height, with no background or border box. */
