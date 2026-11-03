@@ -86,8 +86,7 @@ const s = {
 let pendingStepScroll = null;
 function cancelStepScroll() {
   if (pendingStepScroll === null) return;
-  if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(pendingStepScroll);
-  else clearTimeout(pendingStepScroll);
+  clearTimeout(pendingStepScroll);
   pendingStepScroll = null;
 }
 function scrollToStep(id) {
@@ -126,7 +125,7 @@ function scrollToStep(id) {
   };
   pendingStepScroll = typeof window.requestAnimationFrame === 'function'
     ? window.requestAnimationFrame(align)
-    : setTimeout(align, 0);
+    : setTimeout(align, 80);
 }
 function renderAndAdvance(id) {
   const wasHidden = $(id).classList.contains('hidden');
