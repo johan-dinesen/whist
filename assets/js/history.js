@@ -1,3 +1,4 @@
+import {getWhistClient} from './supabase-client.js';
 import {formatPoints} from './scoring.js';
 import {sortGroups,readSelection,saveIncludeGuests,readIncludeGuests,selectionParams,renderNoteFilters} from './notes.js?v=1.0.4';
 
@@ -178,24 +179,7 @@ async function init() {
     if (!cfg.SUPABASE_URL?.startsWith('https://') || !cfg.SUPABASE_PUBLISHABLE_KEY) {
       throw new Error('Supabase mangler opsætning i assets/js/config.js');
     }
-    const {createClient} = await import('https://esm.sh/@supabase/supabase-js@2');
-    supabase = createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
-    });
-    const {data,error} = await supabase.auth.getSession();
-    if (error) throw error;
-    let session = data.session;
-    if (session && session.user?.is_anonymous === false) {
-      const {error:logoutError} = await supabase.auth.signOut();
-      if (logoutError) throw logoutError;
-      session = null;
-    }
-    if (!session) {
-      const {data:anon,error:anonError} = await supabase.auth.signInAnonymously();
-      if (anonError) throw anonError;
-      session = anon.session;
-    }
-    if (!session) throw new Error('Kunne ikke oprette anonym session');
+    supabase = await getWhistClient();
     const {data:categories,error:groupsError} = await supabase.from('tournaments')
       .select('id,name,created_at');
     if (groupsError) throw new Error(`Kunne ikke læse spilsamlinger: ${groupsError.message}. Kør 06_tournament_notes.sql.`);
@@ -210,4 +194,30 @@ $('include-guests').addEventListener('change',()=>{
   saveIncludeGuests($('include-guests').checked);
   refreshHistory();
 });
+window.addEventListener('whist:pagechange', event => {
+  if (event.detail.page !== 'historik' || !supabase) return;
+  const updated = readSelection(groups);
+  const guests = readIncludeGuests();
+  const changed = [...updated].some(key => !selectedNotes.has(key)) ||
+    [...selectedNotes].some(key => !updated.has(key)) ||
+    $('include-guests').checked !== guests;
+  if (!changed) return;
+  selectedNotes = updated;
+  $('include-guests').checked = guests;
+  drawNotes();
+  void refreshHistory();
+});
+window.addEventListener('whist:datachanged', async () => {
+  if (!supabase) return;
+  try {
+    const {data,error} = await supabase.from('tournaments').select('id,name,created_at');
+    if (error) throw error;
+    groups = sortGroups(data ?? []);
+    selectedNotes = readSelection(groups);
+    $('include-guests').checked = readIncludeGuests();
+    drawNotes();
+    await refreshHistory();
+  } catch (err) { status(`Historik: ${err.message}`, true); }
+});
+
 init();

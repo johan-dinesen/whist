@@ -1,3 +1,4 @@
+import {getWhistClient} from './supabase-client.js';
 import {guestIdsFrom} from './player-order.js';
 import {formatPoints} from './scoring.js';
 import {profileUrl} from './profiles.js';
@@ -692,7 +693,8 @@ window.addEventListener('resize', syncMetricStickyOffsets);
 // otherwise it can measure a zero-width canvas on mobile.
 function mountHistoryChart() {
   if(view !== 'history' || !standings.length || !historyModel?.gameCount ||
-     $('score-history-view').classList.contains('hidden')) return;
+     $('score-history-view').classList.contains('hidden') ||
+     $('page-stilling').hidden) return;
   try {
     if(!historyChart){
       historyChart=drawScoreHistory({
@@ -726,7 +728,8 @@ function renderScoreHistory(raw) {
 }
 function mountPointSourcesChart() {
   if (view !== 'sources' || !standings.length || !sourcesPeople.length ||
-      $('point-sources-view').classList.contains('hidden')) return;
+      $('point-sources-view').classList.contains('hidden') ||
+      $('page-stilling').hidden) return;
   try {
     if (!sourcesRendered) {
       sourcesPopover = drawPointSources({
@@ -907,16 +910,7 @@ async function init(){
     const cfg=await import('./config.js');
     if(!cfg.SUPABASE_URL?.startsWith('https://')||!cfg.SUPABASE_PUBLISHABLE_KEY)
       throw new Error('Supabase mangler opsætning i assets/js/config.js');
-    const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
-    supabase=createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,
-      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
-    const {data,error}=await supabase.auth.getSession();if(error)throw error;
-    let session=data.session;
-    if(session && session.user?.is_anonymous===false){
-      const {error:signOutError}=await supabase.auth.signOut();if(signOutError)throw signOutError;session=null;
-    }
-    if(!session){const {data:anon,error:anonError}=await supabase.auth.signInAnonymously();if(anonError)throw anonError;session=anon.session;}
-    if(!session)throw new Error('Kunne ikke oprette anonym læsesession');
+    supabase = await getWhistClient();
     const {data:categories,error:groupsError}=await supabase.from('tournaments').select('id,name,created_at');
     if(groupsError)throw groupsError;
     groups=sortGroups(categories??[]);
@@ -958,4 +952,43 @@ for (const button of document.querySelectorAll('[data-source-mode]')) {
     sourcesPopover?.setMode(next);
   });
 }
+// Keep the shared Spilsamlinger/guest filters in sync between Stilling and
+// Historik, without needlessly fetching again on every tab switch.
+function syncSharedFilters() {
+  if (!supabase) return;
+  const updated = readSelection(groups);
+  const guests = readIncludeGuests();
+  const changed = [...updated].some(key => !selectedNotes.has(key)) ||
+    [...selectedNotes].some(key => !updated.has(key)) ||
+    $('stats-include-guests').checked !== guests;
+  if (changed) {
+    selectedNotes = updated;
+    $('stats-include-guests').checked = guests;
+    renderNoteFilters($('stats-note-options'), groups, selectedNotes, refresh);
+    void refresh();
+  }
+}
+window.addEventListener('whist:pagechange', event => {
+  if (event.detail.page !== 'stilling') { stopTimeMachine(); return; }
+  syncSharedFilters();
+  requestAnimationFrame(() => {
+    changeView(view);
+    syncMetricStickyOffsets();
+    syncHandsStickyOffsets();
+    historyChart?.resize();
+  });
+});
+window.addEventListener('whist:datachanged', async () => {
+  if (!supabase) return;
+  try {
+    const {data,error} = await supabase.from('tournaments').select('id,name,created_at');
+    if (error) throw error;
+    groups = sortGroups(data ?? []);
+    selectedNotes = readSelection(groups);
+    $('stats-include-guests').checked = readIncludeGuests();
+    renderNoteFilters($('stats-note-options'), groups, selectedNotes, refresh);
+    await refresh();
+  } catch (err) { showError(`Stilling: ${err.message}`); }
+});
+
 init();

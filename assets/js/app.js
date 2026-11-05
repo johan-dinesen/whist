@@ -1,3 +1,4 @@
+import {getWhistClient} from './supabase-client.js';
 import {scoreGame, formatPoints} from './scoring.js';
 window.__whistAppStarted = true;
 // Load config dynamically so a missing config.js cannot hide the form.
@@ -123,9 +124,7 @@ function scrollToStep(id) {
     }
     window.scrollTo({top: destination, behavior: reducedMotion ? 'auto' : 'smooth'});
   };
-  pendingStepScroll = typeof window.requestAnimationFrame === 'function'
-    ? window.requestAnimationFrame(align)
-    : setTimeout(align, 80);
+  pendingStepScroll = setTimeout(align, 80);
 }
 function renderAndAdvance(id) {
   const wasHidden = $(id).classList.contains('hidden');
@@ -354,6 +353,7 @@ async function saveGame() {
     const {data,error}=await supabase.rpc('register_game',params);
     if(error)throw error;
     $('success-id').textContent=`Spil-ID: ${data}`;
+    window.dispatchEvent(new CustomEvent('whist:datachanged', {detail:{kind:'games'}}));
     show('game-panel',false);show('success-panel',true);
     window.scrollTo({top:0,behavior:'smooth'});
   } catch(err){message('save-message',`Spillet blev ikke bekræftet gemt: ${err.message}. Prøv igen.`,true);$('save-btn').disabled=false;}
@@ -431,6 +431,11 @@ $('show-guests').addEventListener('change',()=>{if(!$('show-guests').checked){co
 $('save-btn').addEventListener('click',saveGame);
 $('new-game-btn').addEventListener('click',newGame);
 
+window.addEventListener('whist:leave-registration', cancelStepScroll);
+window.addEventListener('whist:datachanged', event => {
+  if (event.detail?.kind === 'players' && supabase) void loadData().catch(console.error);
+});
+
 async function init() {
   // Make the form usable immediately, including when the server or config fails.
   showDemo('Forbinder til Supabase. Spillerne kan vælges nu, men gemning kræver aktiv forbindelse.');
@@ -454,24 +459,7 @@ async function init() {
     return;
   }
   try {
-    const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
-    supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
-    });
-    const {data,error}=await supabase.auth.getSession();
-    if(error)throw error;
-    let session=data.session;
-    if (session && session.user?.is_anonymous === false) {
-      const {error:signOutError}=await supabase.auth.signOut();
-      if (signOutError)throw signOutError;
-      session=null;
-    }
-    if(!session){
-      const {data:anon,error:anonError}=await supabase.auth.signInAnonymously();
-      if(anonError)throw anonError;
-      session=anon.session;
-    }
-    if(!session)throw new Error('Kunne ikke oprette anonym session.');
+    supabase = await getWhistClient();
     await loadData();
     try {await hasWriteAccess();}
     catch(err){

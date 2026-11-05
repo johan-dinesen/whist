@@ -1359,3 +1359,8 @@ main.shell > .heading {
 
 
 
+
+/* One-document navigation. Sections remain mounted so form state and preloaded
+   data survive switching pages. Only the active page participates in layout. */
+.spa-page[hidden]{display:none!important}
+.spa-page > .heading{display:none}

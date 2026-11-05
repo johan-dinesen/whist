@@ -2,52 +2,10 @@
 <html lang="da">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
-  <meta name="description" content="Whist: historik og pointfordeling for alle registrerede spil.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0;url=./#historik">
   <title>Whist | Historik</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.26">
+  <script>location.replace('./' + location.search + '#historik');</script>
 </head>
-<body class="data-page">
-  <header class="topbar">
-    <div class="shell topbar-inner">
-      
-      <nav class="site-nav"><a href="./">Registrering</a><a href="statistik.html">Stilling</a><a href="historik.html" aria-current="page">Historik</a><a href="administrering.html">Administrering</a></nav>
-    </div>
-  </header>
-  <main class="shell">
-    <div class="heading">
-      <div><p class="eyebrow">Kompagniet · Whist</p><h1>Spilhistorik</h1>
-      </div>
-      
-    </div>
-    <p id="history-status" class="connection-error hidden" role="alert" aria-live="assertive"></p>
-    <section id="history-content">
-      <section class="panel" aria-label="Filtre">
-        <div class="note-filter-heading">
-          <h2>Spilsamlinger</h2>
-          <button type="button" class="note-chip note-reset-chip" data-note-reset>Alle</button>
-        </div>
-        <p class="muted note-hint">Vælg én eller flere spilsamlinger. “Alle” nulstiller valgene.</p>
-        <div id="note-options" class="note-options" role="group" aria-label="Vælg spilsamlinger"></div>
-        <div class="history-controls">
-          <label class="toggle"><input type="checkbox" id="include-guests"><span>Medtag gæstespil</span></label>
-        </div>
-      </section>
-      <section class="panel history-games-panel" aria-label="Historiktabel">
-        <h2>Registrerede spil</h2>
-        <p id="history-count" class="history-count" aria-live="polite"></p>
-        <div class="history-table-wrap" role="region" tabindex="0" aria-label="Historiktabel, scroll vandret">
-          <table id="history-table" class="history-table">
-            <thead id="history-head"></thead>
-            <tbody id="history-body"></tbody>
-          </table>
-        </div>
-        <button class="button secondary load-more-button hidden" id="load-more-history" type="button">Indlæs flere spil</button>
-      </section>
-    </section>
-  </main>
-
-  <script type="module" src="assets/js/history.js?v=1.0.13"></script>
-</body>
+<body><p><a href="./#historik">Åbn Historik</a></p></body>
 </html>

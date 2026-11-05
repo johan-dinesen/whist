@@ -1,6 +1,8 @@
+import {getWhistClient} from './supabase-client.js';
 import { PROFILE_BUCKET, profileUrl, loadAvatarImage, moveAvatarCrop, pinchAvatarCrop, drawAvatarCrop, prepareAvatar } from './profiles.js?v=1.0.3';
 
 const $ = id => document.getElementById(id);
+const notifyDataChanged = kind => window.dispatchEvent(new CustomEvent('whist:datachanged', {detail:{kind}}));
 const isPreview = new URLSearchParams(location.search).has('preview');
 let supabase = null;
 let accessLevel = 'none'; // none | profiles | admin
@@ -284,6 +286,7 @@ async function deleteRecentGame(game) {
     if (data !== game.id) throw new Error('Databasen bekræftede ikke sletningen');
     if (accessLevel !== 'admin') return;
     message('admin-recent-message', 'Spillet er slettet fra Historik og Statistik.');
+    notifyDataChanged('games');
     await fetchRecentGames({preserveMessage:true});
   } catch (err) {
     handleError(err,'admin-recent-message');
@@ -488,6 +491,7 @@ async function saveEditRecentGame(event) {
     if (accessLevel !== 'admin') return;
     closeEditRecentGame();
     message('admin-recent-message','Spillet er opdateret. Historik og Statistik bruger de nye oplysninger.');
+    notifyDataChanged('games');
     await fetchRecentGames({preserveMessage:true});
   } catch (err) {
     handleError(err,'admin-edit-message');
@@ -578,6 +582,7 @@ async function runPeopleMutation(rpc, args, target, success) {
     if (accessLevel !== 'admin') return;
     await Promise.all([fetchManagedPlayers(), fetchPlayers()]);
     succeeded = true;
+    notifyDataChanged('players');
     message(target, success);
   } catch (err) {
     handleError(err, target);
@@ -776,6 +781,7 @@ $('profile-form').addEventListener('submit', async event => {
     clearPendingFile();
     setImage(profileUrl(supabase, playerId, String(Date.now())));
     message('profile-message', `Profilbilledet for ${player.display_name} er gemt.`);
+    notifyDataChanged('profiles');
   } catch (error) {
     handleError(error, 'profile-message');
     button.disabled = !selectedFile;
@@ -817,6 +823,7 @@ $('admin-create-form').addEventListener('submit', async event => {
     $('admin-new-name').value = '';
     await fetchTournaments();
     message('admin-create-message', `“${name}” er oprettet.`);
+    notifyDataChanged('tournaments');
   } catch(err) { handleError(err,'admin-create-message'); }
   finally { btn.disabled = false; }
 });
@@ -874,29 +881,7 @@ async function init() {
     return;
   }
   try {
-    const cfg = await import('./config.js');
-    if (!cfg.SUPABASE_URL?.startsWith('https://') || !cfg.SUPABASE_PUBLISHABLE_KEY ||
-      cfg.SUPABASE_URL.includes('YOUR-') || cfg.SUPABASE_PUBLISHABLE_KEY.includes('YOUR-')) {
-      throw new Error('Supabase mangler opsætning i assets/js/config.js');
-    }
-    const {createClient} = await import('https://esm.sh/@supabase/supabase-js@2');
-    supabase = createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY, {
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
-    });
-    const {data,error} = await supabase.auth.getSession();
-    if (error) throw error;
-    let session = data.session;
-    if (session && session.user?.is_anonymous === false) {
-      const {error:signOutError} = await supabase.auth.signOut();
-      if (signOutError) throw signOutError;
-      session = null;
-    }
-    if (!session) {
-      const {data:anon, error:anonError} = await supabase.auth.signInAnonymously();
-      if (anonError) throw anonError;
-      session = anon.session;
-    }
-    if (!session) throw new Error('Kunne ikke oprette Supabase-session.');
+    supabase = await getWhistClient();
     await refreshModules();
   } catch(err) {
     console.error('Administrering:', err);
