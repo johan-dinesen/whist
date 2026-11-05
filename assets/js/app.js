@@ -355,16 +355,25 @@ async function readActiveTournamentId() {
   if ((data ?? []).length > 1) throw new Error('Flere turneringer er markeret aktive.');
   return data?.[0]?.id ?? null; // No active tournament = Kredsspil.
 }
-function newGame() {
+function resetRegistration(scrollToTop = true) {
   cancelStepScroll();
   $('game-panel').style.paddingBottom = '';
-  s.playerIds=[];resetFrom(1);
-  $('show-guests').checked=false;
-  message('save-message','');
-  show('password-panel',false);
-  show('success-panel',false);show('game-panel',true);$('save-btn').disabled=false;
-  render();window.scrollTo({top:0,behavior:'smooth'});
+  s.playerIds = [];
+  resetFrom(1);
+  $('show-guests').checked = false;
+  $('shared-password').value = '';
+  message('password-message', '');
+  message('save-message', '');
+  show('password-panel', false);
+  show('success-panel', false);
+  show('game-panel', true);
+  $('save-btn').disabled = false;
+  render();
+  if (scrollToTop) {
+    window.scrollTo({top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  }
 }
+function newGame() { resetRegistration(); }
 async function hasWriteAccess() {
   const {data,error}=await supabase.rpc('registration_access_until');
   if (error) throw error;
@@ -494,9 +503,12 @@ $('password-form').addEventListener('submit',async event=>{
 });
 $('show-guests').addEventListener('change',()=>{if(!$('show-guests').checked){const valid=new Set(players.filter(p=>!p.is_guest).map(p=>p.id));if(s.playerIds.some(id=>!valid.has(id))){s.playerIds=s.playerIds.filter(id=>valid.has(id));resetFrom(1);}}render();});
 $('save-btn').addEventListener('click',saveGame);
-$('new-game-btn').addEventListener('click',newGame);
+$('new-game-btn').addEventListener('click', newGame);
+$('reset-game-btn').addEventListener('click', () => resetRegistration());
 
-window.addEventListener('whist:leave-registration', cancelStepScroll);
+// Leaving Registrering discards unfinished choices. The SPA performs its own
+// immediate scroll-to-top during navigation, so don't start a second scroll.
+window.addEventListener('whist:leave-registration', () => resetRegistration(false));
 window.addEventListener('whist:datachanged', event => {
   if (event.detail?.kind === 'players' && supabase) void loadData().catch(console.error);
 });

@@ -1397,3 +1397,25 @@ main.shell > .heading {
 #game-panel .step-navigation-button svg {display:block}
 #game-panel .review-step-title {align-items:center;margin-bottom:10px}
 #game-panel .review-step-title h2 {margin:0}
+
+/* Quiet reset action below Gem spil. Avoid a large/high-contrast target next
+   to the primary submit button, while retaining keyboard accessibility. */
+#game-panel .registration-reset-button {
+  display:block;
+  width:auto;
+  min-height:39px;
+  padding:7px 18px;
+  margin:12px auto 0;
+  border:1px solid rgba(121,144,165,.25);
+  border-radius:8px;
+  background:rgba(18,43,59,.22);
+  color:var(--muted);
+  font-size:13px;
+  font-weight:600;
+  opacity:.72;
+  -webkit-tap-highlight-color:transparent;
+}
+@media (hover:hover) {
+  #game-panel .registration-reset-button:hover {opacity:.92}
+}
+#game-panel .registration-reset-button:focus-visible {opacity:1}

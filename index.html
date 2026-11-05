@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Whist: registrering, stilling, historik og administrering på én side.">
   <title>Whist | Registrering</title>
-  <link rel="stylesheet" href="assets/css/app.css?v=1.0.29">
+  <link rel="stylesheet" href="assets/css/app.css?v=1.0.30">
 </head>
 <body>
   <header class="topbar">
@@ -40,7 +40,7 @@
       <section class="panel step hidden" id="trump-step" aria-labelledby="trump-title"><div class="step-title"><div><h2 id="trump-title">Trumf</h2></div></div><div id="trump-options" class="choices"></div></section>
       <section class="panel step hidden" id="partner-step" aria-labelledby="partner-title"><div class="step-title"><div><h2 id="partner-title">Makker</h2></div></div><div id="partner-options" class="choices"></div></section>
       <section class="panel step hidden" id="result-step" aria-labelledby="result-title"><div class="step-title"><div><h2 id="result-title">Resultat</h2><span id="result-help" hidden></span></div></div><div id="result-options" class="choices"></div></section>
-      <section id="review-panel" class="panel review-panel hidden" aria-labelledby="review-title"><h2 id="review-title">Opsummering</h2><dl class="review-list" id="review-content"></dl><div id="payout-preview" class="payout-preview" aria-label="Beregnet pointfordeling"></div><button class="button primary submit-button" id="save-btn" type="button">Gem spil</button><p class="feedback" id="save-message" aria-live="polite" role="status"></p></section>
+      <section id="review-panel" class="panel review-panel hidden" aria-labelledby="review-title"><h2 id="review-title">Opsummering</h2><dl class="review-list" id="review-content"></dl><div id="payout-preview" class="payout-preview" aria-label="Beregnet pointfordeling"></div><button class="button primary submit-button" id="save-btn" type="button">Gem spil</button><button class="button registration-reset-button" id="reset-game-btn" type="button">Nulstil</button><p class="feedback" id="save-message" aria-live="polite" role="status"></p></section>
       <section id="password-panel" class="panel password-panel hidden" aria-labelledby="password-title">
         <h2 id="password-title">Kode til registrering</h2>
         <form id="password-form" class="password-form">
@@ -416,7 +416,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
   <script type="module" src="assets/js/spa.js?v=1.0.1"></script>
   <script type="module" src="assets/js/realtime.js?v=1.0.0"></script>
-  <script type="module" src="assets/js/app.js?v=1.0.6"></script>
+  <script type="module" src="assets/js/app.js?v=1.0.7"></script>
   <script type="module" src="assets/js/stats.js?v=1.0.25"></script>
   <script type="module" src="assets/js/history.js?v=1.0.14"></script>
   <script type="module" src="assets/js/admin.js?v=1.0.15"></script>
