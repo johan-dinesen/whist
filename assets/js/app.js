@@ -90,7 +90,7 @@ function cancelStepScroll() {
   clearTimeout(pendingStepScroll);
   pendingStepScroll = null;
 }
-function scrollToStep(id) {
+function scrollToStep(id, goingBack = false) {
   cancelStepScroll();
   const align = () => {
     pendingStepScroll = null;
@@ -100,7 +100,10 @@ function scrollToStep(id) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Keep the next heading in the same comfortable position on phones and
     // desktop. A 52 px minimum avoids crowding the top edge on short screens.
-    const offset = Math.min(94, Math.max(52, window.innerHeight * 0.12));
+    const defaultOffset = Math.min(94, Math.max(52, window.innerHeight * 0.12));
+    // Back navigation must also clear the sticky navigation bar on short phones.
+    const navHeight = goingBack ? document.querySelector('.topbar')?.getBoundingClientRect().height ?? 0 : 0;
+    const offset = Math.max(defaultOffset, navHeight + (goingBack ? 12 : 0));
     if (typeof heading.getBoundingClientRect !== 'function') {
       element.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'start'});
       return;
@@ -126,6 +129,44 @@ function scrollToStep(id) {
   };
   pendingStepScroll = setTimeout(align, 80);
 }
+// Add a back arrow to every registration step after Spillere. It navigates
+// without clearing choices; modifying an earlier answer still uses resetFrom().
+function installRegistrationBackButtons() {
+  const steps = [
+    $('game-panel').querySelector('.step'),
+    ...$('game-panel').querySelectorAll('.step[id]'),
+    $('review-panel')
+  ];
+  steps[0].id = 'players-step';
+  const review = $('review-panel');
+  const reviewTitle = review.querySelector('h2');
+  const reviewHeading = document.createElement('div');
+  reviewHeading.className = 'step-title review-step-title';
+  reviewTitle.before(reviewHeading);
+  reviewHeading.append(reviewTitle);
+
+  for (let i = 1; i < steps.length; i++) {
+    const step = steps[i];
+    const heading = step.querySelector('.step-title');
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'step-back';
+    back.setAttribute('aria-label', 'Tilbage til forrige trin');
+    back.title = 'Tilbage';
+    back.innerHTML = '<svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 7-7m-7 7 7 7"/></svg>';
+    back.addEventListener('click', () => {
+      for (let previous = i - 1; previous >= 0; previous--) {
+        if (!steps[previous].classList.contains('hidden')) {
+          scrollToStep(steps[previous].id, true);
+          break;
+        }
+      }
+    });
+    heading.append(back);
+  }
+}
+installRegistrationBackButtons();
+
 function renderAndAdvance(id) {
   const wasHidden = $(id).classList.contains('hidden');
   render();
