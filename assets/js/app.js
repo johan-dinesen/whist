@@ -129,15 +129,24 @@ function scrollToStep(id, goingBack = false) {
   };
   pendingStepScroll = setTimeout(align, 80);
 }
-// Add a back arrow to every registration step after Spillere. It navigates
-// without clearing choices; modifying an earlier answer still uses resetFrom().
-function installRegistrationBackButtons() {
-  const steps = [
-    $('game-panel').querySelector('.step'),
-    ...$('game-panel').querySelectorAll('.step[id]'),
-    $('review-panel')
-  ];
-  steps[0].id = 'players-step';
+// The step controls navigate among the steps currently available. Changing an
+// earlier answer still uses the existing resetFrom() logic; navigation itself
+// never clears or submits anything.
+const registrationSteps = [
+  $('game-panel').querySelector('.step'),
+  ...$('game-panel').querySelectorAll('.step[id]'),
+  $('review-panel')
+];
+function updateRegistrationNavigation() {
+  registrationSteps.forEach((step, index) => {
+    const previous = registrationSteps.slice(0, index).some(other => !other.classList.contains('hidden'));
+    const next = registrationSteps.slice(index + 1).some(other => !other.classList.contains('hidden'));
+    step.querySelector('[data-step-direction="up"]').disabled = !previous;
+    step.querySelector('[data-step-direction="down"]').disabled = !next;
+  });
+}
+function installRegistrationNavigation() {
+  registrationSteps[0].id = 'players-step';
   const review = $('review-panel');
   const reviewTitle = review.querySelector('h2');
   const reviewHeading = document.createElement('div');
@@ -145,27 +154,41 @@ function installRegistrationBackButtons() {
   reviewTitle.before(reviewHeading);
   reviewHeading.append(reviewTitle);
 
-  for (let i = 1; i < steps.length; i++) {
-    const step = steps[i];
-    const heading = step.querySelector('.step-title');
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'step-back';
-    back.setAttribute('aria-label', 'Tilbage til forrige trin');
-    back.title = 'Tilbage';
-    back.innerHTML = '<svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 7-7m-7 7 7 7"/></svg>';
-    back.addEventListener('click', () => {
-      for (let previous = i - 1; previous >= 0; previous--) {
-        if (!steps[previous].classList.contains('hidden')) {
-          scrollToStep(steps[previous].id, true);
-          break;
+  const arrows = {
+    up: '<path d="M12 19V5m0 0-7 7m7-7 7 7"/>',
+    down: '<path d="M12 5v14m0 0 7-7m-7 7-7-7"/>'
+  };
+  for (let index = 0; index < registrationSteps.length; index++) {
+    const heading = registrationSteps[index].querySelector('.step-title');
+    const controls = document.createElement('div');
+    controls.className = 'step-navigation';
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', 'Naviger mellem registreringstrin');
+    for (const [direction, delta, label] of [['up', -1, 'Forrige trin'], ['down', 1, 'Næste trin']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'step-navigation-button';
+      button.dataset.stepDirection = direction;
+      button.setAttribute('aria-label', label);
+      button.title = label;
+      button.innerHTML = `<svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${arrows[direction]}</svg>`;
+      button.addEventListener('click', () => {
+        // Clear touch/keyboard focus so the button returns to its base styling.
+        button.blur();
+        for (let target = index + delta; target >= 0 && target < registrationSteps.length; target += delta) {
+          if (!registrationSteps[target].classList.contains('hidden')) {
+            scrollToStep(registrationSteps[target].id, delta < 0);
+            break;
+          }
         }
-      }
-    });
-    heading.append(back);
+      });
+      controls.append(button);
+    }
+    heading.append(controls);
   }
+  updateRegistrationNavigation();
 }
-installRegistrationBackButtons();
+installRegistrationNavigation();
 
 function renderAndAdvance(id) {
   const wasHidden = $(id).classList.contains('hidden');
@@ -231,10 +254,10 @@ function render() {
   renderPlayers();
   const full = s.playerIds.length === 4;
   show('call-step', full);
-  if (!full) { $('game-panel').style.paddingBottom = ''; ['caller-step','tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
+  if (!full) { $('game-panel').style.paddingBottom = ''; ['caller-step','tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); updateRegistrationNavigation(); return; }
   buttons('call-options', CALLS, v=>s.callType===v, v=>{s.callType=v;resetFrom(2);renderAndAdvance('caller-step');});
   show('caller-step', Boolean(s.callType));
-  if (!s.callType) { ['tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); return; }
+  if (!s.callType) { ['tricks-step','vip-step','trump-step','partner-step','result-step','review-panel'].forEach(id=>show(id,false)); updateRegistrationNavigation(); return; }
   $('caller-help').textContent = isSolo() ? 'Vælg én eller flere meldere.' : 'Vælg én melder.';
   buttons('caller-options', sortedChosen().map(p=>[p.id,p.display_name]), id=>s.callerIds.includes(id), id=>{
     if (isSolo()) s.callerIds = s.callerIds.includes(id) ? s.callerIds.filter(x=>x!==id) : [...s.callerIds,id];
@@ -262,6 +285,7 @@ function render() {
     : s.score !== null);
   show('review-panel',complete);
   if (complete) renderReview();
+  updateRegistrationNavigation();
 }
 function renderResult() {
   if (!isSolo()) {

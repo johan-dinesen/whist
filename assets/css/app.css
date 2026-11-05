@@ -1365,29 +1365,35 @@ main.shell > .heading {
 .spa-page[hidden]{display:none!important}
 .spa-page > .heading{display:none}
 
-/* Registration back arrows mirror the numbered badges, without resizing the step. */
-#game-panel .step-title > .step-back {
+/* Registration step navigation is aligned to the right of each title.
+   Buttons have the old badge size and keep the same base color after taps. */
+#game-panel .step-title > .step-navigation {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+  flex:0 0 auto;
+}
+#game-panel .step-navigation-button {
   display:grid;
   place-items:center;
   flex:0 0 40px;
   width:40px;
   height:39px;
   padding:0;
-  margin-left:auto;
   border:1px solid #395a75;
   border-radius:8px;
   background:#122b3b;
   color:var(--blue);
-  transition:background .1s,border-color .1s;
+  -webkit-tap-highlight-color:transparent;
 }
-#game-panel .step-title > .step-back:hover {
-  background:var(--blue-dark);
-  border-color:var(--blue);
+#game-panel .step-navigation-button:active:not(:disabled) {
+  transform:translateY(1px);
 }
-#game-panel .step-title > .step-back:active {background:#23516e}
-#game-panel .step-title > .step-back svg {display:block}
+#game-panel .step-navigation-button:disabled {
+  opacity:.4;
+  cursor:default;
+}
+#game-panel .step-navigation-button svg {display:block}
 #game-panel .review-step-title {align-items:center;margin-bottom:10px}
 #game-panel .review-step-title h2 {margin:0}
-@media(prefers-reduced-motion:reduce) {
-  #game-panel .step-title > .step-back {transition:none}
-}
